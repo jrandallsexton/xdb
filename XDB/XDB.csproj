@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Ninject">
+      <HintPath>..\packages\Ninject.3.2.2.0\lib\net45-full\Ninject.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -41,120 +44,48 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="API\Common\XBaseApi.cs" />
-    <Compile Include="API\Core\XListManager.cs" />
-    <Compile Include="API\Core\XObjectTypeManager.cs" />
-    <Compile Include="API\Core\XPropertyManager.cs" />
-    <Compile Include="API\Data\XObjectManager.cs" />
-    <Compile Include="API\Security\XRoleManager.cs" />
-    <Compile Include="API\Security\XUserManager.cs" />
-    <Compile Include="BLL\Common\SqlDatabaseLayer.cs" />
-    <Compile Include="BLL\Common\XBaseLayer.cs" />
-    <Compile Include="BLL\Common\XGenEngine.cs" />
-    <Compile Include="BLL\Core\XListLayer.cs" />
-    <Compile Include="BLL\Core\XListValueLayer.cs" />
-    <Compile Include="BLL\Core\XObjectTypeLayer.cs" />
-    <Compile Include="BLL\Core\XPropertyLayer.cs" />
-    <Compile Include="BLL\Data\XImageLayer.cs" />
-    <Compile Include="BLL\Data\XMoneyLayer.cs" />
-    <Compile Include="BLL\Data\XObjectLayer.cs" />
-    <Compile Include="BLL\Data\XSubmittalLayer.cs" />
-    <Compile Include="BLL\Data\XUrlLayer.cs" />
-    <Compile Include="BLL\Data\XValueLayer.cs" />
-    <Compile Include="BLL\Security\XRoleLayer.cs" />
-    <Compile Include="BLL\Security\XUserLayer.cs" />
-    <Compile Include="Config\Config.cs" />
+    <Compile Include="Services\Core\XListService.cs" />
+    <Compile Include="Services\Core\XObjectTypeService.cs" />
+    <Compile Include="Services\Core\XPropertyService.cs" />
+    <Compile Include="Services\Data\XObjectService.cs" />
+    <Compile Include="Services\Interfaces\IXUserService.cs" />
+    <Compile Include="Services\Security\XRoleService.cs" />
+    <Compile Include="Services\Security\XUserService.cs" />
     <Compile Include="Constants\ExceptionMessages.cs" />
     <Compile Include="Constants\FilterValues.cs" />
-    <Compile Include="Constants\Misc.cs" />
     <Compile Include="Constants\OperatorId.cs" />
-    <Compile Include="Constants\StoredProcs.cs" />
     <Compile Include="Constants\XListIds.cs" />
-    <Compile Include="Constants\XObjectTypeIds.cs" />
-    <Compile Include="Constants\XPropertyIds.cs" />
     <Compile Include="Constants\XRoleIds.cs" />
     <Compile Include="Constants\XUserIds.cs" />
-    <Compile Include="DAL\Common\XSqlDal.cs" />
-    <Compile Include="DAL\Common\XSqlDalCo.cs" />
-    <Compile Include="DAL\Common\ReferenceDal.cs" />
-    <Compile Include="DAL\Common\XBaseDal.cs" />
-    <Compile Include="DAL\Core\XListDal.cs" />
-    <Compile Include="DAL\Core\XListValueDal.cs" />
-    <Compile Include="DAL\Core\XObjectTypeDal.cs" />
-    <Compile Include="DAL\Core\XObjectTypePropertyDal.cs" />
-    <Compile Include="DAL\Core\XPropertyDal.cs" />
-    <Compile Include="DAL\Data\XDocumentDal.cs" />
-    <Compile Include="DAL\Data\XImageDal.cs" />
-    <Compile Include="DAL\Data\XMoneyDal.cs" />
-    <Compile Include="DAL\Data\XObjectDal.cs" />
-    <Compile Include="DAL\Data\XObjectRelationDal.cs" />
-    <Compile Include="DAL\Data\XSubmittalDal.cs" />
-    <Compile Include="DAL\Data\XUrlDal.cs" />
-    <Compile Include="DAL\Data\XValueDal.cs" />
-    <Compile Include="DAL\IO\BulkUploadDal.cs" />
-    <Compile Include="DAL\Security\XRoleDal.cs" />
-    <Compile Include="DAL\Security\XUserDal.cs" />
-    <Compile Include="DataObjects\Common\XBase.cs" />
-    <Compile Include="DataObjects\Core\XList.cs" />
-    <Compile Include="DataObjects\Core\XListValue.cs" />
-    <Compile Include="DataObjects\Core\XObjectType.cs" />
-    <Compile Include="DataObjects\Core\XObjectTypeProperty.cs" />
-    <Compile Include="DataObjects\Core\XProperty.cs" />
-    <Compile Include="DataObjects\Data\XDate.cs" />
-    <Compile Include="DataObjects\Data\XDocument.cs" />
-    <Compile Include="DataObjects\Data\XImage.cs" />
-    <Compile Include="DataObjects\Data\XImageInfo.cs" />
-    <Compile Include="DataObjects\Data\XMoney.cs" />
-    <Compile Include="DataObjects\Data\XObject.cs" />
-    <Compile Include="DataObjects\Data\XObjectRelation.cs" />
-    <Compile Include="DataObjects\Data\XSubmittal.cs" />
-    <Compile Include="DataObjects\Data\XUrl.cs" />
-    <Compile Include="DataObjects\Data\XValue.cs" />
-    <Compile Include="DataObjects\Helpers\PropertySelect.cs" />
-    <Compile Include="DataObjects\Helpers\XFilter.cs" />
-    <Compile Include="DataObjects\Helpers\XNarrativeHelper.cs" />
-    <Compile Include="DataObjects\Helpers\XRoleHelper.cs" />
-    <Compile Include="DataObjects\Helpers\XSubmittalHelper.cs" />
-    <Compile Include="DataObjects\IO\XBulkUpload.cs" />
-    <Compile Include="DataObjects\IO\XBulkUploadLog.cs" />
-    <Compile Include="DataObjects\IO\XReport.cs" />
-    <Compile Include="DataObjects\IO\XReportProperty.cs" />
-    <Compile Include="DataObjects\Security\XRole.cs" />
-    <Compile Include="DataObjects\Security\XUser.cs" />
-    <Compile Include="EnumerationOps.cs" />
-    <Compile Include="Enumerations\EApplicationInstance.cs" />
-    <Compile Include="Enumerations\EAssetRequestType.cs" />
-    <Compile Include="Enumerations\EAssetTypeClass.cs" />
-    <Compile Include="Enumerations\ECommonObjectType.cs" />
-    <Compile Include="Enumerations\ECustomReportFieldType.cs" />
-    <Compile Include="Enumerations\EDataType.cs" />
-    <Compile Include="Enumerations\EDBSchema.cs" />
-    <Compile Include="Enumerations\EDocumentType.cs" />
-    <Compile Include="Enumerations\EFilterOperator.cs" />
-    <Compile Include="Enumerations\EImageType.cs" />
-    <Compile Include="Enumerations\EObjectRelationType.cs" />
-    <Compile Include="Enumerations\EPermissionType.cs" />
     <Compile Include="Enumerations\ESortOrder.cs" />
-    <Compile Include="Enumerations\ESqlType.cs" />
     <Compile Include="Enumerations\ESystemActionType.cs" />
-    <Compile Include="Enumerations\ESystemType.cs" />
-    <Compile Include="Enumerations\ETimeElapsedFormat.cs" />
-    <Compile Include="Enumerations\ETimeElapsedType.cs" />
-    <Compile Include="Exceptions\LogicalException.cs" />
-    <Compile Include="Exceptions\RuleViolation.cs" />
-    <Compile Include="Extensions\COApiExtension.cs" />
-    <Compile Include="Extensions\COLayerExtension.cs" />
-    <Compile Include="Helpers.cs" />
-    <Compile Include="Interfaces\ICoreInstanceConfig.cs" />
     <Compile Include="Interfaces\IInstanceProvider.cs" />
     <Compile Include="Interfaces\INarrative.cs" />
-    <Compile Include="Interfaces\IXBaseApi.cs" />
-    <Compile Include="Interfaces\IXBaseBll.cs" />
-    <Compile Include="Interfaces\IXBaseDal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Helpers\" />
+    <Folder Include="Services\Common\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\XDB.Common\XDB.Common.csproj">
+      <Project>{0464d0a4-13a2-4a34-8a73-0731a148edbe}</Project>
+      <Name>XDB.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDB.Data\XDB.Data.csproj">
+      <Project>{28bcb16d-c478-4f49-9aca-60de5cd0e2bb}</Project>
+      <Name>XDB.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDB.Domain\XDB.Domain.csproj">
+      <Project>{21f93cd3-3634-4f93-bfec-90f7da76e758}</Project>
+      <Name>XDB.Domain</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDB.Models\XDB.Models.csproj">
+      <Project>{b97caf8c-60d3-47cf-9df0-740a3785aa20}</Project>
+      <Name>XDB.Models</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

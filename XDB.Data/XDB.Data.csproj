@@ -4,8 +4,8 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1585A1F7-81A9-4779-A338-8292F4C30FB3}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{28BCB16D-C478-4F49-9ACA-60DE5CD0E2BB}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>XDB.Data</RootNamespace>
     <AssemblyName>XDB.Data</AssemblyName>
@@ -13,7 +13,6 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -32,9 +30,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DbUp">
-      <HintPath>..\packages\dbup.3.2.1\lib\NET35\DbUp.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -44,12 +39,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="IO\BulkUploadRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReferenceRepository.cs" />
+    <Compile Include="Security\XRoleRepository.cs" />
+    <Compile Include="Security\XUserRepository.cs" />
+    <Compile Include="XDocumentRepository.cs" />
+    <Compile Include="XImageRepository.cs" />
+    <Compile Include="XListRepository.cs" />
+    <Compile Include="XListValueRepository.cs" />
+    <Compile Include="XMoneyRepository.cs" />
+    <Compile Include="XObjectRepository.cs" />
+    <Compile Include="XObjectRelationRepository.cs" />
+    <Compile Include="XObjectTypeRepository.cs" />
+    <Compile Include="XObjectTypePropertyRepository.cs" />
+    <Compile Include="XPropertyRepository.cs" />
+    <Compile Include="XSubmittalRepository.cs" />
+    <Compile Include="XUrlRepository.cs" />
+    <Compile Include="XValueRepository.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
+    <ProjectReference Include="..\XDB.Common\XDB.Common.csproj">
+      <Project>{0464d0a4-13a2-4a34-8a73-0731a148edbe}</Project>
+      <Name>XDB.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDB.Models\XDB.Models.csproj">
+      <Project>{b97caf8c-60d3-47cf-9df0-740a3785aa20}</Project>
+      <Name>XDB.Models</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

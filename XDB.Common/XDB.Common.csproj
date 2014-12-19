@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{0464D0A4-13A2-4A34-8A73-0731A148EDBE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>XDB.Common</RootNamespace>
+    <AssemblyName>XDB.Common</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Config\Config.cs" />
+    <Compile Include="Constants\Misc.cs" />
+    <Compile Include="Constants\StoredProcs.cs" />
+    <Compile Include="Constants\XObjectTypeIds.cs" />
+    <Compile Include="Constants\XPropertyIds.cs" />
+    <Compile Include="EnumerationOps.cs" />
+    <Compile Include="Enumerations\EApplicationInstance.cs" />
+    <Compile Include="Enumerations\EAssetRequestType.cs" />
+    <Compile Include="Enumerations\EAssetTypeClass.cs" />
+    <Compile Include="Enumerations\ECommonObjectType.cs" />
+    <Compile Include="Enumerations\ECustomReportFieldType.cs" />
+    <Compile Include="Enumerations\EDataType.cs" />
+    <Compile Include="Enumerations\EDBSchema.cs" />
+    <Compile Include="Enumerations\EDocumentType.cs" />
+    <Compile Include="Enumerations\EFilterOperator.cs" />
+    <Compile Include="Enumerations\EImageType.cs" />
+    <Compile Include="Enumerations\EObjectRelationType.cs" />
+    <Compile Include="Enumerations\EPermissionType.cs" />
+    <Compile Include="Enumerations\ESqlType.cs" />
+    <Compile Include="Enumerations\ESystemType.cs" />
+    <Compile Include="Enumerations\ETimeElapsedFormat.cs" />
+    <Compile Include="Enumerations\ETimeElapsedType.cs" />
+    <Compile Include="Exceptions\LogicalException.cs" />
+    <Compile Include="Exceptions\RuleViolation.cs" />
+    <Compile Include="Extensions\COApiExtension.cs" />
+    <Compile Include="Extensions\COLayerExtension.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="Interfaces\ICoreInstanceConfig.cs" />
+    <Compile Include="Interfaces\Domains\IXBaseDal.cs" />
+    <Compile Include="Interfaces\Domains\IXBaseDomain.cs" />
+    <Compile Include="Interfaces\Models\Core\IXObjectType.cs" />
+    <Compile Include="Interfaces\Models\Core\IXObjectTypeProperty.cs" />
+    <Compile Include="Interfaces\Models\Core\IXProperty.cs" />
+    <Compile Include="Interfaces\Models\Data\IXDate.cs" />
+    <Compile Include="Interfaces\Models\Data\IXDocument.cs" />
+    <Compile Include="Interfaces\Models\Data\IXImage.cs" />
+    <Compile Include="Interfaces\Models\Data\IXImageInfo.cs" />
+    <Compile Include="Interfaces\Models\Data\IXMoney.cs" />
+    <Compile Include="Interfaces\Models\Data\IXObject.cs" />
+    <Compile Include="Interfaces\Models\Data\IXObjectRelation.cs" />
+    <Compile Include="Interfaces\Models\Data\IXSubmittal.cs" />
+    <Compile Include="Interfaces\Models\Data\IXUrl.cs" />
+    <Compile Include="Interfaces\Models\Data\IXValue.cs" />
+    <Compile Include="Interfaces\Repositories\IXObjectTypeRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IXPropertyRespository.cs" />
+    <Compile Include="Interfaces\Services\IXBaseService.cs" />
+    <Compile Include="Interfaces\Models\Core\IXList.cs" />
+    <Compile Include="Interfaces\Domains\IXListDomain.cs" />
+    <Compile Include="Interfaces\Repositories\IXListRepository.cs" />
+    <Compile Include="Interfaces\Models\Core\IXListValue.cs" />
+    <Compile Include="Interfaces\Repositories\IXListValueRepository.cs" />
+    <Compile Include="Interfaces\Services\IXListService.cs" />
+    <Compile Include="Objects\XBase.cs" />
+    <Compile Include="Objects\XBaseDal.cs" />
+    <Compile Include="Objects\XBaseDomain.cs" />
+    <Compile Include="Objects\XBaseService.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SQL\XSqlDal.cs" />
+    <Compile Include="SQL\XSqlDalCo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Interfaces\Models\IO\" />
+    <Folder Include="Interfaces\Models\Security\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

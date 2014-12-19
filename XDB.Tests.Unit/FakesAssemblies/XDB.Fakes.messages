@@ -1,0 +1,113 @@
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XGenEngine: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XListValueLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XObjectTypeLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XPropertyLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XObjectLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XRoleLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.BLL.XUserLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Config: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.ExceptionMessages: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.FilterValues: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.Misc: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.OperatorId: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.StoredProcs: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.XListIds: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.XObjectTypeIds: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.XPropertyIds: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.XRoleIds: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Constants.XUserIds: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.ReferenceDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XBaseDal: type has no family visible contructors.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XListValueDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XObjectTypeDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XPropertyDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XDocumentDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XImageDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XMoneyDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XObjectDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XObjectRelationDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XSubmittalDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XUrlDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XValueDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XRoleDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DAL.XUserDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DataObjects.XImageInfo: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DataObjects.XNarrativeHelper: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.DataObjects.XSubmittalHelper: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EApplicationInstance: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EAssetRequestType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EAssetTypeClass: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ECommonObjectType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ECustomReportFieldType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EDataType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EDBSchema: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EDocumentType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EFilterOperator: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EImageType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EObjectRelationType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.EPermissionType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ESortOrder: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ESqlType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ESystemActionType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ESystemType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ETimeElapsedFormat: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Enumerations.ETimeElapsedType: type is a value type.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Extensions.COApiExtension: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for XDB.Extensions.COLayerExtension: type is sealed.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate stub for <PrivateImplementationDetails>{32FD68DF-D64D-42D0-AC60-B1419B3934D8}: type is not supported because of internal limitations.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXBaseService: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.API.XObjectService+<>c__DisplayClass2: type is not supported because of internal limitations.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.API.XObjectService+<>c__DisplayClass6: type is not supported because of internal limitations.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.API.XObjectService+<>c__DisplayClass9: type is not supported because of internal limitations.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXList: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXListRepository: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXUserService: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXBaseDomain: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XGenEngine: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXListDomain: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XListValueLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XObjectTypeLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XPropertyLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XObjectLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XRoleLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.BLL.XUserLayer: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.ReferenceDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IXBaseDal: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XListValueDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XObjectTypeDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XPropertyDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XDocumentDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XImageDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XMoneyDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XObjectDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XObjectRelationDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XSubmittalDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XUrlDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XValueDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XRoleDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DAL.XUserDal: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.DataObjects.XSubmittalHelper: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EApplicationInstance: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EAssetRequestType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EAssetTypeClass: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ECommonObjectType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ECustomReportFieldType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EDataType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EDBSchema: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EDocumentType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EFilterOperator: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EImageType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EObjectRelationType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.EPermissionType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ESortOrder: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ESqlType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ESystemActionType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ESystemType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ETimeElapsedFormat: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Enumerations.ETimeElapsedType: type is an enum.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Extensions.COApiExtension: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Extensions.COLayerExtension: type is not visible to exported or assembly(XDB.Fakes).
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.ICoreInstanceConfig: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.IInstanceProvider: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for XDB.Interfaces.INarrative: type is an interface.
+F:\Projects\XDB Solution\XDB.Tests.Unit\Fakes\XDB.fakes : warning : Cannot generate shim for <PrivateImplementationDetails>{32FD68DF-D64D-42D0-AC60-B1419B3934D8}: type is not supported because of internal limitations.

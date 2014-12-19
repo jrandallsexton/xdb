@@ -1,0 +1,7 @@
+F:\Projects\XDB Solution\XDB.Models\obj\Debug\XDB.Models.csprojResolveAssemblyReference.cache
+F:\Projects\XDB Solution\XDB.Models\bin\Debug\XDB.Models.dll
+F:\Projects\XDB Solution\XDB.Models\bin\Debug\XDB.Models.pdb
+F:\Projects\XDB Solution\XDB.Models\bin\Debug\XDB.Common.dll
+F:\Projects\XDB Solution\XDB.Models\bin\Debug\XDB.Common.pdb
+F:\Projects\XDB Solution\XDB.Models\obj\Debug\XDB.Models.dll
+F:\Projects\XDB Solution\XDB.Models\obj\Debug\XDB.Models.pdb
