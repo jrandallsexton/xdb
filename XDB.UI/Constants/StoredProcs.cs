@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using XDB.Enumerations;
+
 namespace XDB.UI.Constants
 {
     internal static class StoredProcs

@@ -40,15 +40,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants\StoredProcs.cs" />
+    <Compile Include="DAL\PropertyGroupDal.cs" />
+    <Compile Include="DAL\PropertyGroupPropertyRelationDal.cs" />
+    <Compile Include="DAL\ViewDal.cs" />
+    <Compile Include="DAL\ViewPropertyGroupRelationDal.cs" />
     <Compile Include="DataObjects\XPropertyGroup.cs" />
     <Compile Include="DataObjects\XPropertyGroupPropertyRelation.cs" />
     <Compile Include="DataObjects\XView.cs" />
     <Compile Include="DataObjects\XViewPropertyGroupRelation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DAL\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\XDB\XDB.csproj">
       <Project>{431d0649-0dae-4138-a6f0-1c57910cc7a7}</Project>
