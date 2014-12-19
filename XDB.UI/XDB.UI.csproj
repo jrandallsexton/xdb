@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants\StoredProcs.cs" />
     <Compile Include="DataObjects\XPropertyGroup.cs" />
     <Compile Include="DataObjects\XPropertyGroupPropertyRelation.cs" />
     <Compile Include="DataObjects\XView.cs" />
@@ -46,7 +47,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Constants\" />
     <Folder Include="DAL\" />
   </ItemGroup>
   <ItemGroup>
