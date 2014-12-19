@@ -1,4 +1,0 @@
-F:\Projects\XDB Solution\XDB.Common\bin\Debug\XDB.Common.dll
-F:\Projects\XDB Solution\XDB.Common\bin\Debug\XDB.Common.pdb
-F:\Projects\XDB Solution\XDB.Common\obj\Debug\XDB.Common.dll
-F:\Projects\XDB Solution\XDB.Common\obj\Debug\XDB.Common.pdb

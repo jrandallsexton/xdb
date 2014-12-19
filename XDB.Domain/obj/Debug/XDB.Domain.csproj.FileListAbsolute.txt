@@ -1,5 +1,0 @@
-F:\Projects\XDB Solution\XDB.Domain\bin\Debug\XDB.Domain.dll
-F:\Projects\XDB Solution\XDB.Domain\bin\Debug\XDB.Domain.pdb
-F:\Projects\XDB Solution\XDB.Domain\obj\Debug\XDB.Domain.dll
-F:\Projects\XDB Solution\XDB.Domain\obj\Debug\XDB.Domain.pdb
-F:\Projects\XDB Solution\XDB.Domain\obj\Debug\XDB.Domain.csprojResolveAssemblyReference.cache

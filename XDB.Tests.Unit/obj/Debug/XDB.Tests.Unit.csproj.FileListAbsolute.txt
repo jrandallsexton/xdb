@@ -1,1 +1,0 @@
-F:\Projects\XDB Solution\XDB.Tests.Unit\obj\Debug\XDB.Tests.Unit.csprojResolveAssemblyReference.cache

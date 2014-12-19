@@ -14,7 +14,7 @@ using XDB.Models;
 namespace XDB.Repositories
 {
 
-    public class XValueRepository : XBaseDal
+    public class XValueRepository<T> : XBaseDal, IXValueRepository<T> where T : XBase, IXValue
     {
 
         public XValueRepository() : base(ECommonObjectType.XObject) { }
@@ -55,7 +55,7 @@ namespace XDB.Repositories
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public XValue Get(Guid id)
+        public IXValue Get(Guid id)
         {
             return this.PropertyValue_Get(id, StoredProcs.PropertyValue_Get);
         }
@@ -66,12 +66,12 @@ namespace XDB.Repositories
             return base.ExecuteScalarGuidInLine(sql, new List<SqlParameter> { new SqlParameter("@Id", propertyValueId) });
         }
 
-        public XValue PropertyValue_Get(Guid propertyValueId, string spName)
+        public IXValue PropertyValue_Get(Guid xValueId, string spName)
         {
 
             XValue pv = null;
 
-            using (SqlDataReader drdSql = base.OpenDataReader(spName, new List<SqlParameter> { new SqlParameter("@Id", propertyValueId) }))
+            using (SqlDataReader drdSql = base.OpenDataReader(spName, new List<SqlParameter> { new SqlParameter("@Id", xValueId) }))
             {
 
                 if ((drdSql != null) && (drdSql.HasRows))
@@ -121,7 +121,7 @@ namespace XDB.Repositories
 
                     if (!drdSql.IsDBNull(deletedBy)) { pv.DeletedBy = drdSql.GetGuid(deletedBy); }
 
-                    pv.Id = propertyValueId;
+                    pv.Id = xValueId;
                     pv.IsNew = false;
                     pv.IsDirty = false;
 
@@ -315,20 +315,20 @@ namespace XDB.Repositories
 
         //}
 
-        public string PopulateDisplayValueHtml(XValue propertyValue, XProperty prop)
+        public string PopulateDisplayValueHtml(T xValue, IXProperty xProperty)
         {
             // load the display value for the property value if needed
-            if ((propertyValue != null) && (!string.IsNullOrEmpty(propertyValue.Value)))
+            if ((xValue != null) && (!string.IsNullOrEmpty(xValue.Value)))
             {
 
                 Guid selectedId;
 
-                if (Guid.TryParse(propertyValue.Value, out selectedId))
+                if (Guid.TryParse(xValue.Value, out selectedId))
                 {
 
-                    if (prop != null)
+                    if (xProperty != null)
                     {
-                        switch (prop.DataType)
+                        switch (xProperty.DataType)
                         {
 
                             case EDataType.Relation_ChildParent:
@@ -339,7 +339,7 @@ namespace XDB.Repositories
                                 return string.Empty;
                             case EDataType.Currency:
                                 string currVal = string.Empty;
-                                XMoney cv = new XMoneyRepository().Get(new Guid(propertyValue.Value));
+                                XMoney cv = new XMoneyRepository().Get(new Guid(xValue.Value));
                                 if (cv != null)
                                 {
                                     currVal = string.Format("{0}^{1}", cv.SymbolAscii, cv.Amount);
@@ -356,7 +356,7 @@ namespace XDB.Repositories
                             case EDataType.System_AssetType:
                                 return string.Empty;
                             case EDataType.URL:
-                                XUrl url = new XUrlRepository().Get(new Guid(propertyValue.Value));
+                                XUrl url = new XUrlRepository().Get(new Guid(xValue.Value));
                                 if (url != null)
                                 {
                                     if (string.IsNullOrEmpty(url.Name))
@@ -368,9 +368,9 @@ namespace XDB.Repositories
                                         return string.Format("<a href='{0}' target='_new'>{1}</a>", url.Url, url.Name);
                                     }
                                 }
-                                return propertyValue.Value;
+                                return xValue.Value;
                             default:
-                                return propertyValue.Value;
+                                return xValue.Value;
                         }
 
                     }
@@ -430,24 +430,24 @@ namespace XDB.Repositories
 
         }
 
-        public void Save(XValue propVal)
+        public void Save(T xValue)
         {
             List<SqlParameter> paramList = new List<SqlParameter>
                 {
-                    new SqlParameter("@Id", propVal.Id),
-                    new SqlParameter("@PropertyId", propVal.PropertyId),
-                    new SqlParameter("@AssetId", propVal.AssetId),
-                    new SqlParameter("@SubmittalGroupId", propVal.SubmittalGroupId),
-                    new SqlParameter("@Value", propVal.Value),
-                    new SqlParameter("@Order", propVal.Index),
-                    new SqlParameter("@Created", propVal.Created),
-                    new SqlParameter("@Approved", propVal.Approved),
-                    new SqlParameter("@Deleted", propVal.Deleted),
-                    new SqlParameter("@CreatedBy", propVal.CreatedBy),
-                    new SqlParameter("@ApprovedBy", propVal.ApprovedBy),
-                    new SqlParameter("@DeletedBy", propVal.DeletedBy),
-                    new SqlParameter("@Rejected", propVal.Rejected),
-                    new SqlParameter("@RejectedBy", propVal.RejectedBy)
+                    new SqlParameter("@Id", xValue.Id),
+                    new SqlParameter("@PropertyId", xValue.PropertyId),
+                    new SqlParameter("@AssetId", xValue.AssetId),
+                    new SqlParameter("@SubmittalGroupId", xValue.SubmittalGroupId),
+                    new SqlParameter("@Value", xValue.Value),
+                    new SqlParameter("@Order", xValue.Index),
+                    new SqlParameter("@Created", xValue.Created),
+                    new SqlParameter("@Approved", xValue.Approved),
+                    new SqlParameter("@Deleted", xValue.Deleted),
+                    new SqlParameter("@CreatedBy", xValue.CreatedBy),
+                    new SqlParameter("@ApprovedBy", xValue.ApprovedBy),
+                    new SqlParameter("@DeletedBy", xValue.DeletedBy),
+                    new SqlParameter("@Rejected", xValue.Rejected),
+                    new SqlParameter("@RejectedBy", xValue.RejectedBy)
                 };
 
             base.ExecuteSql(StoredProcs.PropertyValue_Save, paramList);
@@ -461,13 +461,13 @@ namespace XDB.Repositories
         /// for a property that is multi-select, false should be provided</param>
         /// <param name="checkExistingIsCaseSensitive"></param>
         /// <returns></returns>
-        public bool PropertyValue_Save(XValue propVal, bool deleteExisting, bool checkExistingIsCaseSensitive)
+        public void Save(T xValue, bool deleteExisting, bool checkExistingIsCaseSensitive)
         {
             bool previousValuesDeleted = false;
 
             List<SqlParameter> paramList = new List<SqlParameter>();
 
-            if (propVal.IsDirty)
+            if (xValue.IsDirty)
             {
 
                 //propVal.Value = base.QuoteReplace(propVal.Value);
@@ -477,17 +477,17 @@ namespace XDB.Repositories
 
                 // ... but only check for an existing if the incoming property value is new.
                 // ... If it's existing, something might have changed (i.e. Approved, Rejected)
-                if (propVal.IsNew)
+                if (xValue.IsNew)
                 {
-                    valueCurrentlyExists = this.PropertyValue_Exists(propVal.PropertyId, propVal.AssetId, propVal.Value, checkExistingIsCaseSensitive);
+                    valueCurrentlyExists = this.PropertyValue_Exists(xValue.PropertyId, xValue.AssetId, xValue.Value, checkExistingIsCaseSensitive);
                 }
 
-                if (valueCurrentlyExists) { return true; }
+                if (valueCurrentlyExists) { return; }
 
                 if (deleteExisting)
                 {
                     // delete any existing property values
-                    if (this.PropertyValue_Delete(propVal.AssetId, propVal.PropertyId, propVal.CreatedBy))
+                    if (this.PropertyValue_Delete(xValue.AssetId, xValue.PropertyId, xValue.CreatedBy))
                     {
                         previousValuesDeleted = true;
                     }
@@ -495,53 +495,47 @@ namespace XDB.Repositories
 
                 if ((deleteExisting == false) || ((deleteExisting == true) && (previousValuesDeleted == true)))
                 {
-                    paramList.Add(new SqlParameter("@Id", propVal.Id));
-                    paramList.Add(new SqlParameter("@PropertyId", propVal.PropertyId));
-                    paramList.Add(new SqlParameter("@AssetId", propVal.AssetId));
-                    paramList.Add(new SqlParameter("@SubmittalGroupId", propVal.SubmittalGroupId));
+                    paramList.Add(new SqlParameter("@Id", xValue.Id));
+                    paramList.Add(new SqlParameter("@PropertyId", xValue.PropertyId));
+                    paramList.Add(new SqlParameter("@AssetId", xValue.AssetId));
+                    paramList.Add(new SqlParameter("@SubmittalGroupId", xValue.SubmittalGroupId));
 
-                    if (string.IsNullOrEmpty(propVal.Value))
+                    if (string.IsNullOrEmpty(xValue.Value))
                     {
                         paramList.Add(new SqlParameter("@Value", null));
                     }
                     else
                     {
-                        paramList.Add(new SqlParameter("@Value", propVal.Value));
+                        paramList.Add(new SqlParameter("@Value", xValue.Value));
                     }
 
-                    paramList.Add(new SqlParameter("@Order", propVal.Index));
-                    paramList.Add(new SqlParameter("@Created", propVal.Created));
-                    paramList.Add(new SqlParameter("@Approved", propVal.Approved));
-                    paramList.Add(new SqlParameter("@Deleted", propVal.Deleted));
-                    paramList.Add(new SqlParameter("@CreatedBy", propVal.CreatedBy));
-                    paramList.Add(new SqlParameter("@ApprovedBy", propVal.ApprovedBy));
-                    paramList.Add(new SqlParameter("@DeletedBy", propVal.DeletedBy));
-                    paramList.Add(new SqlParameter("@Rejected", propVal.Rejected));
-                    paramList.Add(new SqlParameter("@RejectedBy", propVal.RejectedBy));
+                    paramList.Add(new SqlParameter("@Order", xValue.Index));
+                    paramList.Add(new SqlParameter("@Created", xValue.Created));
+                    paramList.Add(new SqlParameter("@Approved", xValue.Approved));
+                    paramList.Add(new SqlParameter("@Deleted", xValue.Deleted));
+                    paramList.Add(new SqlParameter("@CreatedBy", xValue.CreatedBy));
+                    paramList.Add(new SqlParameter("@ApprovedBy", xValue.ApprovedBy));
+                    paramList.Add(new SqlParameter("@DeletedBy", xValue.DeletedBy));
+                    paramList.Add(new SqlParameter("@Rejected", xValue.Rejected));
+                    paramList.Add(new SqlParameter("@RejectedBy", xValue.RejectedBy));
 
                     if (base.ExecuteSql(StoredProcs.PropertyValue_Save, paramList))
                     {
-                        propVal.IsNew = false;
-                        propVal.IsDirty = false;
-
-                        return true;
+                        xValue.IsNew = false;
+                        xValue.IsDirty = false;
                     }
                 }
 
-                return false;
-
             }
-
-            return true;
 
         }
 
-        public void Delete(Guid id, Guid userId)
+        public void Delete(Guid xValueId, Guid userId)
         {
 
             List<SqlParameter> paramList = new List<SqlParameter>
                 {
-                    new SqlParameter("@Id", id),
+                    new SqlParameter("@Id", xValueId),
                     new SqlParameter("@DeletedBy", userId)
                 };
 
@@ -600,11 +594,11 @@ namespace XDB.Repositories
         /// <param name="propertyId">a valid property id</param>
         /// <param name="assetId">a valid asset id</param>
         /// <returns></returns>
-        public XValue Get(Guid propertyId, Guid assetId)
+        public IXValue Get(Guid xPropertyId, Guid xObjectId)
         {
             // TODO: Test this code
             XPropertyRepository<XProperty> propDal = new XPropertyRepository<XProperty>();
-            XProperty prop = propDal.Get(propertyId);
+            XProperty prop = propDal.Get(xPropertyId);
 
             StringBuilder sql = new StringBuilder();
             sql.AppendLine("SELECT [ID] FROM [PropertyValues] WITH (NoLock)");
@@ -615,24 +609,24 @@ namespace XDB.Repositories
 
             List<SqlParameter> paramList = new List<SqlParameter>
                 {
-                    new SqlParameter("@Id", propertyId),
-                    new SqlParameter("@AssetId", assetId)
+                    new SqlParameter("@Id", xPropertyId),
+                    new SqlParameter("@AssetId", xObjectId)
                 };
 
             Guid propertyValueId = base.ExecuteScalarGuidInLine(sql.ToString(), paramList);
 
-            if (propertyId.CompareTo(new Guid()) == 0) return null;
+            if (xPropertyId.CompareTo(new Guid()) == 0) return null;
 
             return this.Get(propertyValueId);
         }
 
-        public XValue GetPrevious(Guid propertyId, Guid assetId)
+        public IXValue GetPrevious(Guid xPropertyId, Guid xObjectId)
         {
             string sql = "SELECT TOP 1 [ID] from [PropertyValues] WHERE [AssetId] = @AssetId AND [PropertyId] = @PropId AND [Deleted] IS NOT NULL ORDER BY [Created] DESC";
 
             List<SqlParameter> paramList = new List<SqlParameter>();
-            paramList.Add(new SqlParameter("@AssetId", assetId));
-            paramList.Add(new SqlParameter("@PropId", propertyId));
+            paramList.Add(new SqlParameter("@AssetId", xObjectId));
+            paramList.Add(new SqlParameter("@PropId", xPropertyId));
 
             Guid pvId = base.ExecuteScalarGuidInLine(sql, paramList);
 
@@ -640,26 +634,26 @@ namespace XDB.Repositories
 
         }
 
-        public void Save(IList<IXValue> propertyvalueList, IDictionary<Guid, XProperty> properties)
+        public void Save(IList<T> xValues, IDictionary<Guid, IXProperty> xProperties)
         {
 
             XPropertyRepository<XProperty> propDal = new XPropertyRepository<XProperty>();
 
-            foreach (XValue propertyvalue in propertyvalueList)
+            foreach (T propertyvalue in xValues)
             {
 
                 if (!propertyvalue.IsDirty) continue;
 
                 XProperty prop = null;
 
-                if (properties.ContainsKey(propertyvalue.PropertyId))
+                if (xProperties.ContainsKey(propertyvalue.PropertyId))
                 {
-                    prop = properties[propertyvalue.PropertyId];
+                    prop = (XProperty)xProperties[propertyvalue.PropertyId];
                 }
                 else
                 {
                     prop = propDal.Get(propertyvalue.PropertyId);
-                    properties.Add(prop.Id, prop);
+                    xProperties.Add(prop.Id, prop);
                 }
 
                 if (prop != null)
@@ -667,7 +661,7 @@ namespace XDB.Repositories
                     bool matchIsCaseSensitive = prop.IsSystem && (prop.SystemType == ESystemType.AssetName);
 
                     // if the property is multi-select, DON'T delete previous values
-                    this.PropertyValue_Save(propertyvalue, !prop.AllowMultiValue, matchIsCaseSensitive);
+                    this.Save(propertyvalue, !prop.AllowMultiValue, matchIsCaseSensitive);
 
                     propertyvalue.IsNew = false;
                     propertyvalue.IsDirty = false;
@@ -1619,7 +1613,7 @@ namespace XDB.Repositories
 
         //}
 
-        public string FormatPropertyValue(XProperty prop, string value)
+        public string FormatPropertyValue(IXProperty prop, string value)
         {
 
             if (prop.DataType == EDataType.Currency)
@@ -1817,13 +1811,13 @@ namespace XDB.Repositories
         //    return values;
         //}
 
-        public IList<string> PropertyValues_GetPotentialByAssetTypeIds(List<Guid> assetTypeIds, ESystemType systemType)
+        public IList<string> PropertyValues_GetPotentialByAssetTypeIds(List<Guid> xObjectTypeIds, ESystemType systemType)
         {
 
             List<string> values = new List<string>();
 
             List<SqlParameter> paramList = new List<SqlParameter>();
-            paramList.Add(new SqlParameter("@AssetTypeIds", Helpers.ListOfGuidToCommaDelimString(assetTypeIds)));
+            paramList.Add(new SqlParameter("@AssetTypeIds", Helpers.ListOfGuidToCommaDelimString(xObjectTypeIds)));
 
             StringBuilder sql = new StringBuilder();
 

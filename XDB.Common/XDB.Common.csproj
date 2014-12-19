@@ -85,6 +85,7 @@
     <Compile Include="Interfaces\Models\Data\IXValue.cs" />
     <Compile Include="Interfaces\Repositories\IXObjectTypeRepository.cs" />
     <Compile Include="Interfaces\Repositories\IXPropertyRespository.cs" />
+    <Compile Include="Interfaces\Repositories\IXValueRepository.cs" />
     <Compile Include="Interfaces\Services\IXBaseService.cs" />
     <Compile Include="Interfaces\Models\Core\IXList.cs" />
     <Compile Include="Interfaces\Domains\IXListDomain.cs" />
