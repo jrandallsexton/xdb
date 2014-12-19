@@ -1,7 +1,0 @@
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\bin\Debug\XDB.Common.Tests.Unit.dll
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\bin\Debug\XDB.Common.Tests.Unit.pdb
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\bin\Debug\nunit.framework.dll
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\bin\Debug\nunit.framework.xml
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\obj\Debug\XDB.Common.Tests.Unit.csprojResolveAssemblyReference.cache
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\obj\Debug\XDB.Common.Tests.Unit.dll
-F:\Projects\XDB Solution\XDB.Common.Tests.Unit\obj\Debug\XDB.Common.Tests.Unit.pdb
