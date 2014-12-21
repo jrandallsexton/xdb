@@ -7,12 +7,9 @@ using System.Threading.Tasks;
 
 using NUnit.Framework;
 
-using XDB.API;
-using XDB.BLL;
-using XDB.DAL;
-using XDB.DataObjects;
+using XDB.Models;
 using XDB.Constants;
-using XDB.Interfaces;
+using XDB.Common.Interfaces;
 
 using XDB.Tests.Unit.Factories;
 using XDB.Tests.Unit.Fakes;

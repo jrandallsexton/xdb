@@ -11,7 +11,7 @@ namespace XDB.Common
     public class Helpers
     {
 
-        public static string ListOfGuidToCommaDelimString(List<Guid> values)
+        public static string ListOfGuidToCommaDelimString(IList<Guid> values)
         {
             if ((values == null) || (values.Count == 0)) { return string.Empty; }
             StringBuilder sb = new StringBuilder();

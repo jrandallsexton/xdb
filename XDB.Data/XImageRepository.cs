@@ -160,7 +160,7 @@ namespace XDB.Repositories
             return (base.ExecuteScalarInLine(sql, new List<SqlParameter> { new SqlParameter("@Id", id) }) == 1);
         }
 
-        public Dictionary<Guid, string> ImageDictionary_GetSystem()
+        public IDictionary<Guid, string> ImageDictionary_GetSystem()
         {
             const string sql = "SELECT [Id], [Name] from [Images] WITH (NoLock) WHERE [IsSystem] = 1 ORDER BY [Name]";
             return base.GetDictionary(sql);

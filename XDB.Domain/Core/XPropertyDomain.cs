@@ -99,7 +99,7 @@ namespace XDB.Domains
         //    return this._dal.SystemType(propertyId);
         //}
 
-        public IDictionary<Guid, XProperty> GetObjectDictionary(List<Guid> propertyIds)
+        public IDictionary<Guid, IXProperty> GetObjectDictionary(IList<Guid> propertyIds)
         {
             return this.dal.GetObjectDictionary(propertyIds);
         }

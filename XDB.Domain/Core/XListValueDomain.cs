@@ -69,7 +69,7 @@ namespace XDB.Domains
             if (value.Id.CompareTo(new Guid()) == 0) { throw new LogicalException("Id cannot be null", "Id"); }
 
             // Ensure the value belongs to a picklist
-            if (value.PickListId.CompareTo(new Guid()) == 0) { throw new LogicalException("PickListId must be defined", "PickListId"); }
+            if (value.XListId.CompareTo(new Guid()) == 0) { throw new LogicalException("XListId must be defined", "XListId"); }
 
             //// Ensure the selected picklist is valid
             //if (new PickListLayer().IsValidId(value.PickListId) == false) { throw new LogicalException("Invalid picklist", "PickListId"); }

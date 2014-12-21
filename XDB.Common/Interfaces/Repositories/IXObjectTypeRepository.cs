@@ -16,7 +16,7 @@ namespace XDB.Common.Interfaces
         IXObjectType Get(Guid id);
         IDictionary<Guid, string> GetDictionary(bool includePlaceholders);
         Guid GetIdByAssetId(Guid assetId);
-        bool HasAssets(Guid assetTypeId, EAssetRequestType requestType);
+        bool HasAssets(Guid assetTypeId, EXObjectRequestType requestType);
         Guid? ParentId(Guid assetTypeId);
         string Pluralization(Guid xObjectTypeId);
         string ReportingLabel(Guid xObjectTypeId, bool forInstances, bool usePlural);

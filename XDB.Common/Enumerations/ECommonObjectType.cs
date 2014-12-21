@@ -6,12 +6,13 @@ namespace XDB.Common.Enumerations
     {
         XObject = 0,
         XObjectType = 1,
-        XUser = 2,
-        XList = 3,
-        XListValue = 4,
-        XProperty = 5,
-        XValue = 6,
-        XRole = 7
+        XObjectTypeProperty = 2,
+        XUser = 3,
+        XList = 4,
+        XListValue = 5,
+        XProperty = 6,
+        XValue = 7,
+        XRole = 8
     }
 
 }

@@ -12,26 +12,24 @@ using XDB.Common;
 namespace XDB.Models
 {
 
-    //<summary>
-    //</summary>
     public class XListValue : XBase, IXListValue
     {
 
-        private Guid _pickListId;
+        private Guid _xListId;
         private string _value = string.Empty;
         private int _index;
         private string _bgColor = string.Empty;
 
         /// <summary>
-        /// PickListId
+        /// XListId
         /// <summary>
-        public Guid PickListId
+        public Guid XListId
         {
-            get { return this._pickListId; }
+            get { return this._xListId; }
             set
             {
-                if (this._pickListId.CompareTo(value) == 0) { return; }
-                this._pickListId = value;
+                if (this._xListId.CompareTo(value) == 0) { return; }
+                this._xListId = value;
                 this.IsDirty = true;
             }
         }
@@ -77,9 +75,9 @@ namespace XDB.Models
 
         public XListValue() { }
 
-        public XListValue(Guid pickListId, string value, string displayValue, int index, Guid memberId)
+        public XListValue(Guid xListId, string value, string displayValue, int index, Guid memberId)
         {
-            this.PickListId = pickListId;
+            this.XListId = xListId;
             this.Value = value;
             this.DisplayValue = displayValue;
             this.Index = index;

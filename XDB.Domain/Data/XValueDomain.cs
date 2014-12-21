@@ -3,56 +3,62 @@ using System;
 using System.Collections.Generic;
 
 using XDB.Models;
+
+using XDB.Common;
 using XDB.Common.Enumerations;
 using XDB.Common.Exceptions;
 using XDB.Common.Interfaces;
+
 using XDB.Repositories;
 
 namespace XDB.Domains
 {
 
-    public class XValueDomain
+    public class XValueDomain<T> : XBaseDomain, IXValueDomain<T> where T : XBase, IXValue
     {
 
-        private XValueRepository dal = new XValueRepository();
+        //private XValueRepository<XValue> dal = new XValueRepository<XValue>();
+        private IXValueRepository<T> dal = new XValueRepository<T>();
 
-        public XValueDomain() { }
+        public XValueDomain() : base(ECommonObjectType.XValue) { }
 
         public Guid AssetId(Guid propertyValueId)
         {
             return this.dal.AssetId(propertyValueId);
         }
 
-        public XValue Get(Guid id)
+        public IXValue Get(Guid id)
         {
             return this.dal.Get(id);
         }
 
-        public XValue Get(Guid propertyId, Guid assetId)
+        public IXValue Get(Guid propertyId, Guid assetId)
         {
             return this.dal.Get(propertyId, assetId);
         }
 
-        public XValue GetPrevious(Guid propertyId, Guid assetId)
+        public IXValue GetPrevious(Guid propertyId, Guid assetId)
         {
             return this.dal.GetPrevious(propertyId, assetId);
         }
 
-        internal void Save(XValue propertyValue)
+        internal void Save(T xValue)
         {
-            XProperty prop = new XPropertyDomain().Get(propertyValue.PropertyId);
+            XProperty prop = new XPropertyDomain().Get(xValue.PropertyId);
 
-            if (this.PropertyValueIsValid(prop, propertyValue)) {
-                this.dal.Save(propertyValue);
+            if (this.PropertyValueIsValid(prop, xValue))
+            {
+                this.dal.Save(xValue);
             }
         }
 
-        public void PropertyValue_Save(XValue propertyvalue, bool existingValueIsCaseSensitive)
+        public void Save(T xValue, bool existingValueIsCaseSensitive)
         {
-            XProperty prop = new XPropertyDomain().Get(propertyvalue.PropertyId);
+            XProperty prop = (XProperty)new XPropertyDomain().Get(xValue.PropertyId);
             // since we're saving a single property value, we'll always delete the existing value
-            if (this.PropertyValueIsValid(prop, propertyvalue)) {
-                this.dal.PropertyValue_Save(propertyvalue, true, existingValueIsCaseSensitive);
+            if (this.PropertyValueIsValid(prop, xValue))
+            {
+                this.dal.Save(xValue, true, existingValueIsCaseSensitive);
             }
         }
 
@@ -73,19 +79,19 @@ namespace XDB.Domains
         //    return this.dal.PropertyValues_Get(propertyId, assetId, creationDateOrder);
         //}
 
-        public void PropertyValueList_Save(IList<IXValue> values, Guid userId)
+        public void Save(IList<T> values, Guid userId)
         {
 
             //Helpers.Log("PropertyValueLayer", "PropertyValueList_Save()");
 
             List<Guid> propIds = new List<Guid>();
 
-            foreach (XValue pv in values)
+            foreach (T pv in values)
             {
                 if (!propIds.Contains(pv.PropertyId)) { propIds.Add(pv.PropertyId); }
             }
 
-            IDictionary<Guid, XProperty> properties = new XPropertyDomain().GetObjectDictionary(propIds);
+            IDictionary<Guid, IXProperty> properties = new XPropertyDomain().GetObjectDictionary(propIds);
 
             this.PropertyValuesAreValid(values, properties);
             this.dal.Save(values, properties);
@@ -98,18 +104,18 @@ namespace XDB.Domains
             //    this.dal.PropertyValue_Delete(assetId, plvId, value.PropertyId, value.CreatedBy);
             //} 
 
-            XObjectDomain aLayer = new XObjectDomain();
+            IXObjectDomain<XObject> aLayer = new XObjectDomain<XObject>();
 
-            foreach (XValue pv in values)
+            foreach (T pv in values)
             {
 
-                XProperty prop = properties[pv.PropertyId];
+                IXProperty prop = properties[pv.PropertyId];
 
                 if (prop.IsSystem)
                 {
                     #region handling of system properties being affected by submitted property values
 
-                    XObject a = aLayer.Asset_Get(pv.AssetId, userId);
+                    XObject a = (XObject)aLayer.Get(pv.AssetId);
 
                     switch (prop.SystemType)
                     {
@@ -136,8 +142,8 @@ namespace XDB.Domains
 
                             if (a != null)
                             {
-                                // assetTypeId has changed.  Update any instances of this asset
-                                if (aLayer.Assets_ChangeAssetType(a.Id, new Guid(pv.Value)))
+                                // assetTypeId has changed.  Update any instances of this asset                                
+                                if (aLayer.ChangeObjectType(a.Id, new Guid(pv.Value)))
                                 {
                                     a.AssetTypeId = new Guid(pv.Value);
                                     a.LastModified = DateTime.Now;
@@ -193,22 +199,22 @@ namespace XDB.Domains
         //    return this.dal.PropertyValueList_GetByAssetId(assetId);
         //}
 
-        private bool PropertyValueIsValid(XProperty prop, XValue propertyValue)
+        private bool PropertyValueIsValid(XProperty prop, T xValue)
         {
 
-            if (propertyValue.Id.CompareTo(new Guid()) == 0) { throw new LogicalException("Id cannot be null", "Id"); }
-            if (propertyValue.PropertyId.CompareTo(new Guid()) == 0) { throw new LogicalException("PropertyId cannot be null", "PropertyId"); }
-            if (propertyValue.SubmittalGroupId == new Guid()) { throw new LogicalException("SubmittalGroupId cannot be null", "SubmittalGroupId"); }
+            if (xValue.Id.CompareTo(new Guid()) == 0) { throw new LogicalException("Id cannot be null", "Id"); }
+            if (xValue.PropertyId.CompareTo(new Guid()) == 0) { throw new LogicalException("PropertyId cannot be null", "PropertyId"); }
+            if (xValue.SubmittalGroupId == new Guid()) { throw new LogicalException("SubmittalGroupId cannot be null", "SubmittalGroupId"); }
 
-            if (propertyValue.AssetId.CompareTo(new Guid()) == 0)
+            if (xValue.AssetId.CompareTo(new Guid()) == 0)
             {
                 throw new LogicalException("AssetId is missing", "AssetId");
             }
 
-            if (propertyValue.CreatedBy.CompareTo(new Guid()) == 0) { throw new LogicalException("'Created By' cannot be null", "CreatedBy"); }
+            if (xValue.CreatedBy.CompareTo(new Guid()) == 0) { throw new LogicalException("'Created By' cannot be null", "CreatedBy"); }
 
             // Ensure the creator is valid
-            if (new XUserDomain().ValidId(propertyValue.CreatedBy) == false)
+            if (new XUserDomain().ValidId(xValue.CreatedBy) == false)
             {
                 throw new LogicalException("Invalid user id", "CreatedBy");
             }
@@ -223,7 +229,7 @@ namespace XDB.Domains
             // this line will allow the 'clearing' of an existing value
             // if the property value's value is empty, it's valid as-is;
             // otherwise the value must be validated according to the property'd data type
-            if (string.IsNullOrEmpty(propertyValue.Value)) { return true; }
+            if (string.IsNullOrEmpty(xValue.Value)) { return true; }
 
             // TODO: This has to be re-implemented later after my demo
 
@@ -235,7 +241,7 @@ namespace XDB.Domains
                         break;
                     case ESystemType.AssetType:
                         Guid newGuid;
-                        if (Guid.TryParse(propertyValue.Value, out newGuid))
+                        if (Guid.TryParse(xValue.Value, out newGuid))
                         {
                             return new XObjectTypeDomain().ValidId(newGuid);
                         }
@@ -271,9 +277,9 @@ namespace XDB.Domains
                     case EDataType.Date:
                     case EDataType.DateTime:
                         DateTime dtValue;
-                        if (!DateTime.TryParse(propertyValue.Value, out dtValue))
+                        if (!DateTime.TryParse(xValue.Value, out dtValue))
                         {
-                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                         }
                         break;
 
@@ -314,9 +320,9 @@ namespace XDB.Domains
 
                     case EDataType.Float:
                         float floatValue;
-                        if (!float.TryParse(propertyValue.Value, out floatValue))
+                        if (!float.TryParse(xValue.Value, out floatValue))
                         {
-                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                         }
                         break;
 
@@ -326,9 +332,9 @@ namespace XDB.Domains
 
                     case EDataType.Int:
                         int intValue;
-                        if (!int.TryParse(propertyValue.Value, out intValue))
+                        if (!int.TryParse(xValue.Value, out intValue))
                         {
-                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                         }
                         break;
 
@@ -337,16 +343,16 @@ namespace XDB.Domains
                         break;
 
                     case EDataType.URL:
-                        if (!string.IsNullOrEmpty(propertyValue.Value))
+                        if (!string.IsNullOrEmpty(xValue.Value))
                         {
-                            Guid urlId = new Guid(propertyValue.Value);
+                            Guid urlId = new Guid(xValue.Value);
                             XUrl url = new XUrlDomain().Get(urlId);
                             if (url != null)
                             {
                                 Uri testUrl;
                                 if (!Uri.TryCreate(url.Url, UriKind.Absolute, out testUrl))
                                 {
-                                    throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                                    throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                                 }
                             }
                         }
@@ -357,17 +363,17 @@ namespace XDB.Domains
 
                         Guid userId;
 
-                        if (Guid.TryParse(propertyValue.Value, out userId))
+                        if (Guid.TryParse(xValue.Value, out userId))
                         {
                             XUser member = new XUserDomain().Get(userId);
                             if (member == null)
                             {
-                                throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but the provided user id is invalid.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                                throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but the provided user id is invalid.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                             }
                         }
                         else
                         {
-                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), propertyValue.Value), "Value");
+                            throw new LogicalException(string.Format("For property '{0}', data type is '{1}' but provided value is not.  Value provided was '{2}'.", prop.Name, prop.DataType.ToString(), xValue.Value), "Value");
                         }
                         break;
                 }
@@ -378,15 +384,15 @@ namespace XDB.Domains
 
         }
 
-        private bool PropertyValuesAreValid(IList<IXValue> propertyValues, IDictionary<Guid, XProperty> properties)
+        private bool PropertyValuesAreValid(IList<T> xObjectValues, IDictionary<Guid, IXProperty> properties)
         {
 
             Dictionary<Guid, int> propertyCounts = new Dictionary<Guid, int>();
 
-            foreach (XValue pv in propertyValues)
+            foreach (T pv in xObjectValues)
             {
 
-                XProperty prop = properties[pv.PropertyId];
+                XProperty prop = (XProperty)properties[pv.PropertyId];
 
                 if (propertyCounts.ContainsKey(pv.PropertyId))
                 {
@@ -992,14 +998,14 @@ namespace XDB.Domains
             return values;
         }
 
-        public Dictionary<Guid, string> PropertyValues_GetPotential(Guid assetTypeId, EAssetRequestType requestType, Guid propertyId)
+        public IDictionary<Guid, string> PropertyValues_GetPotential(Guid assetTypeId, EXObjectRequestType requestType, Guid propertyId)
         {
             SqlDatabaseLayer dbLayer = new SqlDatabaseLayer();
 
             PropertySelect rProp = new PropertySelect(Guid.NewGuid(), propertyId, new XPropertyDomain().DisplayValue(propertyId), 0);
 
             var sql = dbLayer.GetSqlString(assetTypeId, requestType, new List<PropertySelect> { rProp }, new List<XFilter>(), string.Empty, true, true);
-            return this.dal.GetDictionary(sql.ToString());
+            return dbLayer.GetDictionary(sql.ToString());
         }
 
         //public List<string> PropertyValues_GetPotential_OLD(List<Guid> assetIds, Guid propertyId, Guid userId)
@@ -1085,7 +1091,7 @@ namespace XDB.Domains
         //    }
         //}
 
-        internal string PopulateDisplayValue(XProperty prop, string propertyValue)
+        public string PopulateDisplayValue(IXProperty prop, string propertyValue)
         {
 
             if (string.IsNullOrEmpty(propertyValue)) { return string.Empty; }
@@ -1268,7 +1274,7 @@ namespace XDB.Domains
             //return this.dal.PopulateDisplayValue(propertyValue, prop);
         }
 
-        public string PopulateDisplayValue(XValue propertyValue)
+        public string PopulateDisplayValue(IXValue propertyValue)
         {
             return this.PopulateDisplayValue(new XPropertyDomain().Get(propertyValue.PropertyId), propertyValue.Value);
         }

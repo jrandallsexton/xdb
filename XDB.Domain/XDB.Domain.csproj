@@ -34,7 +34,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -45,12 +44,12 @@
     <Compile Include="Core\XListDomain.cs" />
     <Compile Include="Core\XListValueDomain.cs" />
     <Compile Include="Core\XObjectTypeDomain.cs" />
+    <Compile Include="Core\XObjectTypePropertyDomain.cs" />
     <Compile Include="Core\XPropertyDomain.cs" />
     <Compile Include="Data\XDocumentDomain.cs" />
     <Compile Include="Data\XImageDomain.cs" />
     <Compile Include="Data\XMoneyDomain.cs" />
     <Compile Include="Data\XObjectDomain.cs" />
-    <Compile Include="Data\XSubmittalDomain.cs" />
     <Compile Include="Data\XUrlDomain.cs" />
     <Compile Include="Data\XValueDomain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

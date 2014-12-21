@@ -8,7 +8,7 @@ namespace XDB.Common.Interfaces
     {
         string BGColor { get; set; }
         int Index { get; set; }
-        Guid PickListId { get; set; }
+        Guid XListId { get; set; }
         string Value { get; set; }
     }
 

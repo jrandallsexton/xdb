@@ -240,10 +240,10 @@ namespace XDB.Repositories
             return base.ExecuteInLineSql(sql, paramList);
         }
 
-        public bool MemberCanAddAssets(Guid userId, Guid assetTypeId, EAssetRequestType requestType)
+        public bool MemberCanAddAssets(Guid userId, Guid assetTypeId, EXObjectRequestType requestType)
         {
 
-            if (requestType == EAssetRequestType.Both)
+            if (requestType == EXObjectRequestType.Both)
             {
                 throw new LogicalException("Request must be for adding instances or adding definitions");
             }
@@ -263,11 +263,11 @@ namespace XDB.Repositories
             paramList.Add(new SqlParameter("@AssetTypeId", assetTypeId));
             paramList.Add(new SqlParameter("@UserId", userId));
 
-            if (requestType == EAssetRequestType.Definition)
+            if (requestType == EXObjectRequestType.Definition)
             {
                 paramList.Add(new SqlParameter("@PermissionId", EPermissionType.Create.GetHashCode()));
             }
-            else if (requestType == EAssetRequestType.Instance)
+            else if (requestType == EXObjectRequestType.Instance)
             {
                 paramList.Add(new SqlParameter("@PermissionId", EPermissionType.Create.GetHashCode()));
             }

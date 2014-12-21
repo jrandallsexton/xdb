@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using XDB.Constants;
-using XDB.DataObjects;
+using XDB.Models;
 
 namespace XDB.Tests.Unit.Factories
 {

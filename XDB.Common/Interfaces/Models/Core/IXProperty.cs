@@ -22,6 +22,7 @@ namespace XDB.Common.Interfaces
         bool IsReadOnly { get; set; }
         bool IsRelationship { get; set; }
         bool IsRequired { get; set; }
+        bool IsSystem { get; set; }
         Guid? PickListId { get; set; }
         short? Precision { get; set; }
         Guid? RoleId { get; set; }

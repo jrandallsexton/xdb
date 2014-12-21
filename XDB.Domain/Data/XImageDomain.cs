@@ -34,7 +34,7 @@ namespace XDB.Domains
 
         public XImage Image_GetForAsset(Guid assetId, ICoreInstanceConfig instanceConfig)
         {
-            XValue pv = new XValueDomain().Get(instanceConfig.AssetLogoPropertyId, assetId);
+            IXValue pv = new XValueDomain().Get(instanceConfig.AssetLogoPropertyId, assetId);
             if (pv != null)
             {
                 if (!string.IsNullOrEmpty(pv.Value))
@@ -56,7 +56,7 @@ namespace XDB.Domains
             return this.dal.Delete(imageId, userId);
         }
 
-        public Dictionary<Guid, string> ImageDictionary_GetSystem()
+        public IDictionary<Guid, string> ImageDictionary_GetSystem()
         {
             return this.dal.ImageDictionary_GetSystem();
         }

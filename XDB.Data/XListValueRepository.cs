@@ -70,7 +70,7 @@ namespace XDB.Repositories
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@Id", plValue.Id));
-            paramList.Add(new SqlParameter("@PickListId", plValue.PickListId));
+            paramList.Add(new SqlParameter("@PickListId", plValue.XListId));
             paramList.Add(new SqlParameter("@Value", plValue.Value));
 
             paramList.Add(new SqlParameter()

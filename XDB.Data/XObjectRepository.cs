@@ -15,12 +15,10 @@ using XDB.Models;
 namespace XDB.Repositories
 {
 
-    public class XObjectRepository : XBaseDal
+    public class XObjectRepository<T> : XBaseDal, IXObjectRepository<T> where T : XBase, IXObject
     {
 
         public XObjectRepository() : base(ECommonObjectType.XObject) { }
-
-        //public AssetDal(string connString) : this() { this.ConnectionString = connString; }
 
         /// <summary>
         /// 
@@ -28,7 +26,7 @@ namespace XDB.Repositories
         /// <param name="Id"></param>
         /// <returns></returns>
         /// <remarks>1.05.06</remarks>
-        public XObject Get(Guid Id)
+        public IXObject Get(Guid Id)
         {
 
             XObject asset = null;
@@ -94,67 +92,60 @@ namespace XDB.Repositories
         /// <param name="asset"></param>
         /// <returns></returns>
         /// <remarks>1.05.06</remarks>
-        public bool Save(XObject asset)
+        public void Save(T xObject)
         {
 
-            if (!asset.IsDirty) { return true; }
+            if (!xObject.IsDirty) { return; }
 
             List<SqlParameter> paramList = new List<SqlParameter>();
-            paramList.Add(new SqlParameter("@Id", asset.Id));
-            paramList.Add(new SqlParameter("@AssetTypeId", asset.AssetTypeId));
-            paramList.Add(new SqlParameter("@Name", asset.Name));
-            paramList.Add(new SqlParameter() { ParameterName = "@DisplayValue", Value = string.IsNullOrEmpty(asset.DisplayValue) ? null : asset.DisplayValue });
-            paramList.Add(new SqlParameter() { ParameterName = "@Description", Value = string.IsNullOrEmpty(asset.Description) ? null : asset.Description });
-            paramList.Add(new SqlParameter() { ParameterName = "@InstanceOfId", Value = asset.InstanceOfId.HasValue ? asset.InstanceOfId : null });
-            paramList.Add(new SqlParameter("@Created", asset.Created));
-            paramList.Add(new SqlParameter("@CreatedBy", asset.CreatedBy));
-            paramList.Add(new SqlParameter() { ParameterName = "@Approved", Value = asset.Approved.HasValue ? asset.Approved : null });
-            paramList.Add(new SqlParameter() { ParameterName = "@ApprovedBy", Value = asset.ApprovedBy.HasValue ? asset.ApprovedBy : null });
-            paramList.Add(new SqlParameter() { ParameterName = "@LastModified", Value = asset.LastModified.HasValue ? asset.LastModified : null });
-            paramList.Add(new SqlParameter() { ParameterName = "@LastModifiedBy", Value = asset.LastModifiedBy.HasValue ? asset.LastModifiedBy : null });
+            paramList.Add(new SqlParameter("@Id", xObject.Id));
+            paramList.Add(new SqlParameter("@AssetTypeId", xObject.AssetTypeId));
+            paramList.Add(new SqlParameter("@Name", xObject.Name));
+            paramList.Add(new SqlParameter() { ParameterName = "@DisplayValue", Value = string.IsNullOrEmpty(xObject.DisplayValue) ? null : xObject.DisplayValue });
+            paramList.Add(new SqlParameter() { ParameterName = "@Description", Value = string.IsNullOrEmpty(xObject.Description) ? null : xObject.Description });
+            paramList.Add(new SqlParameter() { ParameterName = "@InstanceOfId", Value = xObject.InstanceOfId.HasValue ? xObject.InstanceOfId : null });
+            paramList.Add(new SqlParameter("@Created", xObject.Created));
+            paramList.Add(new SqlParameter("@CreatedBy", xObject.CreatedBy));
+            paramList.Add(new SqlParameter() { ParameterName = "@Approved", Value = xObject.Approved.HasValue ? xObject.Approved : null });
+            paramList.Add(new SqlParameter() { ParameterName = "@ApprovedBy", Value = xObject.ApprovedBy.HasValue ? xObject.ApprovedBy : null });
+            paramList.Add(new SqlParameter() { ParameterName = "@LastModified", Value = xObject.LastModified.HasValue ? xObject.LastModified : null });
+            paramList.Add(new SqlParameter() { ParameterName = "@LastModifiedBy", Value = xObject.LastModifiedBy.HasValue ? xObject.LastModifiedBy : null });
 
-            if (base.ExecuteSql(StoredProcs.Asset_Save, paramList))
-            {
+            base.ExecuteSql(StoredProcs.Asset_Save, paramList);
 
-                //if (asset.AssetMembers != null)
-                //{
-                //    AssetAssetRelationDal relationDal = new AssetAssetRelationDal();
-                //    foreach (AssetAssetRelation relation in asset.AssetMembers)
-                //    {
-                //        if (!relationDal.AssetAssetRelationExists(relation.FromAssetId, relation.ToAssetId, relation.AssetRelationType.GetHashCode()))
-                //        {
-                //            if (!relationDal.AssetAssetRelation_Save(relation)) { return false; }
-                //        }
-                //    }
-                //}
+            //if (asset.AssetMembers != null)
+            //{
+            //    AssetAssetRelationDal relationDal = new AssetAssetRelationDal();
+            //    foreach (AssetAssetRelation relation in asset.AssetMembers)
+            //    {
+            //        if (!relationDal.AssetAssetRelationExists(relation.FromAssetId, relation.ToAssetId, relation.AssetRelationType.GetHashCode()))
+            //        {
+            //            if (!relationDal.AssetAssetRelation_Save(relation)) { return false; }
+            //        }
+            //    }
+            //}
 
-                asset.IsNew = false;
-                asset.IsDirty = false;
-
-                return true;
-
-            }
-
-            return false;
+            xObject.IsNew = false;
+            xObject.IsDirty = false;
 
         }
 
-        public bool Delete(Guid objectId, Guid userId)
+        public void Delete(Guid objectId, Guid userId)
         {
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@Id", objectId));
             paramList.Add(new SqlParameter("@DeletedBy", userId));
 
-            return base.ExecuteSql(StoredProcs.Asset_Delete, paramList);
+            base.ExecuteSql(StoredProcs.Asset_Delete, paramList);
 
         }
 
-        public Dictionary<Guid, string> Assets_SearchByName(List<Guid> assetTypeIds, EAssetRequestType requestType, string searchValue, bool includeDescriptions)
+        public IDictionary<Guid, string> Assets_SearchByName(IList<Guid> assetTypeIds, EXObjectRequestType requestType, string searchValue, bool includeDescriptions)
         {
             StringBuilder sql = new StringBuilder();
             sql.AppendLine("SELECT [Id], [Name],");
-            if (requestType == EAssetRequestType.Instance)
+            if (requestType == EXObjectRequestType.Instance)
             {
                 sql.AppendLine("[dbo].GetAssetParentDescByInstanceId ([Id]) AS [Description]");
             }
@@ -168,10 +159,10 @@ namespace XDB.Repositories
 
             switch (requestType)
             {
-                case EAssetRequestType.Definition:
+                case EXObjectRequestType.Definition:
                     sql.AppendLine("AND [IsInstance] = 0");
                     break;
-                case EAssetRequestType.Instance:
+                case EXObjectRequestType.Instance:
                     sql.AppendLine("AND [IsInstance] = 1");
                     break;
             }
@@ -273,7 +264,7 @@ namespace XDB.Repositories
             return values;
         }
 
-        public List<Guid> GetIdsByName(string assetName)
+        public IList<Guid> GetIdsByName(string assetName)
         {
             string sql = "SELECT [Id] FROM [Assets] WITH (NoLock) WHERE [Name] = @Name";
             //sql += " AND [Deleted] IS NULL AND [DeletedBy] IS NULL";
@@ -361,9 +352,14 @@ namespace XDB.Repositories
             return base.ExecuteInLineSql(sql, paramList);
         }
 
+        public bool ChangeObjectType(Guid instanceOfId, Guid newObjectTypeId)
+        {
+            throw new NotImplementedException();
+        }
+
         #region rework area
 
-        public List<Guid> InstanceOfIds(List<Guid> assetIds)
+        public IList<Guid> InstanceOfIds(IList<Guid> assetIds)
         {
             List<Guid> values = new List<Guid>();
 
@@ -575,9 +571,9 @@ namespace XDB.Repositories
             return values;
         }
 
-        internal List<XObject> Asset_Get(string assetName, bool includeInstances)
+        internal IList<IXObject> Asset_Get(string assetName, bool includeInstances)
         {
-            List<XObject> assets = new List<XObject>();
+            IList<IXObject> assets = new List<IXObject>();
 
             StringBuilder sql = new StringBuilder();
             sql.AppendLine("SELECT [Id] FROM [Assets] WITH (NoLock) WHERE [Name] = @Name");
@@ -673,7 +669,7 @@ namespace XDB.Repositories
             return values;
         }
 
-        internal Dictionary<Guid, string> Assets_GetDictionary(List<Guid> assetTypeIds, EAssetRequestType requestType, bool includeDescriptions)
+        internal Dictionary<Guid, string> Assets_GetDictionary(List<Guid> assetTypeIds, EXObjectRequestType requestType, bool includeDescriptions)
         {
 
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
@@ -698,10 +694,10 @@ namespace XDB.Repositories
 
             switch (requestType)
             {
-                case EAssetRequestType.Definition:
+                case EXObjectRequestType.Definition:
                     sql.AppendLine("AND [IsInstance] = 0");
                     break;
-                case EAssetRequestType.Instance:
+                case EXObjectRequestType.Instance:
                     sql.AppendLine("AND [IsInstance] = 1");
                     break;
                 default:
@@ -851,7 +847,7 @@ namespace XDB.Repositories
             return values;
         }
 
-        internal Dictionary<string, string> Assets_Get(Guid assetTypeId, bool includeChildren, EAssetRequestType requestType)
+        internal Dictionary<string, string> Assets_Get(Guid assetTypeId, bool includeChildren, EXObjectRequestType requestType)
         {
             Dictionary<string, string> values = new Dictionary<string, string>();
 
@@ -907,7 +903,7 @@ namespace XDB.Repositories
         /// <param name="assetTypeId"></param>
         /// <param name="roleIds"></param>
         /// <returns></returns>
-        internal Dictionary<Guid, string> Assets_Get(Guid userId, Guid parentAssetTypeId, List<Guid> childAssetTypeIds, List<Guid> roleIds, EAssetRequestType requestType)
+        internal Dictionary<Guid, string> Assets_Get(Guid userId, Guid parentAssetTypeId, List<Guid> childAssetTypeIds, List<Guid> roleIds, EXObjectRequestType requestType)
         {
 
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
@@ -1100,7 +1096,7 @@ namespace XDB.Repositories
         //    //return false;
         //}
 
-        private List<Guid> Assets_Get(Guid userId, Guid parentAssetTypeId, List<Guid> childAssetTypeIds, Guid roleId, EAssetRequestType requestType)
+        private List<Guid> Assets_Get(Guid userId, Guid parentAssetTypeId, List<Guid> childAssetTypeIds, Guid roleId, EXObjectRequestType requestType)
         {
 
             // correct a potential error condition
@@ -1710,14 +1706,14 @@ namespace XDB.Repositories
             return values;
         }
 
-        internal Dictionary<Guid, string> GetDictionaryByNames(List<string> assetNames, List<Guid> assetTypeIds, EAssetRequestType requestType)
+        internal Dictionary<Guid, string> GetDictionaryByNames(List<string> assetNames, List<Guid> assetTypeIds, EXObjectRequestType requestType)
         {
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@AssetNames", assetNames));
             paramList.Add(new SqlParameter("@AssetTypeIds", Helpers.ListOfGuidToCommaDelimString(assetTypeIds)));
-            paramList.Add(new SqlParameter("@IsInstance", (requestType == EAssetRequestType.Instance)));
+            paramList.Add(new SqlParameter("@IsInstance", (requestType == EXObjectRequestType.Instance)));
 
             using (SqlDataReader rdr = base.OpenDataReader("spr_Assets_GetDictionaryByNames", paramList))
             {
@@ -1777,7 +1773,7 @@ namespace XDB.Repositories
 
         }
 
-        internal XObject GetParent(Guid assetId)
+        internal IXObject GetParent(Guid assetId)
         {
             StringBuilder sql = new StringBuilder();
             sql.AppendLine("SELECT [FromAssetId] FROM [AssetRelations] WITH (NoLock) WHERE [ToAssetId] = @ChildId");

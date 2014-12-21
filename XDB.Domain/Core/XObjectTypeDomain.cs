@@ -16,10 +16,10 @@ namespace XDB.Domains
     /// <summary>
     /// Primary entry point for manipulating <see cref="XObjectType"/> objects
     /// </summary>
-    internal class XObjectTypeDomain : XBaseDomain
+    public class XObjectTypeDomain<T> : XBaseDomain, IXObjectTypeDomain<T> where T : XBase, IXObjectType
     {
 
-        private IXObjectTypeRepository<XObjectType> dal = new XObjectTypeRepository<XObjectType>();
+        private IXObjectTypeRepository<T> dal = new XObjectTypeRepository<T>();
 
         public XObjectTypeDomain() : base(ECommonObjectType.XObjectType) { }
 
@@ -33,7 +33,7 @@ namespace XDB.Domains
         /// </summary>
         /// <param name="assetTypeName"></param>
         /// <returns></returns>
-        public XObjectType GetByName(string assetTypeName)
+        public IXObjectType GetByName(string assetTypeName)
         {
             throw new Exception("NOT IMPLEMENTED");
             //SqlBaseDal dal = new SqlBaseDal();
@@ -53,9 +53,9 @@ namespace XDB.Domains
             //return this.dal.ExecuteScalarBool(string.Format("SELECT [AllowAssets] FROM [AssetTypes] WHERE [Id] = '{0}'", assetTypeId));
         }
 
-        public void Save(XObjectType objectType, Guid userId)
+        public void Save(T xObjectType, Guid userId)
         {
-            this.dal.Save(objectType);
+            this.dal.Save(xObjectType);
             //if (!new AssetTypePropertyRelationDal(this.ConnectionString).Save(assettype.Properties))
             //{
             //    throw new LogicalException("Error while saving AssetType-Property relations.");
@@ -145,7 +145,7 @@ namespace XDB.Domains
             return this.dal.GetIdByAssetId(assetId);
         }
 
-        public List<Guid> GetStack(Guid assetTypeId)
+        public IList<Guid> GetStack(Guid assetTypeId)
         {
             throw new Exception("NOT IMPLEMENTED");
 
@@ -171,7 +171,7 @@ namespace XDB.Domains
 
         }
 
-        public Dictionary<Guid, Guid> AssetTypes_GetDefaultViews(Guid userId, EAssetRequestType requestType)
+        public IDictionary<Guid, Guid> AssetTypes_GetDefaultViews(Guid userId, EXObjectRequestType requestType)
         {
             throw new Exception("NOT IMPLEMENTED");
             //if (new MemberLayer().IsAdmin(userId))
@@ -204,7 +204,7 @@ namespace XDB.Domains
         //    return this.dal.AssetTypes_GetForMember(memberId);           
         //}
 
-        public Dictionary<Guid, string> AssetTypes_GetAvailableForCreation(Guid assetTypeId)
+        public IDictionary<Guid, string> AssetTypes_GetAvailableForCreation(Guid assetTypeId)
         {
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
 
@@ -219,7 +219,7 @@ namespace XDB.Domains
             return values;
         }
 
-        public Dictionary<Guid, string> AssetType_GetLowestLevelParents(Guid assetTypeId)
+        public IDictionary<Guid, string> AssetType_GetLowestLevelParents(Guid assetTypeId)
         {
 
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
@@ -274,7 +274,7 @@ namespace XDB.Domains
             return this.dal.Pluralization(assetTypeId);
         }
 
-        public bool HasAssets(Guid assetTypeId, EAssetRequestType requestType, bool searchChildAssetTypes)
+        public bool HasAssets(Guid assetTypeId, EXObjectRequestType requestType, bool searchChildAssetTypes)
         {
 
             bool hasAssets = this.dal.HasAssets(assetTypeId, requestType);

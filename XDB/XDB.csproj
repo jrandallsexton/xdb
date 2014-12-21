@@ -74,10 +74,6 @@
       <Project>{0464d0a4-13a2-4a34-8a73-0731a148edbe}</Project>
       <Name>XDB.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\XDB.Data\XDB.Data.csproj">
-      <Project>{28bcb16d-c478-4f49-9aca-60de5cd0e2bb}</Project>
-      <Name>XDB.Data</Name>
-    </ProjectReference>
     <ProjectReference Include="..\XDB.Domain\XDB.Domain.csproj">
       <Project>{21f93cd3-3634-4f93-bfec-90f7da76e758}</Project>
       <Name>XDB.Domain</Name>

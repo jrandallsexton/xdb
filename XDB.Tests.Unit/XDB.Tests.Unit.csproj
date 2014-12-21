@@ -58,11 +58,16 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="BLL\" />
-    <Folder Include="DAL\" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\XDB.Common\XDB.Common.csproj">
+      <Project>{0464d0a4-13a2-4a34-8a73-0731a148edbe}</Project>
+      <Name>XDB.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XDB.Models\XDB.Models.csproj">
+      <Project>{b97caf8c-60d3-47cf-9df0-740a3785aa20}</Project>
+      <Name>XDB.Models</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XDB\XDB.csproj">
       <Project>{431d0649-0dae-4138-a6f0-1c57910cc7a7}</Project>
       <Name>XDB</Name>

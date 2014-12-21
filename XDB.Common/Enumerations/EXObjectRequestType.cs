@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace XDB.Common.Enumerations
 {
 
-    public enum EAssetRequestType
+    public enum EXObjectRequestType
     {
         Definition = 0,
         Instance = 1,

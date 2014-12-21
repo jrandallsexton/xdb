@@ -16,9 +16,9 @@ namespace XDB.Models
         public Guid RoleId { get; set; }
         public string RoleName { get; set; }
         public Guid AssetTypeId { get; set; }
-        public EAssetRequestType RequestType { get; set; }
+        public EXObjectRequestType RequestType { get; set; }
 
-        public XRoleHelper(Guid roleId, string roleName, Guid atId, EAssetRequestType requestType)
+        public XRoleHelper(Guid roleId, string roleName, Guid atId, EXObjectRequestType requestType)
         {
             this.RoleId = roleId;
             this.RoleName = roleName;

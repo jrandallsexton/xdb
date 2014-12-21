@@ -66,9 +66,9 @@ namespace XDB.Common
             return EDocumentType.Undefined;
         }
 
-        public static EAssetRequestType EAssetRequestTypeFromValue(int value)
+        public static EXObjectRequestType EAssetRequestTypeFromValue(int value)
         {
-            foreach (EAssetRequestType item in EAssetRequestType.GetValues(typeof(EAssetRequestType)))
+            foreach (EXObjectRequestType item in EXObjectRequestType.GetValues(typeof(EXObjectRequestType)))
             {
                 if (item.GetHashCode() == value) { return item; }
             }

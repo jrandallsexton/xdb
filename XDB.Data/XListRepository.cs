@@ -24,7 +24,7 @@ namespace XDB.Repositories
 
         public IXList Get(Guid id)
         {
-            XList pickList = null;
+            XList pickList;
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@Id", id));

@@ -223,11 +223,11 @@ namespace XDB.Repositories
             return base.ExecuteScalarGuidInLine(sql, paramList);
         }
 
-        public IDictionary<Guid, XProperty> GetObjectDictionary(List<Guid> propertyIds)
+        public IDictionary<Guid, IXProperty> GetObjectDictionary(IList<Guid> propertyIds)
         {
             string propIds = Helpers.ListOfGuidToCommaDelimString(propertyIds);
 
-            Dictionary<Guid, XProperty> values = new Dictionary<Guid, XProperty>();
+            IDictionary<Guid, IXProperty> values = new Dictionary<Guid, IXProperty>();
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@PropertyIds", propIds));
@@ -481,7 +481,7 @@ namespace XDB.Repositories
         /// <param name="assetTypeIds"></param>
         /// <param name="includeInheritedPropeties"></param>
         /// <returns></returns>
-        public IDictionary<Guid, string> Properties_GetNonFreeEntry(List<Guid> assetTypeIds, EAssetRequestType requestType, bool includeInheritedPropeties)
+        public IDictionary<Guid, string> Properties_GetNonFreeEntry(List<Guid> assetTypeIds, EXObjectRequestType requestType, bool includeInheritedPropeties)
         {
 
             if ((assetTypeIds == null) || (assetTypeIds.Count == 0)) { return new Dictionary<Guid, string>(); }
@@ -533,7 +533,7 @@ namespace XDB.Repositories
             sql.AppendLine("AND (P.[Deleted] IS NULL)");
             sql.AppendLine("AND ([ATP].[Deleted] IS NULL)");
 
-            if (requestType == EAssetRequestType.Definition)
+            if (requestType == EXObjectRequestType.Definition)
             {
                 sql.AppendLine("AND ([ATP].[IsInstance] = 0)");
             }

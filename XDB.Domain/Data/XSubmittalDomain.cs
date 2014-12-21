@@ -49,7 +49,7 @@ namespace XDB.Domains
         /// <param name="isAutoApprove">whether or not all of the propertyValues in this group should be approved right now</param>
         /// <param name="userId">id of the user submitting these values</param>
         /// <returns>true if operation was successful; false otherwise</returns>
-        public void Save(XSubmittal submittal, bool isAutoApprove, Guid userId)
+        public void Save(T submittal, bool isAutoApprove, Guid userId)
         {
 
             //Helpers.Log("PropertyValueSubmittalLayer", "PropertyValueSubmittal_Save()");
@@ -70,8 +70,8 @@ namespace XDB.Domains
 
             this._dal.Save(submittal);
 
-            new XValueDomain().PropertyValueList_Save(submittal.PropertyValues, userId);
-
+            new XValueDomain<XValue>().Save(submittal.PropertyValues, userId);
+            
             //new SynchTriggerDal().Save(triggers);
 
             if (isAutoApprove)
@@ -134,12 +134,12 @@ namespace XDB.Domains
                     if (!propIds.Contains(pv.PropertyId)) { propIds.Add(pv.PropertyId); }
                 }
 
-                IDictionary<Guid, XProperty> properties = new XPropertyDomain().GetObjectDictionary(propIds);
+                IDictionary<Guid, IXProperty> properties = new XPropertyDomain().GetObjectDictionary(propIds);
 
                 foreach (XValue pv in submittal.PropertyValues)
                 {
 
-                    XProperty prop = properties[pv.PropertyId];
+                    IXProperty prop = properties[pv.PropertyId];
 
                     if (prop != null)
                     {
@@ -208,7 +208,7 @@ namespace XDB.Domains
 
                         if (prop.IsSystem && (prop.SystemType == ESystemType.AssetName))
                         {
-                            bool renamed = new XObjectDomain().Rename(pv.AssetId, pv.Value);
+                            bool renamed = new XObjectDomain<XObject>().Rename(pv.AssetId, pv.Value);
                         }
 
                         if (relation != null)

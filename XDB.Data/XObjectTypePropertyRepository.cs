@@ -18,12 +18,10 @@ using XDB.Models;
 namespace XDB.Repositories
 {
 
-    public class XObjectTypePropertyRepository : XSqlDal
+    public class XObjectTypePropertyRepository<T> : XBaseDal, IXObjectTypePropertyRepository<T> where T : XBase, IXObjectTypeProperty
     {
 
-        public XObjectTypePropertyRepository() { }
-
-        public XObjectTypePropertyRepository(string connString) { this.ConnectionString = connString; }
+        public XObjectTypePropertyRepository() : base(ECommonObjectType.XObjectType) { }
 
         #region private members
 
@@ -43,7 +41,7 @@ namespace XDB.Repositories
 
         #endregion
 
-        private XObjectTypeProperty Get(Guid id)
+        public IXObjectTypeProperty Get(Guid id)
         {
 
             using (SqlDataReader rdr = base.OpenDataReader(StoredProcs.AssetTypePropertyRelation_Get, new List<SqlParameter>() { new SqlParameter("@Id", id) }))
@@ -81,7 +79,7 @@ namespace XDB.Repositories
 
         }
 
-        public XObjectTypeProperty AssetTypePropertyRelation_Get(Guid assetTypeId, Guid propertyId)
+        public IXObjectTypeProperty AssetTypePropertyRelation_Get(Guid assetTypeId, Guid propertyId)
         {
             string sql = "SELECT [Id] FROM [AssetTypesProperties] WHERE [AssetTypeId] = @AssetTypeId AND [PropertyId] = @PropertyId AND [Deleted] IS NULL";
 
@@ -96,7 +94,7 @@ namespace XDB.Repositories
             return this.Get(relationId);
         }
 
-        private bool Save(XObjectTypeProperty relation)
+        public void Save(T relation)
         {
 
             List<SqlParameter> paramList = new List<SqlParameter>();
@@ -111,26 +109,17 @@ namespace XDB.Repositories
             paramList.Add(new SqlParameter() { ParameterName = "@Deleted", Value = relation.Deleted.HasValue ? relation.Deleted : null });
             paramList.Add(new SqlParameter() { ParameterName = "@DeletedBy", Value = relation.DeletedBy.HasValue ? relation.DeletedBy : null });
 
-            if (base.ExecuteSql(StoredProcs.AssetTypePropertyRelation_Save, paramList))
-            {
+            base.ExecuteSql(StoredProcs.AssetTypePropertyRelation_Save, paramList);
 
-                relation.IsNew = false;
-                relation.IsDirty = false;
-
-                return true;
-
-            }
-            else
-            {
-                return false;
-            }
+            relation.IsNew = false;
+            relation.IsDirty = false;
 
         }
 
-        private List<XObjectTypeProperty> GetCollectionFromReader(string spName, List<SqlParameter> paramList)
+        private IList<IXObjectTypeProperty> GetCollectionFromReader(string spName, List<SqlParameter> paramList)
         {
 
-            List<XObjectTypeProperty> list = new List<XObjectTypeProperty>();
+            IList<IXObjectTypeProperty> list = new List<IXObjectTypeProperty>();
 
             using (SqlDataReader rdr = base.OpenDataReader(spName, paramList))
             {
@@ -176,11 +165,11 @@ namespace XDB.Repositories
             return list;
         }
 
-        internal List<XObjectTypeProperty> GetCollectionByAssetTypeIdAndPropertyIds(Guid assetTypeId, List<Guid> propertyIds)
+        public IList<IXObjectTypeProperty> GetCollectionByAssetTypeIdAndPropertyIds(Guid assetTypeId, List<Guid> propertyIds)
         {
 
-            if (assetTypeId == Guid.Empty) { return new List<XObjectTypeProperty>(); }
-            if ((propertyIds == null) || (propertyIds.Count == 0)) { return new List<XObjectTypeProperty>(); }
+            if (assetTypeId == Guid.Empty) { return new List<IXObjectTypeProperty>(); }
+            if ((propertyIds == null) || (propertyIds.Count == 0)) { return new List<IXObjectTypeProperty>(); }
 
             StringBuilder temp = new StringBuilder();
             foreach (Guid id in propertyIds) { temp.AppendFormat("{0},", id); }
@@ -197,7 +186,7 @@ namespace XDB.Repositories
             return this.GetCollectionFromReader(StoredProcs.AssetTypePropertyRelations_GetByAssetTypeIdAndPropertyIds, paramList);
         }
 
-        internal List<XObjectTypeProperty> GetCollectionByAssetTypeIdsAndPropertyId(List<Guid> assetTypeIds, Guid propertyId)
+        public IList<IXObjectTypeProperty> GetCollectionByAssetTypeIdsAndPropertyId(List<Guid> assetTypeIds, Guid propertyId)
         {
             List<SqlParameter> paramList = new List<SqlParameter>();
 
@@ -217,10 +206,10 @@ namespace XDB.Repositories
 
         }
 
-        public List<XObjectTypeProperty> GetByAssetTypeId(Guid assetTypeId)
+        public IList<IXObjectTypeProperty> GetByAssetTypeId(Guid assetTypeId)
         {
 
-            List<XObjectTypeProperty> list = new List<XObjectTypeProperty>();
+            IList<IXObjectTypeProperty> list = new List<IXObjectTypeProperty>();
 
             using (SqlDataReader rdr = base.OpenDataReader(StoredProcs.AssetTypePropertyRelations_Get, new List<SqlParameter>() { new SqlParameter("@AssetTypeId", assetTypeId) }))
             {
@@ -269,14 +258,12 @@ namespace XDB.Repositories
 
         }
 
-        public bool Save(List<XObjectTypeProperty> relations)
+        public void Save(IList<IXObjectTypeProperty> relations)
         {
             foreach (XObjectTypeProperty relation in relations)
             {
                 if (relation.IsDirty) { this.Save(relation); }
             }
-
-            return true;
         }
 
         public bool Exists(Guid assetTypeId, Guid propertyId, bool isInstance)
@@ -296,6 +283,27 @@ namespace XDB.Repositories
             return (base.ExecuteScalarInLine(sql.ToString(), paramList) != 0);
         }
 
+
+
+        public IList<IXObjectTypeProperty> GetByObjectTypeId(Guid assetTypeId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IList<IXObjectTypeProperty> GetCollectionByObjectTypeIdAndPropertyIds(Guid assetTypeId, IList<Guid> propertyIds)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IList<IXObjectTypeProperty> GetCollectionByObjectTypeIdsAndPropertyId(IList<Guid> assetTypeIds, Guid propertyId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Save(IXObjectTypeProperty relation)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

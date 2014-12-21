@@ -10,8 +10,8 @@ namespace XDB.Models
 {
 
     ///<summary>
-    ///Class object for defining PickLists
-    ///Corresponding class objects are found in the database table: PickLists
+    ///Class object for defining XLists
+    ///Corresponding class objects are found in the database table: XLists
     ///</summary>
     public class XList : XBase, IXList
     {
@@ -25,7 +25,7 @@ namespace XDB.Models
         private IList<IXListValue> _values = null;
 
         /// <summary>
-        /// URL for the web service that will supply the values for this picklist (if applicable)
+        /// URL for the web service that will supply the values for this XList (if applicable)
         /// <summary>
         public string ServiceUrl
         {
@@ -39,7 +39,7 @@ namespace XDB.Models
         }
 
         /// <summary>
-        /// Name of the method on the web service that should be invoked for the values; return value should be a Dictionary<string, string>
+        /// Name of the method on the web service that should be invoked for the values; return value should be an IDictionary<string, string>
         /// (if applicable)
         /// <summary>
         public string ServiceMethod

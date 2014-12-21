@@ -12,7 +12,7 @@ namespace XDB.Domains
 {
 
     /// <summary>
-    /// Primary entry point for working with <see cref="Picklist"/> instances.
+    /// Primary entry point for working with <see cref="XList"/> instances.
     /// </summary>
     public class XListDomain<T> : XBaseDomain, IXListDomain<T> where T : XBase, IXList
     {
@@ -27,9 +27,9 @@ namespace XDB.Domains
         }
 
         /// <summary>
-        /// Gets an instance of a picklist matching the specified id
+        /// Gets an instance of a XList matching the specified id
         /// </summary>
-        /// <param name="id">id of the pickList to retrieve</param>
+        /// <param name="id">id of the XList to retrieve</param>
         /// <returns></returns>
         public IXList Get(Guid id)
         {
@@ -44,7 +44,7 @@ namespace XDB.Domains
         }
 
         /// <summary>
-        /// Deletes a specified PickList
+        /// Deletes a specified XList
         /// </summary>
         /// <param name="pickListId">Id of the PickList to delete</param>
         /// <param name="userId">Id of the user performing this action</param>

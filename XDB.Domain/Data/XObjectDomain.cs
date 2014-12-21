@@ -16,10 +16,10 @@ namespace XDB.Domains
     /// Provides a public means of working with <see cref="XObject"/> instances in this framework.
     /// Most activities will probably be centered around this class.
     /// </summary>
-    internal class XObjectDomain : XBaseDomain
+    public class XObjectDomain<T> : XBaseDomain, IXObjectDomain<T> where T : XBase, IXObject
     {
 
-        private XObjectRepository dal = new XObjectRepository();
+        private XObjectRepository<T> dal = new XObjectRepository<T>();
 
         public XObjectDomain() : base(ECommonObjectType.XObject) { }
 
@@ -112,7 +112,7 @@ namespace XDB.Domains
         /// <param name="assetName">name of the asset</param>
         /// <param name="assetTypeId">type id of the asset</param>
         /// <returns></returns>
-        public XObject Asset_Get(string assetName, Guid assetTypeId)
+        public IXObject Get(string assetName, Guid assetTypeId)
         {
             Guid? assetId = this.GetIdByName(assetName, assetTypeId);
             if (assetId.HasValue)
@@ -122,7 +122,7 @@ namespace XDB.Domains
             return null;
         }
 
-        public XObject Asset_Get(Guid assetId, Guid userId)
+        public IXObject Asset_Get(Guid assetId, Guid userId)
         {
             return this.dal.Get(assetId);
 
@@ -275,7 +275,9 @@ namespace XDB.Domains
             //    newAsset.AssetMembers.Add(relation);
             //}
 
-            return this.Save(newAsset);
+            this.dal.Save(newAsset);
+
+            return true;
 
         }
 
@@ -292,7 +294,9 @@ namespace XDB.Domains
                 newAsset.ApprovedBy = userId;
             }
 
-            return this.Save(newAsset);
+            this.dal.Save(newAsset);
+
+            return true;
         }
 
         /// <summary>
@@ -301,11 +305,11 @@ namespace XDB.Domains
         /// <param name="assetId">id of the asset to be deleted</param>
         /// <param name="userId">id of the user deleting this asset</param>
         /// <returns>true if successful; false otherwise</returns>
-        public bool Delete(Guid objectId, Guid userId)
+        public void Delete(Guid xObjectId, Guid userId)
         {
             // if the asset is referenced by other assets (i.e. assetId is a product code) ...
             // disallow deletion
-            return this.dal.Delete(objectId, userId);
+            this.dal.Delete(xObjectId, userId);
         }
 
         /// <summary>
@@ -313,7 +317,7 @@ namespace XDB.Domains
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public XObject Get(Guid id)
+        public IXObject Get(Guid id)
         {
             return this.dal.Get(id);
         }
@@ -347,7 +351,7 @@ namespace XDB.Domains
             return this.dal.Asset_GetId(assetName, assetTypeId);
         }
 
-        public List<Guid> GetIdsByName(string assetName)
+        public IList<Guid> GetIdsByName(string assetName)
         {
             return this.dal.GetIdsByName(assetName);
         }
@@ -386,7 +390,7 @@ namespace XDB.Domains
             return this.dal.InstanceOfId(assetId);
         }
 
-        public List<Guid> InstanceOfIds(List<Guid> assetIds)
+        public IList<Guid> InstanceOfIds(List<Guid> assetIds)
         {
             return this.dal.InstanceOfIds(assetIds);
         }
@@ -663,21 +667,15 @@ namespace XDB.Domains
         /// <param name="asset">an asset instance</param>
         /// <returns>true if successful; false otherwise; also may throw LogicalException due to
         /// business rule violations</returns>
-        public bool Save(XObject asset)
+        public void Save(T xObject)
         {
 
-            bool isNew = !this.ValidId(asset.Id); // don't rely on Asset.IsNew - check the Asset's Id
-
-            if (this.dal.Save(asset))
-            {
-                //if (SystemFrameworkHelper.NotificationsEnabled && isNew)
-                //{
-                //    return new NotificationLayer().Notification_SendForAssetCreation(asset);
-                //}
-                return true;
-            }
-
-            return false;
+            bool isNew = !this.ValidId(xObject.Id); // don't rely on Asset.IsNew - check the Asset's Id
+            this.dal.Save(xObject);
+            //if (SystemFrameworkHelper.NotificationsEnabled && isNew)
+            //{
+            //    return new NotificationLayer().Notification_SendForAssetCreation(asset);
+            //}
         }
 
         #endregion
@@ -1132,7 +1130,7 @@ namespace XDB.Domains
         //    return this.dal.Asset_GetChildren(parentAssetId);
         //}
 
-        public IDictionary<Guid, string> Assets_Get(List<Guid> assetIds)
+        public IDictionary<Guid, string> Assets_Get(IList<Guid> assetIds)
         {
             //return this.dal.A
             throw new NotImplementedException();
@@ -1156,9 +1154,9 @@ namespace XDB.Domains
 
         //}
 
-        public bool Assets_ChangeAssetType(Guid instanceOfId, Guid newAssetTypeId)
+        public bool ChangeObjectType(Guid instanceOfId, Guid newObjectTypeId)
         {
-            return this.dal.Assets_ChangeAssetType(instanceOfId, newAssetTypeId);
+            return this.dal.ChangeObjectType(instanceOfId, newObjectTypeId);
         }
 
     }

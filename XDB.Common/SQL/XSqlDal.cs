@@ -644,7 +644,7 @@ namespace XDB.Common.SqlDal
             return values;
         }
 
-        public Dictionary<Guid, string> GetDictionary(string sql)
+        public IDictionary<Guid, string> GetDictionary(string sql)
         {
             Dictionary<Guid, string> values = new Dictionary<Guid, string>();
 

@@ -434,13 +434,13 @@ namespace XDB.Repositories
         /// <param name="requestType"></param>
         /// <param name="permission">id of the permission type we are looking for</param>
         /// <returns></returns>
-        public bool HasPermission(Guid roleId, Guid assetTypeId, EAssetRequestType requestType, EPermissionType permission)
+        public bool HasPermission(Guid roleId, Guid assetTypeId, EXObjectRequestType requestType, EPermissionType permission)
         {
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@RoleId", roleId));
             paramList.Add(new SqlParameter("@AssetTypeId", assetTypeId));
-            paramList.Add(new SqlParameter("@IsInstance", requestType == EAssetRequestType.Instance));
+            paramList.Add(new SqlParameter("@IsInstance", requestType == EXObjectRequestType.Instance));
             paramList.Add(new SqlParameter("@PermissionId", permission.GetHashCode()));
 
             return base.ExecuteScalar(StoredProcs.Role_HasPermission, paramList) > 0;

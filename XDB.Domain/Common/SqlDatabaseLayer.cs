@@ -12,6 +12,9 @@ using XDB.Common;
 using XDB.Common.Constants;
 using XDB.Common.SqlDal;
 using XDB.Common.Enumerations;
+using XDB.Common.Extensions;
+using XDB.Common.Interfaces;
+
 using XDB.Models;
 
 namespace XDB.Domains
@@ -31,6 +34,13 @@ namespace XDB.Domains
 
         private XSqlDal _dal = new XSqlDal();
 
+        XObjectDomain<XObject> objectDomain = new XObjectDomain<XObject>();
+        XObjectTypeDomain<XObjectType> objectTypeDomain = new XObjectTypeDomain<XObjectType>();
+        XObjectTypePropertyDomain<XObjectTypeProperty> atprDal = new XObjectTypePropertyDomain<XObjectTypeProperty>();
+
+        //XObjectDomain<XObject> aLayer = new XObjectDomain<XObject>();
+        //XObjectTypeDomain atLayer = new XObjectTypeDomain();
+
         //public bool ExecuteSql(string sqlStatement)
         //{
         //    return this._dal.ExecuteSql(sqlStatement);
@@ -46,10 +56,10 @@ namespace XDB.Domains
         //    return this._dal.GetDictionaryStringInt(sql);
         //}
 
-        //internal Dictionary<Guid, string> GetDictionary(string sql)
-        //{
-        //    return this._dal.GetDictionary(sql);
-        //}
+        public IDictionary<Guid, string> GetDictionary(string sql)
+        {
+            return this._dal.GetDictionary(sql);
+        }
 
         //public int Count(string tableName)
         //{
@@ -77,14 +87,14 @@ namespace XDB.Domains
         //    return this._dal.GetDataset(sql);
         //}
 
-        internal List<string> GetGeneratedStoredProcNames(Dictionary<Guid, EAssetRequestType> assetTypes)
+        internal List<string> GetGeneratedStoredProcNames(Dictionary<Guid, EXObjectRequestType> assetTypes)
         {
             List<string> values = new List<string>();
 
-            foreach (KeyValuePair<Guid, EAssetRequestType> kvp in assetTypes)
+            foreach (KeyValuePair<Guid, EXObjectRequestType> kvp in assetTypes)
             {
-                values.Add(this.FormatGeneratedStoredProcName(kvp.Key, (kvp.Value == EAssetRequestType.Instance), true));
-                values.Add(this.FormatGeneratedStoredProcName(kvp.Key, (kvp.Value == EAssetRequestType.Instance), false));
+                values.Add(this.FormatGeneratedStoredProcName(kvp.Key, (kvp.Value == EXObjectRequestType.Instance), true));
+                values.Add(this.FormatGeneratedStoredProcName(kvp.Key, (kvp.Value == EXObjectRequestType.Instance), false));
             }
 
             return values;
@@ -95,7 +105,7 @@ namespace XDB.Domains
         //    return false;
         //}
 
-        public string FilterString(string filterLogic, List<XFilter> filters)
+        public string FilterString(string filterLogic, IList<XFilter> filters)
         {
             string returnValue = string.Empty;
 
@@ -112,12 +122,12 @@ namespace XDB.Domains
                 if (!propIds.Contains(f.PropertyId)) { propIds.Add(f.PropertyId); }
             }
 
-            IDictionary<Guid, XProperty> props = propLayer.GetObjectDictionary(propIds);
+            IDictionary<Guid, IXProperty> props = propLayer.GetObjectDictionary(propIds);
 
             foreach (XFilter filter in filters)
             {
 
-                XProperty prop = props[filter.PropertyId];
+                IXProperty prop = props[filter.PropertyId];
 
                 string propName = propLayer.DisplayValue(filter.PropertyId);
                 string propVal = filter.Value;
@@ -171,7 +181,7 @@ namespace XDB.Domains
                             }
                         }
 
-                        propVal = new XObjectDomain().Name(new Guid(filter.Value));
+                        propVal = new XObjectDomain<XObject>().Name(new Guid(filter.Value));
 
                         break;
 
@@ -281,10 +291,10 @@ namespace XDB.Domains
 
         }
 
-        public StringBuilder GetSqlString(StringBuilder baseQuery, Guid assetTypeId, EAssetRequestType requestType, string tempTableName, Dictionary<Guid, string> propertyIds)
+        public StringBuilder GetSqlString(StringBuilder baseQuery, Guid assetTypeId, EXObjectRequestType requestType, string tempTableName, Dictionary<Guid, string> propertyIds)
         {
 
-            var isInstance = (requestType == EAssetRequestType.Instance);
+            var isInstance = (requestType == EXObjectRequestType.Instance);
 
             // determine base table names
             var tableName_D = this.FormatGeneratedTableName(assetTypeId, false, false);
@@ -312,8 +322,6 @@ namespace XDB.Domains
 
             StringBuilder final = new StringBuilder();
 
-            var atLayer = new XObjectTypeDomain();
-
             var tempDefTblUsed = false;
             var tempInsTblUsed = false;
 
@@ -332,7 +340,7 @@ namespace XDB.Domains
                 var xTblName = string.Empty;
                 var xTblNameRaw = string.Empty;
 
-                if (requestType == EAssetRequestType.Definition)
+                if (requestType == EXObjectRequestType.Definition)
                 {
                     xTblNameTemp = string.Format("{0}_D", tempTableName);
                     xTblName = tableName_D;
@@ -452,9 +460,9 @@ namespace XDB.Domains
         }
 
         public StringBuilder GetSqlString(Guid assetTypeId,
-                                          EAssetRequestType requestType,
-                                          List<PropertySelect> reportProps,
-                                          List<XFilter> filters,
+                                          EXObjectRequestType requestType,
+                                          IList<PropertySelect> reportProps,
+                                          IList<XFilter> filters,
                                           XFilter dynamicFilter,
                                           string filterLogic,
                                           bool includeOrderBy,
@@ -463,9 +471,6 @@ namespace XDB.Domains
                                           string intoTblName,
                                           bool allFields)
         {
-            XObjectDomain aLayer = new XObjectDomain();
-            XObjectTypeDomain atLayer = new XObjectTypeDomain();
-            XObjectTypePropertyDomain atprDal = new XObjectTypePropertyDomain();
 
             StringBuilder finalSql = new StringBuilder();
 
@@ -477,23 +482,23 @@ namespace XDB.Domains
 
             List<string> joinedTables = new List<string>(); // for keeping track of which tables we've added to the _froms
 
-            var isInstance = (requestType == EAssetRequestType.Instance);
+            var isInstance = (requestType == EXObjectRequestType.Instance);
 
-            string atName = atLayer.Name(assetTypeId);
-            string _rptLabel = atLayer.ReportingLabel(assetTypeId, isInstance, false);
+            string atName = this.objectTypeDomain.Name(assetTypeId);
+            string _rptLabel = this.objectTypeDomain.ReportingLabel(assetTypeId, isInstance, false);
 
             string lblDef = string.Empty;
             string lblIns = string.Empty;
 
             if (isInstance)
             {
-                lblDef = atLayer.ReportingLabel(assetTypeId, false, false);
+                lblDef = objectTypeDomain.ReportingLabel(assetTypeId, false, false);
                 lblIns = _rptLabel;
             }
             else
             {
                 lblDef = _rptLabel;
-                lblIns = atLayer.ReportingLabel(assetTypeId, true, false);
+                lblIns = objectTypeDomain.ReportingLabel(assetTypeId, true, false);
             }
 
             #region determine base table names
@@ -511,7 +516,7 @@ namespace XDB.Domains
             froms.AppendFormat("FROM [dbo].[{0}] AS [A]", tblName).AppendLine();
             froms.AppendFormat("INNER JOIN [dbo].[{0}] AS [B] ON [B].[AssetId] = [A].[AssetId]", tblNameRaw).AppendLine();
 
-            List<Guid> propIds = new List<Guid>();
+            IList<Guid> propIds = new List<Guid>();
             #region Prefetch all properties
 
             foreach (XFilter f in filters)
@@ -526,7 +531,7 @@ namespace XDB.Domains
                 if ((prop.SubPropertyId.HasValue) && (!propIds.Contains(prop.SubPropertyId.Value))) { propIds.Add(prop.SubPropertyId.Value); }
             }
 
-            IDictionary<Guid, XProperty> props = new XPropertyDomain().GetObjectDictionary(propIds);
+            IDictionary<Guid, IXProperty> props = new XPropertyDomain().GetObjectDictionary(propIds);
 
             #endregion
 
@@ -575,7 +580,7 @@ namespace XDB.Domains
                     else
                     {
 
-                        XProperty p = props[reportProp.PropertyId];
+                        IXProperty p = props[reportProp.PropertyId];
                         XObjectTypeProperty relation = null;
 
                         if (relations.ContainsKey(reportProp.PropertyId)) { relation = relations[reportProp.PropertyId]; }
@@ -589,7 +594,7 @@ namespace XDB.Domains
                                 // if we are here, we know that the PropertyId is an Asset (or a User - which technically is still an Asset)
                                 // we need to join into that table so we can retrieve the subProperty value
 
-                                XProperty subProp = props[reportProp.SubPropertyId.Value];
+                                XProperty subProp = (XProperty)props[reportProp.SubPropertyId.Value];
 
                                 string tempTableName = string.Empty;
 
@@ -807,8 +812,8 @@ namespace XDB.Domains
                 foreach (XFilter f in filters)
                 {
 
-                    XProperty prop = props[f.PropertyId];
-                    XObjectTypeProperty relation = atLayer.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
+                    IXProperty prop = props[f.PropertyId];
+                    XObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
 
                     if (prop.IsSystem)
                     {
@@ -989,17 +994,13 @@ namespace XDB.Domains
         /// <param name="forSingleProp">For returning just a distinct list of single properties (e.x. All locations for hardware instances)</param>
         /// <returns></returns>
         public StringBuilder GetSqlString(Guid assetTypeId,
-                                          EAssetRequestType requestType,
+                                          EXObjectRequestType requestType,
                                           List<PropertySelect> reportProps,
                                           List<XFilter> filters,
                                           string filterLogic,
                                           bool includeOrderBy,
                                           bool forSingleProp)
         {
-
-            XObjectDomain aLayer = new XObjectDomain();
-            XObjectTypeDomain atLayer = new XObjectTypeDomain();
-            XObjectTypePropertyDomain atprDal = new XObjectTypePropertyDomain();
 
             StringBuilder finalSql = new StringBuilder();
 
@@ -1009,23 +1010,23 @@ namespace XDB.Domains
 
             List<string> joinedTables = new List<string>(); // for keeping track of which tables we've added to the _froms
 
-            var isInstance = (requestType == EAssetRequestType.Instance);
+            var isInstance = (requestType == EXObjectRequestType.Instance);
 
             //var atName = atLayer.Name(assetTypeId);
-            var _rptLabel = atLayer.ReportingLabel(assetTypeId, isInstance, false);
+            var _rptLabel = this.objectTypeDomain.ReportingLabel(assetTypeId, isInstance, false);
 
             var lblDef = string.Empty;
             var lblIns = string.Empty;
 
             if (isInstance)
             {
-                lblDef = atLayer.ReportingLabel(assetTypeId, false, false);
+                lblDef = this.objectTypeDomain.ReportingLabel(assetTypeId, false, false);
                 lblIns = _rptLabel;
             }
             else
             {
                 lblDef = _rptLabel;
-                lblIns = atLayer.ReportingLabel(assetTypeId, true, false);
+                lblIns = this.objectTypeDomain.ReportingLabel(assetTypeId, true, false);
             }
 
             #region determine base table names
@@ -1067,7 +1068,7 @@ namespace XDB.Domains
                 }
             }
 
-            IDictionary<Guid, XProperty> props = new XPropertyDomain().GetObjectDictionary(propIds);
+            IDictionary<Guid, IXProperty> props = new XPropertyDomain().GetObjectDictionary(propIds);
 
             #endregion
 
@@ -1095,7 +1096,7 @@ namespace XDB.Domains
                 else
                 {
 
-                    XProperty p = props[reportProp.PropertyId];
+                    XProperty p = (XProperty)props[reportProp.PropertyId];
                     XObjectTypeProperty relation = null;
 
                     if (relations.ContainsKey(reportProp.PropertyId)) { relation = relations[reportProp.PropertyId]; }
@@ -1109,7 +1110,7 @@ namespace XDB.Domains
                             // if we are here, we know that the PropertyId is an Asset (or a User - which technically is still an Asset)
                             // we need to join into that table so we can retrieve the subProperty value
 
-                            XProperty subProp = props[reportProp.SubPropertyId.Value];
+                            XProperty subProp = (XProperty)props[reportProp.SubPropertyId.Value];
 
                             string tempTableName = string.Empty;
 
@@ -1373,8 +1374,8 @@ namespace XDB.Domains
                 foreach (XFilter f in filters)
                 {
 
-                    XProperty prop = props[f.PropertyId];
-                    XObjectTypeProperty relation = atLayer.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
+                    IXProperty prop = props[f.PropertyId];
+                    XObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
 
                     if (prop.IsSystem)
                     {
@@ -1612,7 +1613,7 @@ namespace XDB.Domains
         /// <param name="definitionLabel"></param>
         /// <param name="instanceLabel"></param>
         /// <returns></returns>
-        public StringBuilder GetSqlForGenTable(EAssetRequestType requestType,
+        public StringBuilder GetSqlForGenTable(EXObjectRequestType requestType,
                                        string assetDisplayName,
                                        Guid assetTypeId,
                                        List<Guid> assetTypeIds,
@@ -1672,12 +1673,12 @@ namespace XDB.Domains
                 if (!propertyIds.Contains(rp.PropertyId)) { propertyIds.Add(rp.PropertyId); }
             }
 
-            IDictionary<Guid, XProperty> props = propDal.GetObjectDictionary(propertyIds);
+            IDictionary<Guid, IXProperty> props = propDal.GetObjectDictionary(propertyIds);
 
             foreach (PropertySelect rp in reportProperties)
             {
 
-                XProperty property = props[rp.PropertyId];
+                XProperty property = (XProperty)props[rp.PropertyId];
                 XProperty subProp = rp.SubPropertyId.HasValue ? propDal.Get(rp.SubPropertyId.Value) : null;
 
                 if (property == null) { continue; }
@@ -1690,7 +1691,7 @@ namespace XDB.Domains
                 if (!property.IsSystem)
                 {
                     if (relation == null) { continue; }
-                    if ((requestType == EAssetRequestType.Instance) && (!relation.IsInstance))
+                    if ((requestType == EXObjectRequestType.Instance) && (!relation.IsInstance))
                     {
                         assetId = "InstanceOfId";
                     }
@@ -1714,7 +1715,7 @@ namespace XDB.Domains
                         }
                         else
                         {
-                            if ((requestType == EAssetRequestType.Instance) && (!relation.IsInstance))
+                            if ((requestType == EXObjectRequestType.Instance) && (!relation.IsInstance))
                             {
                                 assetId = "InstanceOfId";
                             }
@@ -2145,7 +2146,7 @@ namespace XDB.Domains
                     }
                 }
 
-                if (requestType == EAssetRequestType.Definition)
+                if (requestType == EXObjectRequestType.Definition)
                 {
                     wheres.AppendLine(" AND ([A].[IsInstance] = 0)");
                 }
@@ -2202,9 +2203,9 @@ namespace XDB.Domains
 
         public bool InsertIntoGenTables(Guid assetId, bool isInstance, Guid assetTypeId)
         {
-            Dictionary<Guid, EAssetRequestType> assetTypes = new Dictionary<Guid, EAssetRequestType>();
+            Dictionary<Guid, EXObjectRequestType> assetTypes = new Dictionary<Guid, EXObjectRequestType>();
 
-            EAssetRequestType requestType = isInstance ? EAssetRequestType.Instance : EAssetRequestType.Definition;
+            EXObjectRequestType requestType = isInstance ? EXObjectRequestType.Instance : EXObjectRequestType.Definition;
 
             foreach (Guid id in new XObjectTypeDomain().GetStack(assetTypeId))
             {

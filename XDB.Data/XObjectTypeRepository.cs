@@ -248,12 +248,12 @@ namespace XDB.Repositories
             return base.ExecuteScalarStringInLine(sql, new List<SqlParameter>() { new SqlParameter("@Id", assetTypeId) });
         }
 
-        public bool HasAssets(Guid assetTypeId, EAssetRequestType requestType)
+        public bool HasAssets(Guid assetTypeId, EXObjectRequestType requestType)
         {
 
             List<SqlParameter> paramList = new List<SqlParameter>();
             paramList.Add(new SqlParameter("@AssetTypeId", assetTypeId));
-            paramList.Add(new SqlParameter("@IsInstance", (requestType == EAssetRequestType.Instance)));
+            paramList.Add(new SqlParameter("@IsInstance", (requestType == EXObjectRequestType.Instance)));
 
             return base.ExecuteScalar(StoredProcs.AssetType_HasAssets, paramList) > 0;
 
