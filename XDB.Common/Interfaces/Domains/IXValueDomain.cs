@@ -7,7 +7,7 @@ using XDB.Common.Enumerations;
 namespace XDB.Common.Interfaces
 {
 
-    public interface IXValueDomain<T> where T : XBase, IXValue
+    public interface IXValueDomain<T> :IXBaseDomain where T : XBase, IXValue
     {
         Guid AssetId(Guid xValueId);
         void Delete(Guid id, Guid userId);

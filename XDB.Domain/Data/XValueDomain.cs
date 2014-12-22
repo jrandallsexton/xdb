@@ -7,6 +7,7 @@ using XDB.Models;
 using XDB.Common;
 using XDB.Common.Enumerations;
 using XDB.Common.Exceptions;
+using XDB.Common.Extensions;
 using XDB.Common.Interfaces;
 
 using XDB.Repositories;
@@ -17,8 +18,10 @@ namespace XDB.Domains
     public class XValueDomain<T> : XBaseDomain, IXValueDomain<T> where T : XBase, IXValue
     {
 
-        //private XValueRepository<XValue> dal = new XValueRepository<XValue>();
         private IXValueRepository<T> dal = new XValueRepository<T>();
+
+        private IXObjectDomain<XObject> _xObjectDomain = new XObjectDomain<XObject>();
+        private IXObjectTypeDomain<XObjectType> _xObjectTypeDomain = new XObjectTypeDomain<XObjectType>();
 
         public XValueDomain() : base(ECommonObjectType.XValue) { }
 
@@ -243,7 +246,7 @@ namespace XDB.Domains
                         Guid newGuid;
                         if (Guid.TryParse(xValue.Value, out newGuid))
                         {
-                            return new XObjectTypeDomain().ValidId(newGuid);
+                            return this._xObjectTypeDomain.ValidId(newGuid);
                         }
                         return false;
                     case ESystemType.Created:
@@ -1105,7 +1108,7 @@ namespace XDB.Domains
                 {
                     switch (prop.SystemType)
                     {
-                        case ESystemType.AssetType: return new XObjectTypeDomain().Name(selectedId);
+                        case ESystemType.AssetType: return this._xObjectTypeDomain.Name(selectedId);
 
                         case ESystemType.CreatedBy:
                         case ESystemType.DeletedBy:
@@ -1142,7 +1145,8 @@ namespace XDB.Domains
 
                             #region different properties whose values are an asset
 
-                            XObject asset = new XObjectDomain().Get(selectedId);
+                            XObject asset = (XObject)this._xObjectDomain.Get(selectedId);
+
                             if (asset != null)
                             {
                                 return string.IsNullOrEmpty(asset.DisplayValue) ? asset.Name : asset.DisplayValue;
@@ -1238,7 +1242,7 @@ namespace XDB.Domains
 
                             #region asset type
 
-                            return new XObjectTypeDomain().Name(selectedId);
+                            return this._xObjectTypeDomain.Name(selectedId);
 
                             #endregion
 

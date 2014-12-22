@@ -22,7 +22,7 @@ namespace XDB.Models
         private string _servicePassword = string.Empty;
         private bool _allowNewValues = false;
         private bool _isMemberList = false;
-        private IList<IXListValue> _values = null;
+        private List<IXListValue> _values = null;
 
         /// <summary>
         /// URL for the web service that will supply the values for this XList (if applicable)
@@ -108,7 +108,7 @@ namespace XDB.Models
             }
         }
 
-        public IList<IXListValue> Values
+        public List<IXListValue> Values
         {
             get { return this._values; }
         }
@@ -116,7 +116,7 @@ namespace XDB.Models
         public XList()
         {
             this.Id = System.Guid.NewGuid();
-            this._values = (IList<IXListValue>)new List<XListValue>();
+            this._values = new List<IXListValue>();
             this.Created = DateTime.Now;
         }
 

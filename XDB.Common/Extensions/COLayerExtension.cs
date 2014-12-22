@@ -11,22 +11,22 @@ using XDB.Common;
 namespace XDB.Common.Extensions
 {
 
-    internal static class COLayerExtension
+    public static class COLayerExtension
     {
-        internal static DateTime xCreated(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Created(id); }
-        internal static Guid xCreatedBy(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.CreatedBy(id); }
+        public static DateTime xCreated(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Created(id); }
+        public static Guid xCreatedBy(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.CreatedBy(id); }
 
-        internal static DateTime? xLastModified(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.LastModified(id); }
-        internal static Guid? xLastModifiedBy(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.LastModifiedBy(id); }
+        public static DateTime? xLastModified(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.LastModified(id); }
+        public static Guid? xLastModifiedBy(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.LastModifiedBy(id); }
 
-        internal static bool xIsValidId(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.IsValidId(id); }
+        public static bool xIsValidId(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.IsValidId(id); }
 
-        internal static Guid xId(this XBaseDomain coLayer, string name) { return coLayer.cDal.Id(name); }
-        internal static string xName(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Name(id); }
-        internal static string xDisplayValue(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.DisplayValue(id); }
-        internal static string xDescription(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Description(id); }
+        public static Guid xId(this XBaseDomain coLayer, string name) { return coLayer.cDal.Id(name); }
+        public static string xName(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Name(id); }
+        public static string xDisplayValue(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.DisplayValue(id); }
+        public static string xDescription(this XBaseDomain coLayer, Guid id) { return coLayer.cDal.Description(id); }
 
-        internal static IDictionary<Guid, string> xGetDictionary(this XBaseDomain coLayer) { return coLayer.cDal.GetDictionary(); }
+        public static IDictionary<Guid, string> xGetDictionary(this XBaseDomain coLayer) { return coLayer.cDal.GetDictionary(); }
 
     }
 

@@ -7,7 +7,7 @@ using XDB.Common.Enumerations;
 namespace XDB.Common.Interfaces
 {
 
-    public interface IXObjectTypePropertyDomain<T> where T : XBase, IXObjectTypeProperty
+    public interface IXObjectTypePropertyDomain<T> : IXBaseDomain where T : XBase, IXObjectTypeProperty
     {
 
     }

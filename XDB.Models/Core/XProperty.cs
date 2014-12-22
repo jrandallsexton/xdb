@@ -85,7 +85,7 @@ namespace XDB.Models
         /// <summary>
         /// Id of the picklist that this property uses; if null, a picklist is not used
         /// <summary>
-        public Guid? PickListId
+        public Guid? XListId
         {
             get { return this._pickListId; }
             set
@@ -249,7 +249,7 @@ namespace XDB.Models
         /// <summary>
         /// Used if the property's dataType is of some type of Asset
         /// <summary>
-        public Guid? AssetTypeId
+        public Guid? XObjectTypeId
         {
             get { return this._assetTypeId; }
             set
@@ -361,13 +361,13 @@ namespace XDB.Models
             this.IsDirty = true;
         }
 
-        public XProperty(Guid id, string name, string displayVal, Guid pickListId, string desc, Guid createdBy)
+        public XProperty(Guid id, string name, string displayVal, Guid xListId, string desc, Guid createdBy)
         {
             this.Id = id;
             this.Name = name;
             this.DisplayValue = displayVal;
             this.DataType = EDataType.PickList;
-            this.PickListId = pickListId;
+            this.XListId = xListId;
             this.Description = desc;
             this.Created = DateTime.Now;
             this.CreatedBy = createdBy;

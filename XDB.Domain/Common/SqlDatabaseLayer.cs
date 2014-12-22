@@ -38,6 +38,8 @@ namespace XDB.Domains
         XObjectTypeDomain<XObjectType> objectTypeDomain = new XObjectTypeDomain<XObjectType>();
         XObjectTypePropertyDomain<XObjectTypeProperty> atprDal = new XObjectTypePropertyDomain<XObjectTypeProperty>();
 
+        private IXObjectTypeDomain<XObjectType> _xObjectTypeDomain = new XObjectTypeDomain<XObjectType>();
+
         //XObjectDomain<XObject> aLayer = new XObjectDomain<XObject>();
         //XObjectTypeDomain atLayer = new XObjectTypeDomain();
 
@@ -312,7 +314,7 @@ namespace XDB.Domains
                 propIds.Add(kvp.Key);
             }
 
-            XObjectTypePropertyDal atprdal = new XObjectTypePropertyDal();
+            XObjectTypePropertyDomain<XObjectTypeProperty> atprdal = new XObjectTypePropertyDomain<XObjectTypeProperty>();
             foreach (XObjectTypeProperty relation in atprdal.GetCollectionByAssetTypeIdAndPropertyIds(assetTypeId, propIds))
             {
                 relations.Add(relation.PropertyId, relation);
@@ -601,14 +603,14 @@ namespace XDB.Domains
                                 if (subProp.IsSystem)
                                 {
 
-                                    tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, p.AssetTypeIsInstance.Value, false);
+                                    tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, p.AssetTypeIsInstance.Value, false);
                                     string tempTableNameAlias = reportProp.PropertyName.Replace(" ", "_") + "_Data";
                                     froms.AppendFormat("LEFT JOIN [dbo].[{0}] AS [{1}] ON [{2}].[AssetId] = [B].[{3}]", tempTableName, tempTableNameAlias, tempTableNameAlias, reportProp.PropertyId).AppendLine();
 
                                     switch (subProp.SystemType)
                                     {
                                         case ESystemType.AssetName:
-                                            if (p.AssetTypeId.Value.CompareTo(XObjectTypeIds.User) == 0)
+                                            if (p.XObjectTypeId.Value.CompareTo(XObjectTypeIds.User) == 0)
                                             {
                                                 selects.AppendFormat("\t,[{0}].[Name] AS [{1}.BUN]", tempTableNameAlias, reportProp.PropertyName).AppendLine();
                                             }
@@ -643,15 +645,15 @@ namespace XDB.Domains
                                 }
                                 else
                                 {
-                                    XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.AssetTypeId.Value, reportProp.SubPropertyId.Value);
+                                    XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
 
                                     if (tempRel.IsInstance)
                                     {
-                                        tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, true, false);
+                                        tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, true, false);
                                     }
                                     else
                                     {
-                                        tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, false, false);
+                                        tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, false, false);
                                     }
 
                                     if (!joinedTables.Contains(tempTableName))
@@ -1118,14 +1120,14 @@ namespace XDB.Domains
                             {
 
                                 var isIns = p.AssetTypeIsInstance.HasValue ? p.AssetTypeIsInstance.Value : false;
-                                tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, isIns, false);
+                                tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, isIns, false);
                                 string tempTableNameAlias = reportProp.PropertyName.Replace(" ", "_") + "_Data";
                                 froms.AppendFormat("LEFT JOIN [dbo].[{0}] AS [{1}] ON [{2}].[AssetId] = [B].[{3}]", tempTableName, tempTableNameAlias, tempTableNameAlias, reportProp.PropertyId).AppendLine();
 
                                 switch (subProp.SystemType)
                                 {
                                     case ESystemType.AssetName:
-                                        if (p.AssetTypeId.Value.CompareTo(XObjectTypeIds.User) == 0)
+                                        if (p.XObjectTypeId.Value.CompareTo(XObjectTypeIds.User) == 0)
                                         {
                                             selects.AppendFormat("\t,[{0}].[Name] AS [{1}.BUN]", tempTableNameAlias, reportProp.PropertyName).AppendLine();
                                         }
@@ -1160,15 +1162,15 @@ namespace XDB.Domains
                             }
                             else
                             {
-                                XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.AssetTypeId.Value, reportProp.SubPropertyId.Value);
+                                XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
 
                                 if (tempRel.IsInstance)
                                 {
-                                    tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, true, false);
+                                    tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, true, false);
                                 }
                                 else
                                 {
-                                    tempTableName = this.FormatGeneratedTableName(p.AssetTypeId.Value, false, false);
+                                    tempTableName = this.FormatGeneratedTableName(p.XObjectTypeId.Value, false, false);
                                 }
 
                                 if (!joinedTables.Contains(tempTableName))
@@ -1625,8 +1627,6 @@ namespace XDB.Domains
                                        string intoTableName,
                                        ESqlType sqlType)
         {
-
-            XObjectTypePropertyDal relationDal = new XObjectTypePropertyDal();
 
             XPropertyDomain propDal = new XPropertyDomain();
 
@@ -2207,7 +2207,7 @@ namespace XDB.Domains
 
             EXObjectRequestType requestType = isInstance ? EXObjectRequestType.Instance : EXObjectRequestType.Definition;
 
-            foreach (Guid id in new XObjectTypeDomain().GetStack(assetTypeId))
+            foreach (Guid id in this._xObjectTypeDomain.GetStack(assetTypeId))
             {
                 assetTypes.Add(id, requestType);
             }

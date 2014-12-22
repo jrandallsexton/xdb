@@ -20,6 +20,7 @@ namespace XDB.Domains
     {
 
         private XObjectRepository<T> dal = new XObjectRepository<T>();
+        private IXObjectTypeDomain<XObjectType> _xObjectTypeDomain = new XObjectTypeDomain<XObjectType>();
 
         public XObjectDomain() : base(ECommonObjectType.XObject) { }
 
@@ -360,7 +361,7 @@ namespace XDB.Domains
         {
             if ((assetTypeId.CompareTo(new Guid()) != 0) && (searchChildAssetTypes))
             {
-                IList<Guid> assetTypeIds = new XObjectTypeDomain().AssetType_GetChildren(assetTypeId, true);
+                IList<Guid> assetTypeIds = this._xObjectTypeDomain.AssetType_GetChildren(assetTypeId, true);
                 assetTypeIds.Add(assetTypeId);
                 return this.dal.AssetIds_Get(assetName, assetTypeIds);
             }

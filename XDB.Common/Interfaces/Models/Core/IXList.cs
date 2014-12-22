@@ -16,7 +16,7 @@ namespace XDB.Common.Interfaces
         string ServicePassword { get; set; }
         string ServiceUrl { get; set; }
         string ServiceUsername { get; set; }
-        IList<IXListValue> Values { get; }
+        List<IXListValue> Values { get; }
     }
 
 }

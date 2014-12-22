@@ -10,7 +10,7 @@ namespace XDB.Common.Interfaces
     {
         bool AllowMultiValue { get; set; }
         bool AllowNewValues { get; set; }
-        Guid? AssetTypeId { get; set; }
+        Guid? XObjectTypeId { get; set; }
         bool? AssetTypeIsInstance { get; set; }
         EDataType DataType { get; set; }
         string DefaultValue { get; set; }
@@ -23,7 +23,7 @@ namespace XDB.Common.Interfaces
         bool IsRelationship { get; set; }
         bool IsRequired { get; set; }
         bool IsSystem { get; set; }
-        Guid? PickListId { get; set; }
+        Guid? XListId { get; set; }
         short? Precision { get; set; }
         Guid? RoleId { get; set; }
         ESystemType SystemType { get; set; }

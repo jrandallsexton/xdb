@@ -10,22 +10,22 @@ using XDB.Common;
 namespace XDB.Common.Extensions
 {
 
-    internal static class COApiExtension
+    public static class COApiExtension
     {
-        internal static DateTime yCreated(this XBaseService coApi, Guid id) { return coApi.cBll.xCreated(id); }
-        internal static Guid yCreatedBy(this XBaseService coApi, Guid id) { return coApi.cBll.xCreatedBy(id); }
+        public static DateTime yCreated(this XBaseService coApi, Guid id) { return coApi.cBll.xCreated(id); }
+        public static Guid yCreatedBy(this XBaseService coApi, Guid id) { return coApi.cBll.xCreatedBy(id); }
 
-        internal static DateTime? yLastModified(this XBaseService coApi, Guid id) { return coApi.cBll.xLastModified(id); }
-        internal static Guid? yLastModifiedBy(this XBaseService coApi, Guid id) { return coApi.cBll.xLastModifiedBy(id); }
+        public static DateTime? yLastModified(this XBaseService coApi, Guid id) { return coApi.cBll.xLastModified(id); }
+        public static Guid? yLastModifiedBy(this XBaseService coApi, Guid id) { return coApi.cBll.xLastModifiedBy(id); }
 
-        internal static bool yIsValidId(this XBaseService coApi, Guid id) { return coApi.cBll.xIsValidId(id); }
+        public static bool yIsValidId(this XBaseService coApi, Guid id) { return coApi.cBll.xIsValidId(id); }
 
-        internal static Guid yId(this XBaseService coApi, string name) { return coApi.cBll.xId(name); }
-        internal static string yName(this XBaseService coApi, Guid id) { return coApi.cBll.xName(id); }
-        internal static string yDisplayValue(this XBaseService coApi, Guid id) { return coApi.cBll.xDisplayValue(id); }
-        internal static string yDescription(this XBaseService coApi, Guid id) { return coApi.cBll.xDescription(id); }
+        public static Guid yId(this XBaseService coApi, string name) { return coApi.cBll.xId(name); }
+        public static string yName(this XBaseService coApi, Guid id) { return coApi.cBll.xName(id); }
+        public static string yDisplayValue(this XBaseService coApi, Guid id) { return coApi.cBll.xDisplayValue(id); }
+        public static string yDescription(this XBaseService coApi, Guid id) { return coApi.cBll.xDescription(id); }
 
-        internal static IDictionary<Guid, string> yGetDictionary(this XBaseService coApi) { return coApi.cBll.xGetDictionary(); }
+        public static IDictionary<Guid, string> yGetDictionary(this XBaseService coApi) { return coApi.cBll.xGetDictionary(); }
     }
 
 }

@@ -13,10 +13,9 @@ using XDB.Repositories;
 namespace XDB.Domains
 {
 
-    //public class XObjectTypePropertyDomain
     public class XObjectTypePropertyDomain<T> : XBaseDomain, IXObjectTypePropertyDomain<T> where T : XBase, IXObjectTypeProperty
     {
-
+        public XObjectTypePropertyDomain() : base(ECommonObjectType.XObjectTypeProperty) { }
     }
 
 }

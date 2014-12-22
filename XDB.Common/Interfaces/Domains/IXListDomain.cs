@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace XDB.Common.Interfaces
 {
 
-    public interface IXListDomain<T> where T : XBase, IXList
+    public interface IXListDomain<T> : IXBaseDomain where T : XBase, IXList
     {
         void Delete(Guid id, Guid userId);
         IXList Get(Guid id);

@@ -84,7 +84,7 @@ namespace XDB.Repositories
 
                 if (!rdr.IsDBNull(Precision)) { property.Precision = (Int16)rdr[Precision]; }
 
-                if (!rdr.IsDBNull(PickListId)) { property.PickListId = rdr.GetGuid(PickListId); }
+                if (!rdr.IsDBNull(PickListId)) { property.XListId = rdr.GetGuid(PickListId); }
 
                 if (!rdr.IsDBNull(RoleId)) { property.RoleId = rdr.GetGuid(RoleId); }
 
@@ -96,7 +96,7 @@ namespace XDB.Repositories
 
                 if (!rdr.IsDBNull(Plural)) { property.Plural = rdr.GetString(Plural); }
 
-                if (!rdr.IsDBNull(AssetTypeId)) { property.AssetTypeId = rdr.GetGuid(AssetTypeId); }
+                if (!rdr.IsDBNull(AssetTypeId)) { property.XObjectTypeId = rdr.GetGuid(AssetTypeId); }
 
                 if (!rdr.IsDBNull(AssetTypeIsInstance)) { property.AssetTypeIsInstance = (bool)rdr[AssetTypeIsInstance]; }
 
@@ -129,7 +129,7 @@ namespace XDB.Repositories
             paramList.Add(new SqlParameter("@DataTypeId", xProp.DataType.GetHashCode()));
             paramList.Add(new SqlParameter("@Precision", xProp.Precision));
 
-            paramList.Add(new SqlParameter() { ParameterName = "@PickListId", Value = xProp.PickListId.HasValue ? xProp.PickListId : null });
+            paramList.Add(new SqlParameter() { ParameterName = "@PickListId", Value = xProp.XListId.HasValue ? xProp.XListId : null });
 
             paramList.Add(new SqlParameter("@AllowMultiValue", xProp.AllowMultiValue));
             paramList.Add(new SqlParameter("@IsOrdered", xProp.IsOrdered));
@@ -138,7 +138,7 @@ namespace XDB.Repositories
             paramList.Add(new SqlParameter() { ParameterName = "@DisplayValue", Value = string.IsNullOrEmpty(xProp.DisplayValue) ? null : xProp.DisplayValue });
             paramList.Add(new SqlParameter() { ParameterName = "@Description", Value = string.IsNullOrEmpty(xProp.Description) ? null : xProp.Description });
 
-            paramList.Add(new SqlParameter("@AssetTypeId", xProp.AssetTypeId));
+            paramList.Add(new SqlParameter("@AssetTypeId", xProp.XObjectTypeId));
             paramList.Add(new SqlParameter("@AssetTypeIsInstance", xProp.AssetTypeIsInstance));
 
             paramList.Add(new SqlParameter("@Created", xProp.Created));
@@ -283,7 +283,7 @@ namespace XDB.Repositories
 
                     if (!rdr.IsDBNull(Precision)) { property.Precision = (Int16)rdr[Precision]; }
 
-                    if (!rdr.IsDBNull(PickListId)) { property.PickListId = rdr.GetGuid(PickListId); }
+                    if (!rdr.IsDBNull(PickListId)) { property.XListId = rdr.GetGuid(PickListId); }
 
                     if (!rdr.IsDBNull(RoleId)) { property.RoleId = rdr.GetGuid(RoleId); }
 
@@ -295,7 +295,7 @@ namespace XDB.Repositories
 
                     if (!rdr.IsDBNull(Plural)) { property.Plural = rdr.GetString(Plural); }
 
-                    if (!rdr.IsDBNull(AssetTypeId)) { property.AssetTypeId = rdr.GetGuid(AssetTypeId); }
+                    if (!rdr.IsDBNull(AssetTypeId)) { property.XObjectTypeId = rdr.GetGuid(AssetTypeId); }
 
                     if (!rdr.IsDBNull(AssetTypeIsInstance)) { property.AssetTypeIsInstance = (bool)rdr[AssetTypeIsInstance]; }
 

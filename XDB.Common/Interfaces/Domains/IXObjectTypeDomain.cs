@@ -7,7 +7,7 @@ using XDB.Common.Enumerations;
 namespace XDB.Common.Interfaces
 {
 
-    public interface IXObjectTypeDomain<T> where T : XBase, IXObjectType
+    public interface IXObjectTypeDomain<T> :IXBaseDomain where T : XBase, IXObjectType
     {
         bool AllowAssets(Guid xObjectTypeId);
         IList<Guid> AssetType_GetChildren(Guid assetTypeId, bool includeAllDescendants);
