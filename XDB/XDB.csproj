@@ -55,10 +55,8 @@
     <Compile Include="Constants\FilterValues.cs" />
     <Compile Include="Constants\OperatorId.cs" />
     <Compile Include="Constants\XListIds.cs" />
-    <Compile Include="Constants\XRoleIds.cs" />
     <Compile Include="Constants\XUserIds.cs" />
     <Compile Include="Enumerations\ESortOrder.cs" />
-    <Compile Include="Enumerations\ESystemActionType.cs" />
     <Compile Include="Interfaces\IInstanceProvider.cs" />
     <Compile Include="Interfaces\INarrative.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

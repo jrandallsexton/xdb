@@ -45,8 +45,10 @@
     <Compile Include="Constants\StoredProcs.cs" />
     <Compile Include="Constants\XObjectTypeIds.cs" />
     <Compile Include="Constants\XPropertyIds.cs" />
+    <Compile Include="Constants\XRoleIds.cs" />
     <Compile Include="EnumerationOps.cs" />
     <Compile Include="Enumerations\EApplicationInstance.cs" />
+    <Compile Include="Enumerations\ESystemActionType.cs" />
     <Compile Include="Enumerations\EXObjectRequestType.cs" />
     <Compile Include="Enumerations\EAssetTypeClass.cs" />
     <Compile Include="Enumerations\ECommonObjectType.cs" />

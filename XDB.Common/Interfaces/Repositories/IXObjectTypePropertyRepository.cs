@@ -15,6 +15,7 @@ namespace XDB.Common.Interfaces
         IList<IXObjectTypeProperty> GetCollectionByObjectTypeIdsAndPropertyId(IList<Guid> assetTypeIds, Guid propertyId);
         void Save(IList<IXObjectTypeProperty> relations);
         void Save(IXObjectTypeProperty relation);
+        IList<IXObjectTypeProperty> GetCollectionByAssetTypeIdAndPropertyIds(Guid xObjectTypeId, IList<Guid> propertyIds);
     }
 
 }

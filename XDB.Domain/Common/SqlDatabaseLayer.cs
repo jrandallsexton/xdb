@@ -540,7 +540,7 @@ namespace XDB.Domains
             Dictionary<Guid, XObjectTypeProperty> relations = new Dictionary<Guid, XObjectTypeProperty>();
             #region Prefetch all AssetType-Property relations
 
-            foreach (XObjectTypeProperty relation in atprDal.GetCollectionByAssetTypeIdAndPropertyIds(assetTypeId, propIds))
+            foreach (XObjectTypeProperty relation in this.atprDal.GetCollectionByAssetTypeIdAndPropertyIds(assetTypeId, propIds))
             {
                 relations.Add(relation.PropertyId, relation);
             }
@@ -645,7 +645,7 @@ namespace XDB.Domains
                                 }
                                 else
                                 {
-                                    XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
+                                    IXObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
 
                                     if (tempRel.IsInstance)
                                     {
@@ -815,7 +815,7 @@ namespace XDB.Domains
                 {
 
                     IXProperty prop = props[f.PropertyId];
-                    XObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
+                    IXObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
 
                     if (prop.IsSystem)
                     {
@@ -1162,7 +1162,7 @@ namespace XDB.Domains
                             }
                             else
                             {
-                                XObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
+                                IXObjectTypeProperty tempRel = atprDal.AssetTypePropertyRelation_Get(p.XObjectTypeId.Value, reportProp.SubPropertyId.Value);
 
                                 if (tempRel.IsInstance)
                                 {
@@ -1377,7 +1377,7 @@ namespace XDB.Domains
                 {
 
                     IXProperty prop = props[f.PropertyId];
-                    XObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
+                    IXObjectTypeProperty relation = this.objectTypeDomain.AssetTypePropertyRelation_Get(assetTypeId, f.PropertyId);
 
                     if (prop.IsSystem)
                     {
@@ -1662,7 +1662,7 @@ namespace XDB.Domains
             }
 
             Dictionary<Guid, XObjectTypeProperty> propRelations = new Dictionary<Guid, XObjectTypeProperty>();
-            foreach (XObjectTypeProperty rel in relationDal.GetCollectionByAssetTypeIdAndPropertyIds(assetTypeId, propIds))
+            foreach (XObjectTypeProperty rel in this.atprDal.GetCollectionByAssetTypeIdAndPropertyIds(assetTypeId, propIds))
             {
                 propRelations.Add(rel.PropertyId, rel);
             }

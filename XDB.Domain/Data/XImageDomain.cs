@@ -34,7 +34,7 @@ namespace XDB.Domains
 
         public XImage Image_GetForAsset(Guid assetId, ICoreInstanceConfig instanceConfig)
         {
-            IXValue pv = new XValueDomain().Get(instanceConfig.AssetLogoPropertyId, assetId);
+            IXValue pv = new XValueDomain<XValue>().Get(instanceConfig.AssetLogoPropertyId, assetId);
             if (pv != null)
             {
                 if (!string.IsNullOrEmpty(pv.Value))

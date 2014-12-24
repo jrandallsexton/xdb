@@ -304,6 +304,12 @@ namespace XDB.Repositories
         {
             throw new NotImplementedException();
         }
+
+
+        public IList<IXObjectTypeProperty> GetCollectionByAssetTypeIdAndPropertyIds(Guid xObjectTypeId, IList<Guid> propertyIds)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

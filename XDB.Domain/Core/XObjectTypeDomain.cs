@@ -254,9 +254,9 @@ namespace XDB.Domains
         //    return new AssetTypePropertyRelationDal().GetCollectionByAssetTypeIdsAndPropertyId(assetTypeIds, propertyId);
         //}
 
-        public XObjectTypeProperty AssetTypePropertyRelation_Get(Guid assetTypeId, Guid propertyId)
+        public IXObjectTypeProperty AssetTypePropertyRelation_Get(Guid assetTypeId, Guid propertyId)
         {
-            return new XObjectTypePropertyDomain().AssetTypePropertyRelation_Get(assetTypeId, propertyId);
+            return new XObjectTypePropertyDomain<XObjectTypeProperty>().AssetTypePropertyRelation_Get(assetTypeId, propertyId);
         }
 
         //public System.Data.DataSet AssetTypes_GetHierarchy()

@@ -5,11 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using XDB.BLL;
-using XDB.Constants;
-using XDB.Enumerations;
-using XDB.Extensions;
+using XDB.Domains;
+using XDB.Models;
+using XDB.Common;
+using XDB.Common.Constants;
+using XDB.Common.Enumerations;
+using XDB.Common.Exceptions;
+using XDB.Common.Interfaces;
 using XDB.Interfaces;
+
+using XDB.Common.Interfaces;
 
 namespace XDB.API
 {
