@@ -1,0 +1,32 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.binlog
+
+# Node / React
+node_modules/
+dist/
+build/
+coverage/
+.env*
+!.env.example
+
+# Editors / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db
+.DS_Store
+
+# Never in this repo: company material lives in C:\Projects\xdb-legacy
+legacy/
+phase1/
+*.har
+*.bak
+*.mdf
+*.ldf
+*.msi
