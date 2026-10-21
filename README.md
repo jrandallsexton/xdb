@@ -16,6 +16,7 @@ See `docs/10-plan-run-as-is.md` for the phased plan and `docs/07-design-lessons.
 | `docs/07-design-lessons.md` | Patterns worth reusing, mistakes not to repeat, outstanding housekeeping |
 | `docs/09-concept-sportdeets-overlay.md` | Concept: XDB as a link explorer over sportDeets data (export/import, Definition/Instance mapping, first slice) |
 | `docs/10-plan-run-as-is.md` | Plan: run the original as-is on .NET Fx 4.8, then port the API to .NET 10 with the same wire contract |
+| `docs/11-phase2-scope.md` | Phase 2 scope: what the .NET 10 port covers, wire-contract rules, architecture, baseline migration, comparison harness, milestones and sizing |
 
 ## What is not in this repository
 
