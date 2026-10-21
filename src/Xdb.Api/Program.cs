@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 
 using Xdb.Api.DependencyInjection;
+using Xdb.Api.Infrastructure.Data;
 
 namespace Xdb.Api;
 
@@ -21,6 +22,7 @@ public partial class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        var isTestingEnv = builder.Environment.IsEnvironment(TestingEnvironmentName);
 
         builder.Host.UseSerilog((context, configuration) => configuration
             .ReadFrom.Configuration(context.Configuration)
@@ -34,7 +36,17 @@ public partial class Program
         services.AddHealthChecks();
         services.AddApplicationServices();
 
+        if (!isTestingEnv)
+        {
+            services.AddDataPersistence(builder.Configuration);
+        }
+
         var app = builder.Build();
+
+        if (!isTestingEnv)
+        {
+            await app.Services.ApplyMigrationsAsync();
+        }
 
         app.UseSerilogRequestLogging();
 

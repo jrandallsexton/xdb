@@ -6,5 +6,7 @@
     <!-- Owner rule: no implicit usings anywhere in this repo, tests included. -->
     <ImplicitUsings>disable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Latest compiler warning wave. -->
+    <WarningLevel>6</WarningLevel>
   </PropertyGroup>
 </Project>
