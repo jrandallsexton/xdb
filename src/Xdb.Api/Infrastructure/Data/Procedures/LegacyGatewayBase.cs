@@ -159,6 +159,20 @@ public abstract class LegacyGatewayBase(XdbDataContext db)
         return result;
     }
 
+    private static readonly System.Globalization.CultureInfo EnUs = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+
+    /// <summary>object.ToString() as .NET Framework wrote it under en-US (dates without ICU's narrow space, 15-digit doubles).</summary>
+    protected static string LegacyText(object value) => value switch
+    {
+        string text => text,
+        DateTime date => date.ToString(ViewProcedures.EnUsGeneralPattern, EnUs),
+        double number => number.ToString("G15", EnUs),
+        float number => number.ToString("G7", EnUs),
+        Guid id => id.ToString("D"),
+        DBNull => string.Empty,
+        _ => Convert.ToString(value, EnUs) ?? string.Empty
+    };
+
     protected static DbString AnsiList(IEnumerable<Guid> ids) =>
         new() { Value = string.Join(",", ids.Select(id => id.ToString("D"))), IsAnsi = true, Length = -1 };
 }

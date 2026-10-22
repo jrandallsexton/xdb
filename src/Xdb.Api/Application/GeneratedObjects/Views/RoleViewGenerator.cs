@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,12 +14,18 @@ public interface IRoleViewGenerator
     /// <summary>(Re)creates a role's row-security views from the role as stored.</summary>
     /// <returns>The number of views created.</returns>
     Task<int> GenerateAsync(Guid roleId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// (Re)creates a role's views from the given asset types in the given order: Role_Save passes the posted role, as
+    /// the original did (deleted or unchanged entries included). Stops at the first failure, leaving that view dropped.
+    /// </summary>
+    Task<int> GenerateAsync(Guid roleId, IReadOnlyList<RoleAssetTypeRow> assetTypes, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
 /// The view part of the original's RoleLayer.Save: one view per non-inherited asset type and permission that has
 /// filters and none of them is CURRENT_USER (those are evaluated at run time). The view name omits definition vs
-/// instance, so processing in spr_Role_Get's order lets the last one win, as in the original.
+/// instance, so processing in order lets the last one win, as in the original.
 /// </summary>
 public sealed class RoleViewGenerator(IGeneratedObjectProcedures procedures, ViewInputLoader loader) : IRoleViewGenerator
 {
@@ -28,10 +35,13 @@ public sealed class RoleViewGenerator(IGeneratedObjectProcedures procedures, Vie
 
     private static readonly ViewColumn NameColumn = new(SystemPropertyIds.AssetName, null, null, "Asset Name", null);
 
-    public async Task<int> GenerateAsync(Guid roleId, CancellationToken cancellationToken = default)
+    public async Task<int> GenerateAsync(Guid roleId, CancellationToken cancellationToken = default) =>
+        await GenerateAsync(roleId, await procedures.GetRoleAssetTypesAsync(roleId, cancellationToken), cancellationToken);
+
+    public async Task<int> GenerateAsync(Guid roleId, IReadOnlyList<RoleAssetTypeRow> assetTypes, CancellationToken cancellationToken = default)
     {
         var views = 0;
-        foreach (var assetType in await procedures.GetRoleAssetTypesAsync(roleId, cancellationToken))
+        foreach (var assetType in assetTypes)
         {
             if (assetType.IsInherited)
                 continue;

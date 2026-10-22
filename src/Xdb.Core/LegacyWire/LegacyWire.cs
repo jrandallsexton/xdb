@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -79,6 +80,13 @@ public static class LegacyWire
     /// <summary>The host's response when a typed query parameter cannot be converted.</summary>
     public static IActionResult RequestError() =>
         new LegacyBytesResult(500, StreamHtmlContentType, Encoding.ASCII.GetBytes(RequestErrorPage));
+
+    /// <summary>
+    /// The original's HandleLogicalException response (measured): 500, Content-Type exactly "application/json", the
+    /// saved error's id in an ErrorId header, and the operation's typed false as the body.
+    /// </summary>
+    public static IActionResult LogicalFailure(string errorId) =>
+        new LegacyBytesResult(500, StreamJsonContentType, "false"u8.ToArray(), new Dictionary<string, string> { ["ErrorId"] = errorId });
 
     /// <summary>An operation that returned a null Stream: 200 with an empty body.</summary>
     public static IActionResult NullStream() => new EmptyResult();

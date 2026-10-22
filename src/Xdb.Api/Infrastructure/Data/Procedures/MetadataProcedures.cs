@@ -59,6 +59,12 @@ public sealed class MetadataProcedures(XdbDataContext db) : LegacyGatewayBase(db
         (await (await OpenAsync(cancellationToken)).QueryAsync<Guid>(
             Procedure("spr_AssetType_GetAllDescendants", new { Id = assetTypeId }, cancellationToken))).ToList();
 
+    public Task<string> GetReportingLabelPluralAsync(Guid assetTypeId, bool forInstances, CancellationToken cancellationToken) =>
+        ScalarStringAsync(forInstances
+                ? "SELECT [InstanceLabelPlural] FROM [AssetTypes] WITH (NoLock) WHERE [Id] = @AssetTypeId AND [Deleted] IS NULL"
+                : "SELECT [DefinitionLabelPlural] FROM [AssetTypes] WITH (NoLock) WHERE [Id] = @AssetTypeId AND [Deleted] IS NULL",
+            new { AssetTypeId = assetTypeId }, cancellationToken);
+
     public Task<string> GetReportingLabelAsync(Guid assetTypeId, bool forInstances, CancellationToken cancellationToken) =>
         ScalarStringAsync(forInstances
                 ? "SELECT [InstanceLabel] FROM [AssetTypes] WITH (NoLock) WHERE [Id] = @AssetTypeId AND [Deleted] IS NULL"
@@ -145,6 +151,9 @@ public sealed class MetadataProcedures(XdbDataContext db) : LegacyGatewayBase(db
 
     public async Task<bool> IsLiveAssetIdAsync(Guid assetId, CancellationToken cancellationToken) =>
         await (await OpenAsync(cancellationToken)).ExecuteScalarAsync<int>(Procedure("spr_AssetId_IsValid", new { Id = assetId }, cancellationToken)) == 1;
+
+    public Task<Guid> GetMemberIdByUserIdAsync(string userId, CancellationToken cancellationToken) =>
+        ScalarGuidAsync("SELECT [Id] FROM [Members] WITH (NoLock) WHERE [UserId] = @UserId", new { UserId = userId }, cancellationToken);
 
     public async Task<bool> IsLiveMemberIdAsync(Guid memberId, CancellationToken cancellationToken) =>
         await (await OpenAsync(cancellationToken)).ExecuteScalarAsync<int>(Procedure("spr_MemberId_IsValid", new { Id = memberId }, cancellationToken)) == 1;

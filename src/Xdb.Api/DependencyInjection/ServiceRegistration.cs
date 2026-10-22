@@ -4,6 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Xdb.Api.Application.Assets;
 using Xdb.Api.Application.Assets.Queries;
+using Xdb.Api.Application.Charts.Commands;
+using Xdb.Api.Application.Charts.Queries;
+using Xdb.Api.Application.Common.Identity;
+using Xdb.Api.Application.Reports;
+using Xdb.Api.Application.Reports.Commands;
+using Xdb.Api.Application.Reports.Queries;
+using Xdb.Api.Application.Roles.Commands;
+using Xdb.Api.Application.Roles.Queries;
 using Xdb.Api.Application.Common.Metadata;
 using Xdb.Api.Application.GeneratedObjects;
 using Xdb.Api.Application.GeneratedObjects.Commands.RegenerateAll;
@@ -48,6 +56,10 @@ public static class ServiceRegistration
         services.AddScoped<IAssetProcedures, AssetProcedures>();
         services.AddScoped<IFilterProcedures, FilterProcedures>();
         services.AddScoped<IUiProcedures, UiProcedures>();
+        services.AddScoped<IChartProcedures, ChartProcedures>();
+        services.AddScoped<IDashboardProcedures, DashboardProcedures>();
+        services.AddScoped<IRoleProcedures, RoleProcedures>();
+        services.AddScoped<IReportStore, ReportStore>();
 
         services.AddOptions<GeneratedObjectsOptions>().BindConfiguration(GeneratedObjectsOptions.SectionName);
         services.AddOptions<FirstAdminOptions>().BindConfiguration(FirstAdminOptions.SectionName);
@@ -173,6 +185,51 @@ public static class ServiceRegistration
         services.AddScoped<IGetAssetsFromPropertyValueQueryHandler, GetAssetsFromPropertyValueQueryHandler>();
         services.AddScoped<IGetAssetsInPropertyValueQueryHandler, GetAssetsInPropertyValueQueryHandler>();
         services.AddScoped<IGetAssetsGroupedQueryHandler, GetAssetsGroupedQueryHandler>();
+
+        // Report builder and administration
+        services.AddScoped<ReportLoader>();
+        services.AddScoped<ReportFilterString>();
+        services.AddScoped<ReportSaver>();
+        services.AddScoped<IGetReportQueryHandler, GetReportQueryHandler>();
+        services.AddScoped<IGetReportFilterStringQueryHandler, GetReportFilterStringQueryHandler>();
+        services.AddScoped<IGetReportGroupColumnsQueryHandler, GetReportGroupColumnsQueryHandler>();
+        services.AddScoped<IGetUnusedReportPropertiesQueryHandler, GetUnusedReportPropertiesQueryHandler>();
+        services.AddScoped<IGetReportsDictionaryQueryHandler, GetReportsDictionaryQueryHandler>();
+        services.AddScoped<IGetReportCacheQueryHandler, GetReportCacheQueryHandler>();
+        services.AddScoped<ICloneReportQueryHandler, CloneReportQueryHandler>();
+        services.AddScoped<ISaveReportCommandHandler, SaveReportCommandHandler>();
+        services.AddScoped<ICreateReportFromMemberFilterCommandHandler, CreateReportFromMemberFilterCommandHandler>();
+        services.AddScoped<IDeleteReportCommandHandler, DeleteReportCommandHandler>();
+        services.AddScoped<IKillReportCommandHandler, KillReportCommandHandler>();
+        services.AddScoped<IMigrateReportCommandHandler, MigrateReportCommandHandler>();
+        services.AddScoped<IReportBookmarkCommandHandler, ReportBookmarkCommandHandler>();
+
+        // Roles
+        services.AddScoped<LegacyErrorLog>();
+        services.AddScoped<IGetRolesDictionaryQueryHandler, GetRolesDictionaryQueryHandler>();
+        services.AddScoped<IGetRoleQueryHandler, GetRoleQueryHandler>();
+        services.AddScoped<ICloneRoleQueryHandler, CloneRoleQueryHandler>();
+        services.AddScoped<ICloneRoleViewRelationsQueryHandler, CloneRoleViewRelationsQueryHandler>();
+        services.AddScoped<IGetRoleMembersQueryHandler, GetRoleMembersQueryHandler>();
+        services.AddScoped<IGetRoleReportsQueryHandler, GetRoleReportsQueryHandler>();
+        services.AddScoped<IGetRoleUserIdsQueryHandler, GetRoleUserIdsQueryHandler>();
+        services.AddScoped<ISaveRoleCommandHandler, SaveRoleCommandHandler>();
+        services.AddScoped<ISaveRoleViewRelationsCommandHandler, SaveRoleViewRelationsCommandHandler>();
+        services.AddScoped<ISaveRoleProcessRelationsCommandHandler, SaveRoleProcessRelationsCommandHandler>();
+        services.AddScoped<IKillRoleCommandHandler, KillRoleCommandHandler>();
+
+        // Charts
+        services.AddScoped<ICreateChartQueryHandler, CreateChartQueryHandler>();
+        services.AddScoped<CurrentMember>();
+        services.AddScoped<IGetDashboardsQueryHandler, GetDashboardsQueryHandler>();
+        services.AddScoped<IGetUnmappedQueryHandler, GetUnmappedQueryHandler>();
+        services.AddScoped<SaveDashboardCommandHandler>();
+        services.AddScoped<ISaveDashboardCommandHandler>(sp => sp.GetRequiredService<SaveDashboardCommandHandler>());
+        services.AddScoped<IAddDashboardItemCommandHandler, AddDashboardItemCommandHandler>();
+        services.AddScoped<ISetMappingCommandHandler, SetMappingCommandHandler>();
+        services.AddScoped<IRenderChartCommandHandler, RenderChartCommandHandler>();
+        services.AddScoped<IGetDashboardChartQueryHandler, GetDashboardChartQueryHandler>();
+        services.AddScoped<IGetChartSupportDataQueryHandler, GetChartSupportDataQueryHandler>();
 
         // Generated objects
         services.AddScoped<IGenTableGenerator, GenTableGenerator>();

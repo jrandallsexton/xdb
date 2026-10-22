@@ -17,9 +17,11 @@ public sealed class FilterProcedures(XdbDataContext db) : LegacyGatewayBase(db),
         await using var reader = await (await OpenAsync(cancellationToken)).ExecuteReaderAsync(Procedure("spr_MemberView_Get", new { Id = memberViewId }, cancellationToken));
         if (!await reader.ReadAsync(cancellationToken))
             return null;
+        var memberId = reader.GetGuid(0);
+        var viewId = reader.GetGuid(1);
         var assetTypeId = reader.GetGuid(2);
         var isInstance = (bool)reader.GetValue(3);
-        _ = reader.GetString(4);
+        var name = reader.GetString(4);
         var expression = reader.GetString(5);
         var filters = new List<MemberFilterItemRow>();
         if (await reader.NextResultAsync(cancellationToken))
@@ -27,7 +29,7 @@ public sealed class FilterProcedures(XdbDataContext db) : LegacyGatewayBase(db),
             while (await reader.ReadAsync(cancellationToken))
                 filters.Add(new MemberFilterItemRow(reader.GetGuid(0), reader.GetInt32(1), reader.IsDBNull(2) ? string.Empty : reader.GetString(2), reader.GetInt32(3)));
         }
-        return new MemberFilterRow(assetTypeId, isInstance, expression, filters);
+        return new MemberFilterRow(assetTypeId, isInstance, expression, filters, memberId, viewId, name);
     }
 
     public async Task<IReadOnlyList<string>> GetPotentialValuesAsync(IReadOnlyList<Guid> assetIds, Guid propertyId, CancellationToken cancellationToken)
@@ -319,19 +321,6 @@ public sealed class FilterProcedures(XdbDataContext db) : LegacyGatewayBase(db),
         while (await reader.NextResultAsync(cancellationToken));
         return sets;
     }
-
-    private static readonly System.Globalization.CultureInfo EnUs = System.Globalization.CultureInfo.GetCultureInfo("en-US");
-
-    /// <summary>object.ToString() as .NET Framework wrote it under en-US (dates without ICU's narrow space, 15-digit doubles).</summary>
-    private static string LegacyText(object value) => value switch
-    {
-        string text => text,
-        DateTime date => date.ToString(ViewProcedures.EnUsGeneralPattern, EnUs),
-        double number => number.ToString("G15", EnUs),
-        float number => number.ToString("G7", EnUs),
-        Guid id => id.ToString("D"),
-        _ => Convert.ToString(value, EnUs) ?? string.Empty
-    };
 
     /// <summary>The ids one per line, the last closing the list: "'a',\r\n'b')". An empty list leaves "IN (" open (a syntax error).</summary>
     private static void InList(StringBuilder sb, IReadOnlyList<Guid> ids)

@@ -211,8 +211,8 @@ public static class LegacyJsonBody
                 }
                 if (filter.ValueKind != JsonValueKind.Object || new[] { "propertyId", "operatorId", "value", "order" }.Any(name => !filter.TryGetProperty(name, out _)))
                     throw new LegacyBodyException("Missing a required filter member.");
-                _ = Int(filter.GetProperty("order"));
-                filters.Add(new FilterInput(Text(filter.GetProperty("propertyId")), Int(filter.GetProperty("operatorId")), Text(filter.GetProperty("value"))));
+                filters.Add(new FilterInput(Text(filter.GetProperty("propertyId")), Int(filter.GetProperty("operatorId")), Text(filter.GetProperty("value")),
+                    Int(filter.GetProperty("order"))));
             }
         }
         else if (filtersElement.ValueKind != JsonValueKind.Null)
@@ -221,10 +221,8 @@ public static class LegacyJsonBody
         }
 
         // ChartCreationClient's optional members must still be readable when present.
-        if (r.TryGetProperty("maxRecords", out var maxRecords))
-            _ = Int(maxRecords);
-        if (r.TryGetProperty("isDirty", out var isDirty))
-            _ = Bool(isDirty);
+        var maxRecordsValue = r.TryGetProperty("maxRecords", out var maxRecords) ? Int(maxRecords) : 0;
+        var isDirtyValue = r.TryGetProperty("isDirty", out var isDirty) && Bool(isDirty);
 
         return new AssetSearchClient(
             r.TryGetProperty("id", out var id) ? Text(id) : null,
@@ -232,8 +230,60 @@ public static class LegacyJsonBody
             Int(r.GetProperty("assetRequestType")),
             Text(r.GetProperty("filterExpression")),
             r.TryGetProperty("propertyId", out var propertyId) ? Text(propertyId) : null,
-            filters);
+            filters,
+            Text(r.GetProperty("filterName")),
+            maxRecordsValue,
+            isDirtyValue);
+    }
+
+    /// <summary>A DashboardClient (bare): every member required at every depth; null for an empty or null body.</summary>
+    public static DashboardBody? Dashboard(JsonElement? root)
+    {
+        if (root is null)
+            return null;
+        var r = root.Value;
+        if (r.ValueKind != JsonValueKind.Object || new[] { "id", "caption", "index", "items", "memberId" }.Any(name => !r.TryGetProperty(name, out _)))
+            throw new LegacyBodyException("Missing a required member.");
+        List<DashboardItemBody>? items = null;
+        var itemsElement = r.GetProperty("items");
+        if (itemsElement.ValueKind == JsonValueKind.Array)
+            items = [.. itemsElement.EnumerateArray().Select(item => DashboardItem(item)!)];
+        else if (itemsElement.ValueKind != JsonValueKind.Null)
+            throw new LegacyBodyException("items is not an array.");
+        return new DashboardBody(Text(r.GetProperty("id")), Text(r.GetProperty("caption")), Int(r.GetProperty("index")), items, Text(r.GetProperty("memberId")));
+    }
+
+    /// <summary>A DashboardItemClient (bare or inside a dashboard): every member required; itemType read as a number.</summary>
+    public static DashboardItemBody? DashboardItem(JsonElement? element)
+    {
+        if (element is null || element.Value.ValueKind == JsonValueKind.Null)
+            return null;
+        var e = element.Value;
+        if (e.ValueKind != JsonValueKind.Object
+            || new[] { "id", "dashboardId", "index", "itemType", "chartId", "title", "subtitle" }.Any(name => !e.TryGetProperty(name, out _)))
+            throw new LegacyBodyException("Missing a required item member.");
+        return new DashboardItemBody(Text(e.GetProperty("id")), Text(e.GetProperty("dashboardId")), Int(e.GetProperty("index")), Int(e.GetProperty("itemType")),
+            Text(e.GetProperty("chartId")), Text(e.GetProperty("title")), Text(e.GetProperty("subtitle")));
+    }
+
+    /// <summary>
+    /// A top-level KeyValuePair&lt;string,string&gt; body: the serializer's adapter requires lowercase key and value. An
+    /// empty or null body is the default pair (both null).
+    /// </summary>
+    public static (string? Key, string? Value) KeyValue(JsonElement? root)
+    {
+        if (root is null)
+            return (null, null);
+        var r = root.Value;
+        if (r.ValueKind != JsonValueKind.Object || !r.TryGetProperty("key", out var key) || !r.TryGetProperty("value", out var value))
+            throw new LegacyBodyException("Missing a required member.");
+        return (Text(key), Text(value));
     }
 }
 
-public sealed record AssetSearchClient(string? Id, string? AssetTypeId, int AssetRequestType, string? FilterExpression, string? PropertyId, List<FilterInput>? Filters);
+public sealed record AssetSearchClient(string? Id, string? AssetTypeId, int AssetRequestType, string? FilterExpression, string? PropertyId, List<FilterInput>? Filters,
+    string? FilterName = null, int MaxRecords = 0, bool IsDirty = false);
+
+public sealed record DashboardBody(string? Id, string? Caption, int Index, List<DashboardItemBody>? Items, string? MemberId);
+
+public sealed record DashboardItemBody(string? Id, string? DashboardId, int Index, int ItemType, string? ChartId, string? Title, string? Subtitle);

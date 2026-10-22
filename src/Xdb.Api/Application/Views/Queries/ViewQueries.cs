@@ -153,7 +153,8 @@ public sealed class GetViewFilterDisplayQueryHandler(IViewProcedures views) : IG
 }
 
 /// <summary>The filters of an asset search client, as the UI posts them.</summary>
-public sealed record SearchFilter(Guid PropertyId, int OperatorId, string Value);
+/// <param name="Operator">The operator text shown: always "=" for views; the filter's own SQL operator for charts.</param>
+public sealed record SearchFilter(Guid PropertyId, int OperatorId, string? Value, string Operator = "=");
 
 public sealed record GetSearchFilterDisplayQuery(string? FilterExpression, IReadOnlyList<SearchFilter> Filters);
 
@@ -163,8 +164,8 @@ public interface IGetSearchFilterDisplayQueryHandler
 }
 
 /// <summary>
-/// SqlDatabaseLayer.FilterString over posted filters: each rendered as "{property} = {value}" (the operator text is
-/// always "=" here), values decoded by the property's type, formatted into the filter expression.
+/// SqlDatabaseLayer.FilterString over posted filters: each rendered as "{property} {operator} {value}" (the operator
+/// text is always "=" for views), values decoded by the property's type, formatted into the filter expression.
 /// </summary>
 public sealed class GetSearchFilterDisplayQueryHandler(IMetadataProcedures metadata, IReportProcedures reports) : IGetSearchFilterDisplayQueryHandler
 {
@@ -190,20 +191,20 @@ public sealed class GetSearchFilterDisplayQueryHandler(IMetadataProcedures metad
                         value = datePartText;
                     break;
                 case (int)LegacyDataType.Asset:
-                    value = await reports.GetAssetNameAsync(new Guid(filter.Value), cancellationToken);
+                    value = await reports.GetAssetNameAsync(new Guid(filter.Value!), cancellationToken);
                     break;
                 case (int)LegacyDataType.PickList:
-                    var pickListValue = await reports.GetPickListValueAsync(new Guid(filter.Value), cancellationToken)
+                    var pickListValue = await reports.GetPickListValueAsync(new Guid(filter.Value!), cancellationToken)
                         ?? throw new NullReferenceException("Pick list value not found.");
                     value = string.IsNullOrEmpty(pickListValue.DisplayValue) ? pickListValue.Value : pickListValue.DisplayValue;
                     break;
                 case (int)LegacyDataType.User:
-                    value = await MemberDisplayValueAsync(new Guid(filter.Value), cancellationToken);
+                    value = await MemberDisplayValueAsync(new Guid(filter.Value!), cancellationToken);
                     break;
             }
             if (filter.Value == EmptyGuid)
                 value = "null";
-            items.Add($"{name} = {value}");
+            items.Add($"{name} {filter.Operator} {value}");
         }
         return new Success<string>(string.Format(CultureInfo.InvariantCulture, query.FilterExpression!, [.. items]));
     }

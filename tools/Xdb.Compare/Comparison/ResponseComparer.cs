@@ -79,9 +79,26 @@ public static class ResponseComparer
         }
     }
 
+    /// <summary>A path as the rules see it: the "(sorted)" markers of unordered arrays removed.</summary>
+    private static string Unsorted(string path) => path.Replace("(sorted)", string.Empty, StringComparison.Ordinal);
+
+    /// <summary>The element's JSON with every value at an ignored path replaced by null (used to order unordered arrays).</summary>
+    private static string Canonical(string path, JsonElement element, IgnoreRules ignore)
+    {
+        if (ignore.Matches(path))
+            return "null";
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => "{" + string.Join(",", element.EnumerateObject()
+                .Select(p => JsonSerializer.Serialize(p.Name) + ":" + Canonical($"{path}.{p.Name}", p.Value, ignore))) + "}",
+            JsonValueKind.Array => "[" + string.Join(",", element.EnumerateArray().Select(i => Canonical($"{path}[0]", i, ignore))) + "]",
+            _ => element.GetRawText()
+        };
+    }
+
     private static void CompareElements(string path, JsonElement legacy, JsonElement port, ComparisonOptions options, List<Difference> differences)
     {
-        var ignored = options.Ignore.Matches(path);
+        var ignored = options.Ignore.Matches(Unsorted(path));
 
         if (legacy.ValueKind != port.ValueKind)
         {
@@ -113,14 +130,16 @@ public static class ResponseComparer
         var legacyItems = legacy.EnumerateArray().ToList();
         var portItems = port.EnumerateArray().ToList();
 
-        if (options.Unordered.Matches(path))
+        if (options.Unordered.Matches(Unsorted(path)))
         {
+            // Items are matched on their text with ignored members blanked, so random ids do not decide the order.
+            string Key(JsonElement item) => Canonical($"{Unsorted(path)}[0]", item, options.Ignore);
             var legacyTexts = legacyItems.Select(i => i.GetRawText()).ToList();
             var portTexts = portItems.Select(i => i.GetRawText()).ToList();
             if (!legacyTexts.SequenceEqual(portTexts, StringComparer.Ordinal))
             {
-                var sortedLegacy = legacyItems.OrderBy(i => i.GetRawText(), StringComparer.Ordinal).ToList();
-                var sortedPort = portItems.OrderBy(i => i.GetRawText(), StringComparer.Ordinal).ToList();
+                var sortedLegacy = legacyItems.OrderBy(Key, StringComparer.Ordinal).ToList();
+                var sortedPort = portItems.OrderBy(Key, StringComparer.Ordinal).ToList();
                 if (sortedLegacy.Select(i => i.GetRawText()).SequenceEqual(sortedPort.Select(i => i.GetRawText()), StringComparer.Ordinal))
                 {
                     differences.Add(new Difference(path, DifferenceKind.ArrayOrder, null, null, Ignored: true));
@@ -144,9 +163,9 @@ public static class ResponseComparer
         var portNames = port.EnumerateObject().Select(p => p.Name).ToList();
 
         foreach (var missing in legacyNames.Except(portNames, StringComparer.Ordinal))
-            differences.Add(new Difference($"{path}.{missing}", DifferenceKind.MissingProperty, missing, null, options.Ignore.Matches($"{path}.{missing}")));
+            differences.Add(new Difference($"{path}.{missing}", DifferenceKind.MissingProperty, missing, null, options.Ignore.Matches(Unsorted($"{path}.{missing}"))));
         foreach (var extra in portNames.Except(legacyNames, StringComparer.Ordinal))
-            differences.Add(new Difference($"{path}.{extra}", DifferenceKind.ExtraProperty, null, extra, options.Ignore.Matches($"{path}.{extra}")));
+            differences.Add(new Difference($"{path}.{extra}", DifferenceKind.ExtraProperty, null, extra, options.Ignore.Matches(Unsorted($"{path}.{extra}"))));
 
         var common = legacyNames.Intersect(portNames, StringComparer.Ordinal).ToList();
         var portOrder = portNames.Where(n => common.Contains(n, StringComparer.Ordinal)).ToList();

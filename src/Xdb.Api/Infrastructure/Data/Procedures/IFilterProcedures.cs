@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 namespace Xdb.Api.Infrastructure.Data.Procedures;
 
 /// <summary>A saved quick filter (spr_MemberView_Get): its view's asset type and kind, expression and filters.</summary>
-public sealed record MemberFilterRow(Guid AssetTypeId, bool IsInstance, string FilterExpression, IReadOnlyList<MemberFilterItemRow> Filters);
+public sealed record MemberFilterRow(Guid AssetTypeId, bool IsInstance, string FilterExpression, IReadOnlyList<MemberFilterItemRow> Filters,
+    Guid MemberId = default, Guid ViewId = default, string Name = "");
 
 public sealed record MemberFilterItemRow(Guid PropertyId, int OperatorId, string Value, int Order);
 

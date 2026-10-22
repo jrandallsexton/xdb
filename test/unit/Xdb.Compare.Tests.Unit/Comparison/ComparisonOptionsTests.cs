@@ -36,6 +36,17 @@ public class ComparisonOptionsTests
     }
 
     [Fact]
+    public void UnorderedArray_IgnoresIgnoredMembersWhenMatchingItems()
+    {
+        var options = ComparisonOptions.Strict with { Unordered = new IgnoreRules(["$.rows"]), Ignore = new IgnoreRules(["$.rows[*].id"]) };
+
+        var result = Compare("""{"rows":[{"id":"x1","a":1},{"id":"x2","a":2}]}""", """{"rows":[{"id":"y9","a":2},{"id":"y8","a":1}]}""", options);
+
+        result.Grade.Should().Be(ComparisonGrade.Equivalent);
+        result.Differences.Should().OnlyContain(d => d.Ignored);
+    }
+
+    [Fact]
     public void OrderedArrays_StayStrict()
     {
         Compare("[1,2]", "[2,1]", ComparisonOptions.Strict).Grade.Should().Be(ComparisonGrade.Different);

@@ -13,7 +13,7 @@ using Xdb.Core.Common;
 namespace Xdb.Api.Application.Assets.Queries;
 
 /// <summary>A filter as the client sent it (FilterClient), before the original's conversion.</summary>
-public sealed record FilterInput(string? PropertyId, int OperatorId, string? Value);
+public sealed record FilterInput(string? PropertyId, int OperatorId, string? Value, int Order = 0);
 
 /// <summary>
 /// AssetLayer.Assets_GetMatchingByAssetTypeId: the gen-table assets of the type and kind (any request type but

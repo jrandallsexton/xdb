@@ -25,6 +25,8 @@ public interface IMetadataProcedures
     Task<IReadOnlyList<Guid>> GetDirectChildAssetTypeIdsAsync(Guid parentAssetTypeId, CancellationToken cancellationToken);
     /// <summary>spr_AssetType_GetAllDescendants: live descendants, by name.</summary>
     Task<IReadOnlyList<Guid>> GetDescendantAssetTypeIdsAsync(Guid assetTypeId, CancellationToken cancellationToken);
+    /// <summary>The type's plural instance or definition label (live types only), trimmed; "" when absent.</summary>
+    Task<string> GetReportingLabelPluralAsync(Guid assetTypeId, bool forInstances, CancellationToken cancellationToken);
     Task<string> GetReportingLabelAsync(Guid assetTypeId, bool forInstances, CancellationToken cancellationToken);
     /// <summary>spr_AssetType_Get: null for a missing or deleted type.</summary>
     Task<AssetTypeRow?> GetAssetTypeAsync(Guid assetTypeId, CancellationToken cancellationToken);
@@ -50,6 +52,8 @@ public interface IMetadataProcedures
     Task<bool> IsAdminAsync(Guid memberId, Guid adminRoleId, CancellationToken cancellationToken);
     Task<bool> IsLiveAssetIdAsync(Guid assetId, CancellationToken cancellationToken);
     Task<bool> IsLiveMemberIdAsync(Guid memberId, CancellationToken cancellationToken);
+    /// <summary>MemberLayer.GetMemberId: the member with that user id (account name), or the empty Guid.</summary>
+    Task<Guid> GetMemberIdByUserIdAsync(string userId, CancellationToken cancellationToken);
     /// <summary>spr_Members_GetDictionary: live members' asset display values.</summary>
     Task<IReadOnlyList<KeyValuePair<Guid, string>>> GetMembersDictionaryAsync(CancellationToken cancellationToken);
 

@@ -171,7 +171,7 @@ The EF Core migration generator splits `migrationBuilder.Sql` on `GO` lines, whi
 - **Captures stay private.** They contain real data. The harness reads them from a configured path outside the repo, and the repo contains only harness code and synthetic fixtures.
 - **Coverage today: 40 of 299 operations (13%), from six captures.** Nothing covers files, search, picklist or view administration, or users. Before each area is ported, the author records a capture that exercises it.
 - **Known deviations are written down, not hidden.** Each is an allowed-diff rule plus a line in a deviations list. Candidates:
-  - fixing the shipped `Role_SaveViewRelations` null-body 500;
+  - fixing the shipped `Role_SaveViewRelations` null-body 500 (declined 2026-10-22: kept byte-identical);
   - UTF-8 instead of ASCII-with-`?` in hand-built JSON;
   - fixing the duplicate malformed maps script tag (a UI-side issue).
 
@@ -288,6 +288,45 @@ Operations the UI never references (two asset getters) are not ported.
 - The chart filter panel (`AssetFilterClient_Get`) is not deterministic in the original itself: two identical calls to it return different value lists. In 3 of 177 calls the port's lists differ from the original's by one item.
 - The last 12 relation-graph calls (about 10 minutes each) are left for an unattended run.
 
+### M5 result (2026-10-22)
+
+**Scope:** the report builder and administration, charts, dashboards and maps, and role administration: 51 operations the UI references (reports 20, charts 16, roles 15). Each area was specified from the deployed release, its write behaviour was settled by probes on a reverted snapshot of the original, and a synthetic capture was replayed. After each replay, the tables written and the generated views were compared between the two databases.
+
+**Code:** `Application/Charts`, `Application/Roles`, and `Application/Reports` (a separate builder controller beside M2's viewer), each with gateways in `Infrastructure/Data/Procedures`.
+- **Charts:** `ChartSql` gains the grouping-count and detail queries that the original stored with each chart. Six operations were stubs in the deployed release and stay stubs, with identical bytes.
+- **Roles:** `Role_Save` builds the original's inline batch in a pure, unit-tested `RoleSaveBatch`, including its bugs. A removed report writes `GetDate` without parentheses, which rejects the whole batch. An existing changed asset type fails while the batch is being built. Row-security views are rebuilt from the posted role, as the original did.
+- **Reports:**
+  - `ReportLoader` (the original's report load, including its reporting-label overwrite);
+  - `ReportFilterString`;
+  - `ReportSaver`: writes in the original order without a transaction, then reloads and rebuilds the view. If the view create fails, it kills a report posted as new.
+- **Request bodies** are read as the original's serializer read them:
+  - every member is required at every depth;
+  - typed values are strict;
+  - dates follow its offset rule;
+  - relation lists keep the first item per id and derive `IsDirty` from posted member order.
+
+**Wire facts established (now in `LegacyWire`):**
+- A caught logical failure writes an `Errors` row and answers 500 with Content-Type exactly `application/json`, an `ErrorId` header and the body `false`.
+- The caller identity of the original (the account its requests ran as) is configured and resolved per call.
+
+**Verification:**
+- **Charts:** 533 calls, 0 different. The chart, filter and member tables were identical afterwards, including every stored query text.
+- **Roles:** 870 calls. All differences came from a harness bug (fixed below); the recheck was clean.
+- **Reports:** 1,501 calls. The only differences were the export (deferred, below) and one cache read after the exports that counts their log rows.
+  - The report, property, filter, bookmark, role-link and error tables were identical afterwards.
+  - Of the views both databases have, 11 of 157 differ only in the order of filters that share an `[Order]` value. Every save gives filters new random ids, so the order among ties is random on both hosts.
+
+**Harness changes:**
+- Unordered arrays are matched with ignored members blanked, and ignore rules apply inside sorted arrays.
+- The replayer timeout is configurable.
+
+**Known differences and deviations:**
+- `Chart_GetViaFiltering` saves the chart before loading its data. The original saved it on a background thread, where one failure could stop the worker process. The port logs that failure instead; the rows left behind and the response are the same.
+- The admin roles page posts `null` to `Role_SaveViewRelations` on every save, and the original answers 500 even though the role was saved. The port keeps that 500 (author decision; the scope's "fix" candidate is not taken).
+- `Report_Export` is moved to M8 with the other spreadsheet work (author decision): its file cannot be byte-identical (embedded timestamps and measured column widths), and its bulk-template half already belongs to the uploader.
+- `MigrateReport` (other environments' databases) is a stub. The configured own instance re-saves the report, as the original did. Any other target faults without writing.
+- Environment strings that the original hard-coded (a chart subtitle and two type names quoted in error pages) come from configuration.
+
 ## 6. Milestones and sizing
 
 Sizes are in **focused sessions**: a few hours of Claude implementing with the author reviewing. They are rough, and the L areas carry the most uncertainty.
@@ -302,7 +341,7 @@ Sizes are in **focused sessions**: a few hours of Claude implementing with the a
 | M5 | Reports, charts, roles | Report builder save (view DDL), charts, role save (row-security views) match their captures | 9-11 |
 | M6 | Asset writes | Submittal/approval save path, read-table refresh, narrative; the asset edit capture matches | 4-6 |
 | M7 | Members, submittals and history, search | Including RSS and the parallel user fan-out | 5-7 |
-| M8 | Files, images, bulk upload | Multipart parser, 202-then-poll, image streams, xlsx | 4-6 |
+| M8 | Files, images, bulk upload | Multipart parser, 202-then-poll, image streams, xlsx (incl. `Report_Export`, moved from M5) | 4-6 |
 | M9 | Admin and stubs; cut-over | Stubs in place; the original UI runs entirely on the port; the original service retired from the local setup | 2-3 |
 | | **Total** | | **~38-52** |
 

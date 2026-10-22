@@ -136,6 +136,21 @@ public sealed class LegacyEnvironmentOptions
     public Guid RGraphMemberId { get; set; }
 
     /// <summary>
+    /// The account name the original resolved its caller to (anonymous requests ran as the application pool's
+    /// account), mapped to a member by Members.UserId. Environment data; set it locally, never commit it.
+    /// </summary>
+    public string CurrentUserName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The original's own application instance number (its applicationInstance setting; DEV = "1"), the only
+    /// MigrateReport target that reached a database the port can see.
+    /// </summary>
+    public string ApplicationInstance { get; set; } = "1";
+
+    /// <summary>The chart subtitle the original hard-coded on new charts ("Source: " and the product name). Set it locally.</summary>
+    public string ChartSubtitle { get; set; } = string.Empty;
+
+    /// <summary>
     /// The original's full type name of its asset request type enum, which its serializer quoted when a wrapped body's
     /// requestType could not be read. Environment data; set it locally, never commit it.
     /// </summary>
