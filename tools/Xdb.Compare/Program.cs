@@ -58,7 +58,10 @@ public static class Program
         var showValues = options.Flag("show-values");
         var delay = TimeSpan.FromMilliseconds(int.Parse(options.All("delay-ms").LastOrDefault() ?? "0", System.Globalization.CultureInfo.InvariantCulture));
 
-        using var replayer = new Replayer();
+        var timeoutMinutes = options.All("timeout-min").LastOrDefault();
+        using var replayer = new Replayer(timeoutMinutes is null
+            ? null
+            : TimeSpan.FromMinutes(int.Parse(timeoutMinutes, System.Globalization.CultureInfo.InvariantCulture)));
         var grades = new Dictionary<ComparisonGrade, int>();
         foreach (var call in calls)
         {
@@ -102,7 +105,7 @@ public static class Program
     private static int Usage()
     {
         Console.Error.WriteLine("usage:");
-        Console.Error.WriteLine("  replay --config file.json --har capture.har [--op Name]... [--recorded] [--show-values] [--delay-ms N]");
+        Console.Error.WriteLine("  replay --config file.json --har capture.har [--op Name]... [--recorded] [--show-values] [--delay-ms N] [--timeout-min N]");
         Console.Error.WriteLine("  snapshot create|revert|drop --config file.json");
         return 2;
     }

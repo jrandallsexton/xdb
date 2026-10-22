@@ -38,7 +38,7 @@ public static class HarReader
                 request.GetProperty("method").GetString() ?? "GET",
                 relative,
                 request.TryGetProperty("postData", out var post) && post.TryGetProperty("text", out var text) ? text.GetString() : null,
-                Header(request, "Content-Type"),
+                Header(request, "Content-Type") ?? PostMimeType(request),
                 response.GetProperty("status").GetInt32(),
                 Header(response, "Content-Type"),
                 content.ValueKind == JsonValueKind.Object ? Body(content) : null));
@@ -52,6 +52,13 @@ public static class HarReader
                 .Where(h => string.Equals(h.GetProperty("name").GetString(), name, StringComparison.OrdinalIgnoreCase))
                 .Select(h => h.GetProperty("value").GetString())
                 .FirstOrDefault()
+            : null;
+
+    /// <summary>A request body's type as HAR records it (postData.mimeType), for captures without request headers.</summary>
+    private static string? PostMimeType(JsonElement request) =>
+        request.TryGetProperty("postData", out var post) && post.TryGetProperty("mimeType", out var mime) && mime.ValueKind == JsonValueKind.String
+            && !string.IsNullOrEmpty(mime.GetString())
+            ? mime.GetString()
             : null;
 
     private static string? Body(JsonElement content)

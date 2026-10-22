@@ -12,7 +12,7 @@ using Xdb.Compare.Har;
 namespace Xdb.Compare;
 
 /// <summary>Sends a recorded call to a service base URL and captures the response as it arrived on the wire.</summary>
-public sealed class Replayer : IDisposable
+public sealed class Replayer(TimeSpan? timeout = null) : IDisposable
 {
     private readonly HttpClient _http = new(new HttpClientHandler
     {
@@ -21,7 +21,8 @@ public sealed class Replayer : IDisposable
         UseCookies = false
     })
     {
-        Timeout = TimeSpan.FromMinutes(5)
+        // Some operations (RGraph on a well-connected asset) take ~10 minutes on both hosts.
+        Timeout = timeout ?? TimeSpan.FromMinutes(5)
     };
 
     public async Task<CapturedResponse> SendAsync(string baseUrl, RecordedCall call, CancellationToken cancellationToken)

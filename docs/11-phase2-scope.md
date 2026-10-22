@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 done (2026-10-22); M4 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 and M4 done (2026-10-22); M5 next.** Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
@@ -247,6 +247,46 @@ The EF Core migration generator splits `migrationBuilder.Sql` on `GO` lines, whi
 - Duplicate display names in a property set (the system Created/Created By/Last Modified/Last Modified By pairs on instance tables): the original's choice was undefined; the port prefers the current system properties over the legacy duplicates, which is what most existing tables show.
 - Column order uses .NET's en-US culture comparison (ICU). The original ran on Windows NLS, whose "word sort" almost ignores hyphens and apostrophes; the two agree on every display name in the working database.
 - Report filters that share an order position: the original's order was undefined and the port keeps that (the same procedure); in the working database the port's order matched the original in all five such views.
+
+### M4 result (DONE 2026-10-22)
+
+**Scope:** every read operation the original UI calls, in three batches, each proved by a synthetic capture (every call template filled from the working database, including deliberate error cases) replayed against the running original:
+- A, metadata (asset types, properties, picklists, lookups): 42 operations;
+- B, views, property groups, processes, help and roles: 31 operations;
+- C, assets (the asset editor, values and history, type-level dictionaries, the filter engine, related items, the relation graph, hits, view asset lists, the chart filter panel): 42 operations, including one deferred from A.
+
+Operations the UI never references (two asset getters) are not ported.
+
+**Code:** `Application/Metadata`, `Application/Views` and `Application/Assets`, each with a wire controller, CQRS handlers and a gateway in `Infrastructure/Data/Procedures` that runs the original's SQL text and reproduces its data-layer helpers.
+- The filter engine reuses M3's `ViewSql`. The chart filter panel's SQL (the "SELECT ... INTO" temp-table form) is transcribed separately in `ChartSql`.
+- The client caches (`ViewClients`, `AssetClients`) read the original's BinaryFormatter rows through `System.Formats.Nrbf` and store new rows as the response JSON. Consequence: the original service cannot share a database the port has written to.
+
+**Wire facts established by replay and probe** (now part of `LegacyWire` and the binding filter):
+- The data-contract serializer on .NET Framework writes control characters as `\u000d`-style escapes; .NET 10 writes `\r`. The port rewrites them.
+- An empty query value binds as `""`; only an absent one is null.
+- A typed operation returning null answers 200 with an empty body and no Content-Type.
+- Request bodies:
+  - A POST body without a Content-Type never reaches the operation; the answer is the 1047-byte Request Error page.
+  - A body the host's JSON reader rejects at its first token answers 400 with no body; any later syntax error answers the Request Error page; a literal `null` reaches the operation.
+  - A wrapped body member that cannot be converted answers 400 with the formatter's message, which names the parameter and the serializer's own error text.
+- A runtime SQL error that the server raises after the column metadata (for example a plan-dependent uniqueidentifier conversion) leaves `HasRows` false. The original's guarded readers then return nothing instead of failing. Microsoft.Data.SqlClient behaves the same, so the port guards the same readers.
+
+**Verification (synthetic captures, port against the original, snapshots reverted before each run, 200 ms between calls):**
+- A: 7,833 calls. Every difference found was fixed; the final recheck of the affected operations had 0 different.
+- B: 4,972 calls. Two operations differed (the missing Content-Type and the guarded reader); both were fixed, and the recheck was 995 of 995 identical.
+- C: 13,247 calls. The full re-run covered the first 12,111 calls (including 49 of the 61 relation-graph calls), with 5 differences, all since fixed or explained (below). The remaining operations, and those fixed during that run, were replayed separately: 1,130 calls, all identical or equivalent apart from the known cases below. A last fix (an id that is neither a view nor a report fails, as M2 found) was rechecked: 205 of 205 identical.
+
+**Harness changes:**
+- When a capture has no request Content-Type header, the replayer uses the HAR `postData.mimeType`.
+- `--timeout-min` raises the HTTP timeout. The relation graph of a well-connected asset takes about 10 minutes on both hosts: the original's algorithm runs 1+n+n·m related-item queries.
+
+**Known differences (accepted):**
+- Tie order: lists ordered only by a name, label or count return equal rows in engine order, which differs between two databases. These are compared as unordered.
+  - One text/html dictionary is not valid JSON, because the original writes backslashes and control characters raw and the port keeps that. The harness cannot compare it as unordered, so it was checked by hand: same 49,330 entries in a different order.
+- Synthesized system values (Asset Name, Asset Type) get a new random id on every call in the original. Property-value ids are therefore not compared for the asset editor and its view values.
+- A view with saved filters would take a separate matching path in the view asset lists. No view has filters in the data, so the port fails on that branch instead of porting it (recorded deviation).
+- The chart filter panel (`AssetFilterClient_Get`) is not deterministic in the original itself: two identical calls to it return different value lists. In 3 of 177 calls the port's lists differ from the original's by one item.
+- The last 12 relation-graph calls (about 10 minutes each) are left for an unattended run.
 
 ## 6. Milestones and sizing
 

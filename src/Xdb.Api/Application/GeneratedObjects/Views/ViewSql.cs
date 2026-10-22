@@ -39,7 +39,9 @@ public sealed record ViewInput(
     string? FilterLogic,
     IReadOnlyDictionary<Guid, PropertyMetaRow> Properties,
     IReadOnlyDictionary<Guid, PropertyRelationRow> Relations,
-    IReadOnlyDictionary<(Guid AssetTypeId, Guid PropertyId), PropertyRelationRow> RelationLookup)
+    IReadOnlyDictionary<(Guid AssetTypeId, Guid PropertyId), PropertyRelationRow> RelationLookup,
+    bool ForSingleProp = false,
+    bool IncludeOrderBy = false)
 {
     /// <summary>The ids the original loaded properties and bulk relations for: filters first, then plain columns and their sub-properties.</summary>
     public static IReadOnlyList<Guid> ReferencedPropertyIds(IReadOnlyList<ViewColumn> columns, IReadOnlyList<ViewFilter> filters)
@@ -91,10 +93,11 @@ public static class ViewSql
         var where = new StringBuilder();
         var joined = new List<string>();
 
-        Line(select, "SELECT");
+        Line(select, input.ForSingleProp ? "SELECT DISTINCT" : "SELECT");
         Line(from, $"FROM [dbo].[{table}] AS [A]");
         Line(from, $"INNER JOIN [dbo].[{rawTable}] AS [B] ON [B].[AssetId] = [A].[AssetId]");
-        Line(select, "\t[A].[AssetId] AS [AssetId]");
+        if (!input.ForSingleProp)
+            Line(select, "\t[A].[AssetId] AS [AssetId]");
 
         void Join(string tableName, string sql)
         {
@@ -107,7 +110,7 @@ public static class ViewSql
         var index = 0;
         foreach (var column in input.Columns)
         {
-            if (index == 0)
+            if (!input.ForSingleProp && index == 0)
             {
                 Line(select, $",\t[A].[Name] AS [{label}]");
                 index++;
@@ -152,7 +155,20 @@ public static class ViewSql
                     {
                         Join(otherRawTable, $"INNER JOIN [dbo].[{otherRawTable}] ON [{otherRawTable}].[AssetId] = [B].[{instanceOf}]");
                         Join(otherTable, $"INNER JOIN [dbo].[{otherTable}] ON [{otherTable}].[AssetId] = [{otherRawTable}].[AssetId]");
-                        Line(select, $"\t,[{otherTable}].[{column.PropertyName}] AS [{column.PropertyName}]");
+                        if (input.ForSingleProp)
+                        {
+                            Line(select, $"\t[{otherRawTable}].[{column.PropertyId:D}] AS [Key]");
+                            Line(select, $"\t,[{otherTable}].[{column.PropertyName}] AS [Value]");
+                        }
+                        else
+                        {
+                            Line(select, $"\t,[{otherTable}].[{column.PropertyName}] AS [{column.PropertyName}]");
+                        }
+                    }
+                    else if (input.ForSingleProp)
+                    {
+                        Line(select, $"\t[B].[{column.PropertyId:D}] AS [Key]");
+                        Line(select, $"\t,[A].[{column.PropertyName}] AS [Value]");
                     }
                     else
                     {
@@ -291,6 +307,10 @@ public static class ViewSql
         sql.Append(select).Append(from);
         if (input.Filters.Count > 0)
             sql.Append(where);
+        if (input.ForSingleProp)
+            Line(sql, "ORDER BY [Value]");
+        else if (input.IncludeOrderBy)
+            Line(sql, $"ORDER BY [{label}]");
         return sql.ToString();
     }
 

@@ -72,4 +72,28 @@ public class HarReaderTests
         call.RecordedStatus.Should().Be(500);
         call.RecordedBody.Should().Be("false");
     }
+
+    [Fact]
+    public void UsesThePostDataMimeType_WhenTheRequestHasNoContentTypeHeader()
+    {
+        const string har = """
+            {
+              "log": {
+                "entries": [
+                  {
+                    "request": {
+                      "method": "POST",
+                      "url": "http://localhost/svc/Service.svc/Assets_GetMatching",
+                      "headers": [],
+                      "postData": { "mimeType": "application/json", "text": "{}" }
+                    },
+                    "response": { "status": 200, "headers": [], "content": { "text": "[]" } }
+                  }
+                ]
+              }
+            }
+            """;
+
+        HarReader.Parse(har)[0].RequestContentType.Should().Be("application/json");
+    }
 }
