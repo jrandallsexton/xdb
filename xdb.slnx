@@ -8,6 +8,11 @@
     <Project Path="test/integration/Xdb.Api.Tests.Integration/Xdb.Api.Tests.Integration.csproj" />
   </Folder>
   <Folder Name="/test/unit/">
+    <Project Path="test/unit/Xdb.Api.Tests.Unit/Xdb.Api.Tests.Unit.csproj" />
+    <Project Path="test/unit/Xdb.Compare.Tests.Unit/Xdb.Compare.Tests.Unit.csproj" />
     <Project Path="test/unit/Xdb.Core.Tests.Unit/Xdb.Core.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Xdb.Compare/Xdb.Compare.csproj" />
   </Folder>
 </Solution>

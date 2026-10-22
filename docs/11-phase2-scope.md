@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0 and M1 done (2026-10-21); M2 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 next.** Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
@@ -174,6 +174,43 @@ The EF Core migration generator splits `migrationBuilder.Sql` on `GO` lines, whi
   - fixing the shipped `Role_SaveViewRelations` null-body 500;
   - UTF-8 instead of ASCII-with-`?` in hand-built JSON;
   - fixing the duplicate malformed maps script tag (a UI-side issue).
+
+### M2 result (DONE 2026-10-21)
+
+**Legacy wire layer** (`src/Xdb.Core/LegacyWire`):
+- `LegacyWireControllerBase` is deliberately not `[ApiController]`: missing query values bind to defaults and there is no automatic 400.
+- `LegacyFaultFilter` turns any exception into the host's generic 500 `{"Detail":...}`, and logs it, which the original did not.
+- `LegacyWire.JsonStream` (hand-built JSON: ASCII bytes, `application/json` without charset), `LegacyWire.Typed` (.NET 10's `DataContractJsonSerializer`, verified to match the original's dates, `\/` escaping, member order and dictionaries), `NullStream`, and `Result<T>.ToLegacyResult`.
+- Neutral base route `legacy/Service.svc`.
+
+**First slice** (`src/Xdb.Api/Application/Reports`): `ReportClient_Get`, `Report_GetData`, `Report_GetExecutionStats`.
+- Clean query handlers returning `Result<T>`.
+- A Dapper gateway (`Infrastructure/Data/Procedures`) holds every stored-procedure call and inline SQL.
+- An in-process background queue replaces the original's thread-pool work (the report-log close).
+- Wire formatting stays in the slice's `Legacy/` folder: Json.NET for the one operation the original serialized with it, and a literal transcription of the original's jqGrid string builder, so its quirks (spacing, string numbers, invalid JSON for zero rows, sequential placeholder replacement) reproduce by construction.
+- Unit tests cover those quirks and the handlers' rules.
+
+**Comparison harness** (`tools/Xdb.Compare`):
+- `replay` sends each recorded call to the original and the port, grading Identical (bytes), Equivalent (only configured differences) or Different, with values hidden unless asked.
+- `snapshot create|revert|drop` resets both databases to identical data.
+- Configuration (addresses, databases, captures) lives outside the repo, with three kinds of allowed difference:
+  - path ignores;
+  - regex masks (e.g. the elapsed time inside the execution-stats message);
+  - unordered arrays, for results whose order the original itself does not keep stable from run to run (checked by comparing the original with itself).
+
+**Results:**
+- The reports capture: 6 of 9 calls byte-identical; 3 equivalent (elapsed time masked).
+- A synthetic capture calling all three operations for **every report in the database** (170 reports, deleted ones and error paths included): 510 calls, **0 different**, 350 byte-identical and 160 equivalent (149 masked elapsed times, 11 row-order-only on large reports without a deterministic sort).
+- That run found two real bugs, both now fixed and covered by tests:
+  - a report with no properties must skip the property lookup;
+  - a stored-procedure report takes its headers from the procedure's columns.
+
+**Found and fixed along the way:** the pre-baseline cleanup had dropped three report procedures (and three functions they call) that stored report definitions name *as data*. Migration `RestoreQuestionReports` restores them verbatim, and is idempotent. A sweep of every metadata string column for the other dropped names found no further data references.
+
+**Known differences (accepted):**
+- Response framing (`Content-Length` instead of chunked) and the original host's informational headers.
+- Exceptions are logged.
+- An unparseable typed query parameter returns the generic fault. The original's exact response in that case was never captured.
 
 ## 6. Milestones and sizing
 

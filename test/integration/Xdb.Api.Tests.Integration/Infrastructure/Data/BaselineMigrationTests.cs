@@ -63,7 +63,7 @@ public class BaselineMigrationTests(MigratedDatabaseFixture fixture) : IClassFix
     private readonly string _connectionString = fixture.ConnectionString;
 
     [Fact]
-    public async Task Baseline_CreatesTheStaticSchema()
+    public async Task Migrations_CreateTheStaticSchema()
     {
         var counts = await QueryAsync("""
             SELECT type, COUNT(*) FROM sys.objects
@@ -74,8 +74,8 @@ public class BaselineMigrationTests(MigratedDatabaseFixture fixture) : IClassFix
         counts.Should().BeEquivalentTo(new Dictionary<string, int>
         {
             ["U "] = 102,
-            ["P "] = 306,
-            ["FN"] = 32,
+            ["P "] = 309,
+            ["FN"] = 35,
             ["TF"] = 3
         });
     }
@@ -91,7 +91,7 @@ public class BaselineMigrationTests(MigratedDatabaseFixture fixture) : IClassFix
             """);
 
         settings["compat"].Should().Be(DatabaseRegistration.CompatibilityLevel);
-        settings["ansi_nulls_off"].Should().Be(301);
+        settings["ansi_nulls_off"].Should().Be(304);
         settings["heaps"].Should().Be(4);
 
         var collation = await ScalarAsync<string>("SELECT CAST(DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS nvarchar(128))");
@@ -125,7 +125,7 @@ public class BaselineMigrationTests(MigratedDatabaseFixture fixture) : IClassFix
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
         (await db.Database.GetPendingMigrationsAsync()).Should().BeEmpty();
-        (await db.Database.GetAppliedMigrationsAsync()).Should().ContainSingle();
+        (await db.Database.GetAppliedMigrationsAsync()).Should().Equal(db.Database.GetMigrations());
     }
 
     private async Task<Dictionary<string, int>> QueryAsync(string sql)
