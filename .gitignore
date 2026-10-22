@@ -23,8 +23,8 @@ Thumbs.db
 .DS_Store
 
 # Never in this repo: company material lives in C:\Projects\xdb-legacy
-legacy/
-phase1/
+/legacy/
+/phase1/
 *.har
 *.bak
 *.mdf
