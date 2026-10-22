@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 done (2026-10-22); M4 next.** Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
@@ -120,7 +120,7 @@ Further facts:
 - 301 of 305 modules were created with `ANSI_NULLS`/`QUOTED_IDENTIFIER` OFF, and their logic depends on it.
 - No CLR, Agent jobs, triggers, linked servers or user-defined types.
 - Four heaps (no clustered index), including the 1.6M-row values table.
-- **No "regenerate all" exists anywhere.** Generated objects are built by C# when a type, report or role is saved.
+- **The deployed application has no "regenerate all", and never builds the read tables at all.** It builds a report's view when the report is saved and a role's views when the role is saved. The read tables and their MERGE procedures were built once, in 2013, by a developer tool in the source tree (which also re-saved every report and role). See the M3 result.
 
 **Database engine: SQL Server (DECIDED 2026-10-21).** PostgreSQL was considered and rejected for this phase. The original is tied to SQL Server in four ways: ~306 stored procedures (most relying on `ANSI_NULLS OFF` comparison semantics), a C# generator that emits T-SQL DDL at runtime (`SELECT ... INTO`, `MERGE`, views), dependence on the case-insensitive collation and on implicit row order, and a comparison harness that is only meaningful against the same engine and data. Moving engines now would turn the port into a rewrite before equivalence is proven. A later move becomes realistic once the procedures are replaced by LINQ, leaving the generator as the main engine-specific piece.
 
@@ -135,7 +135,7 @@ Further facts:
    - `0005_seed`: system lookups with fixed GUIDs (the binaries hard-code 172 of them), system roles, and an admin member whose user id comes from config
    - Principals, database name and file names are excluded.
 3. **Adopting the existing database:** if the core tables exist and `__EFMigrationsHistory` is empty, startup records the baseline migration as applied instead of running it. That is how the existing working copy adopts the baseline.
-4. **`RegenerateAll()`**, ported from the original C# generator, rebuilds the read tables and MERGE procs, then the report views, then the row-security views. Generated objects are never part of migrations.
+4. **`RegenerateAll()`**, ported from the original C# generators, rebuilds the read tables and MERGE procs, then the report views, then the row-security views. Generated objects are never part of migrations: an existing database keeps its own, and a fresh install builds them at startup (M3).
 5. **Verification:**
    - Create a fresh database from the baseline.
    - Compare it against the reconciled copy with generated objects dropped, using a schema compare with ANSI settings and column order **not** ignored. Expect zero differences, plus matching seed checksums.
@@ -211,6 +211,42 @@ The EF Core migration generator splits `migrationBuilder.Sql` on `GO` lines, whi
 - Response framing (`Content-Length` instead of chunked) and the original host's informational headers.
 - Exceptions are logged.
 - An unparseable typed query parameter returns the generic fault. The original's exact response in that case was never captured.
+
+### M3 result (DONE 2026-10-22)
+
+**Finding that reshaped the milestone:** the deployed release never creates the gen tables or their MERGE procedures. Saving an asset type only saves metadata; the generator method is compiled in but nothing calls it. All of the existing read tables and procedures were made by a developer test fixture in 2013 (one batch, plus one later run for two types). The deployed release builds only the report views (on report save) and the role views (on role save). Regenerating from today's metadata therefore cannot reproduce every existing object, because the metadata has changed since 2013.
+
+**Decision (author, 2026-10-22): port and adopt.**
+- All three generators are ported exactly, from the deployed release where it has them (views) and from the source tree's version of the same template where it does not (read tables and procedures).
+- An existing database keeps its generated objects as they are; nothing regenerates on startup.
+- A fresh install (no gen tables) builds everything at startup, after the migrations.
+- `dotnet run --project src/Xdb.Api -- regenerate-all` applies migrations, rebuilds everything and exits (exit code 1 if any object failed). It is a command-line verb rather than an endpoint until the port has authentication.
+- Building an asset type's read tables when the type is saved (the source tree's behaviour, absent from the deployed release) arrives with the metadata write paths, as a recorded deviation.
+
+**Code** (`src/Xdb.Api/Application/GeneratedObjects`):
+- `GenTables/GenTableSql` and `Views/ViewSql`: pure builders that reproduce the original SQL character for character (CRLF line endings, the bare LF after the table DROP, unescaped names and values, the original's comma logic, and its bugs, such as the never-joined alias for single-valued Dependency properties).
+- `GenTables/GenPropertySet`: column choice and order, including the system relabels and the en-US sort with first-wins de-duplication by name.
+- `GenTableGenerator`, `ReportViewGenerator`, `RoleViewGenerator`: load metadata through the original's procedures and inline SQL (`Infrastructure/Data/Procedures/GeneratedObjectProcedures`), then run the DDL statement by statement without a transaction, with the connection's default SET options (which is why every generated module has ANSI_NULLS and QUOTED_IDENTIFIER on).
+- `Commands/RegenerateAll`: every live asset type, then every live report, then every active live role; a failure is recorded and the run continues.
+- `Application/Setup/Commands/InitializeDatabase`: at startup, creates the configured first administrator (`Seed:FirstAdmin`: user id and name; the original never seeded one, and admin rights are membership in the Admin role), then regenerates if no gen tables exist.
+- Migration `SystemSeed`: the system rows the application hard-codes (the User asset type, 14 system properties, the Admin and DB Admin roles, the built-in system administrator with its User asset and Admin membership). Idempotent; an existing database already has them all.
+- Configuration `GeneratedObjects:ViewImageUrl`: the original baked an environment-specific image URL into every image column as a literal; regenerated tables bake in this value.
+
+**Verification:**
+- Regenerated on a copy of the working database (7.9 minutes, no failures): 182 read tables with their MERGE procedures, 156 report views, 78 role views. The extra four tables belong to a live asset type that never had any.
+- Against the original objects:
+  - report views: 155 of 156 byte-identical; the other differs only in blank lines at the start and end of the stored text;
+  - role views: 75 of 78 byte-identical; the other three belong to roles edited after their views were generated in 2013 (the original never refreshed them);
+  - every generated module has the original's SET options; every table has one clustered primary key on `AssetId` (names are generated by SQL Server and cannot match);
+  - MERGE procedures: all differences trace to metadata changes since 2013 (above all a system property the 2013 run did not see, which now adds a column to every table). An independent emulator of the original generator, validated against the originals where metadata has not changed, produces exactly the port's text for all 182 procedures over today's metadata.
+- Gen table rows differ from the existing ones as expected: the original only ever loaded a table when it was created, then maintained rows incrementally, so existing tables are missing assets created through paths that never refreshed them (for example 1,820 users added by member sync). This is why an existing database is adopted rather than regenerated.
+- The working database (adopted, generated objects kept) still replays all 170 reports against the original with no differences (510 calls) after the new migration.
+- Integration tests (SQL Server container): a fresh database gets the seed, the first administrator with Admin membership, and the User type's read tables loaded with both administrators; a MERGE procedure refreshes an asset; report and role views build over the tables and return the expected rows; a second start changes nothing.
+
+**Known differences (accepted):**
+- Duplicate display names in a property set (the system Created/Created By/Last Modified/Last Modified By pairs on instance tables): the original's choice was undefined; the port prefers the current system properties over the legacy duplicates, which is what most existing tables show.
+- Column order uses .NET's en-US culture comparison (ICU). The original ran on Windows NLS, whose "word sort" almost ignores hyphens and apostrophes; the two agree on every display name in the working database.
+- Report filters that share an order position: the original's order was undefined and the port keeps that (the same procedure); in the working database the port's order matched the original in all five such views.
 
 ## 6. Milestones and sizing
 

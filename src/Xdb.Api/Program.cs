@@ -1,11 +1,16 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using Serilog;
 
+using Xdb.Api.Application.GeneratedObjects.Commands.RegenerateAll;
+using Xdb.Api.Application.Setup.Commands.InitializeDatabase;
 using Xdb.Api.DependencyInjection;
 using Xdb.Api.Infrastructure.Data;
 
@@ -19,8 +24,18 @@ public partial class Program
     /// </summary>
     public const string TestingEnvironmentName = "Testing";
 
-    public static async Task Main(string[] args)
+    /// <summary>
+    /// First argument that makes the process apply migrations, rebuild every generated object and exit instead of
+    /// serving requests (e.g. <c>dotnet run -- regenerate-all</c>).
+    /// </summary>
+    public const string RegenerateAllVerb = "regenerate-all";
+
+    public static async Task<int> Main(string[] args)
     {
+        var regenerateAll = args.Length > 0 && args[0] == RegenerateAllVerb;
+        if (regenerateAll)
+            args = args[1..];
+
         var builder = WebApplication.CreateBuilder(args);
         var isTestingEnv = builder.Environment.IsEnvironment(TestingEnvironmentName);
 
@@ -46,6 +61,11 @@ public partial class Program
         if (!isTestingEnv)
         {
             await app.Services.ApplyMigrationsAsync();
+
+            if (regenerateAll)
+                return await RegenerateAllAsync(app.Services);
+
+            await InitializeDatabaseAsync(app.Services);
         }
 
         app.UseSerilogRequestLogging();
@@ -60,5 +80,25 @@ public partial class Program
         app.MapHealthChecks("/health");
 
         await app.RunAsync();
+        return 0;
+    }
+
+    private static async Task InitializeDatabaseAsync(IServiceProvider services)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<IInitializeDatabaseCommandHandler>();
+        await handler.ExecuteAsync(new InitializeDatabaseCommand());
+    }
+
+    /// <returns>The process exit code: 1 when any object failed to generate.</returns>
+    private static async Task<int> RegenerateAllAsync(IServiceProvider services)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var handler = scope.ServiceProvider.GetRequiredService<IRegenerateAllCommandHandler>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        var result = (await handler.ExecuteAsync(new RegenerateAllCommand())).Value;
+        foreach (var failure in result.Failures)
+            logger.LogError("Generation failed for {Kind} {Id}: {Error}", failure.Kind, failure.Id, failure.Error);
+        return result.Failures.Any() ? 1 : 0;
     }
 }
