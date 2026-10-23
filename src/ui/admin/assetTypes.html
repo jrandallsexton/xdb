@@ -1,0 +1,215 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Asset Types</title>
+		<LINK REL="SHORTCUT ICON" href="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><span id="driverCaption">Select an Asset Type:</span>
+				<input style="width:25%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<div id="accordion" style="display:none;">
+					<h3><a href="#">General Info</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Id', ttId, false, 400, false);" onMouseOut="hideMessage();"></span>Id
+								</td>
+								<td style="width:80%"><label id="lblId" style="width:100%" class="ui-widget" /></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Name (Required)', ttName, false, 400, false);" onMouseOut="hideMessage();"></span>Name *
+								</td>
+								<td style="width:80%;">
+									<input type="text" id="txtName" style="width:100%;" class="ui-widget ui-widget-content" onChange="onNameChanged()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Pluralization (Required)', ttPlural, false, 400, false);" onMouseOut="hideMessage();"></span>Pluralization *
+								</td>
+								<td style="width:80%;">
+									<input type="text" id="txtPluralization" style="width:100%;" class="ui-widget ui-widget-content" onChange="onPluralizationChanged()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Parent Asset Type', ttParent, false, 400, false);" onMouseOut="hideMessage();"></span>Parent Asset Type
+								</td>
+								<td style="width:80%;">
+									<select id="lstAssetTypes" style="width:100%;" class="ui-widget ui-widget-content" onChange="onParentAssetTypeChanged()"></select>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Label - Definitions', ttName, false, 400, false);" onMouseOut="hideMessage();"></span>Label - Definitions *
+								</td>
+								<td style="width:80%;">
+									<input type="text" id="txtLabelDefinitions" style="width:100%;" class="ui-widget ui-widget-content" onChange="onLabelDefinitionChanged()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Label - Instances', ttName, false, 400, false);" onMouseOut="hideMessage();"></span>Label - Instances
+								</td>
+								<td style="width:80%;">
+									<input type="text" id="txtLabelInstances" style="width:100%;" class="ui-widget ui-widget-content" onChange="onLabelInstanceChanged()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Default View - Definitions', ttDVD, false, 400, false);" onMouseOut="hideMessage();"></span>Default View - Definitions
+								</td>
+								<td style="width:80%;">
+									<select id="lstViewsDefinitions" style="width:100%;" class="ui-widget ui-widget-content" onChange="onDefaultDefinitionViewChanged()"></select>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Default View - Instances', ttDVI, false, 400, false);" onMouseOut="hideMessage();"></span>Default View - Instances
+								</td>
+								<td style="width:80%;">
+									<select id="lstViewsInstances" style="width:100%;" class="ui-widget ui-widget-content" onChange="onDefaultInstanceViewChanged()"></select>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">
+									<span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Image', ttImage, false, 400, false);" onMouseOut="hideMessage();"></span>Image (32x32 png preferred)
+								</td>
+								<td style="width:80%;" id="tdImages"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Allow Assets?', ttAllowAssets, false, 400, false);" onMouseOut="hideMessage();"></span>Allow Assets?</td>
+								<td style="width:80%;"><input type="checkbox" id="chkAllowAssets" style="width:100%;" class="ui-widget ui-widget-content" onChange="onAllowAssetsChanged()"/></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Definition Properties (Inherited)</a></h3>
+					<div id="divDefinitionInherited">
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:100%;">
+									<i>Inherited from the parent asset type.  Cannot be changed.</i>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;">
+									<select id="lstDefPropsInherited" size=20 style="width:100%;" class="ui-widget ui-widget-content" disabled="disabled"/>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Definition Properties (Asset Type-Specific and Children)</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:10%;">Available Properties</td>
+								<td style="width:86%;"><select id="lstAllPropertiesDef" style="width:100%;" class="ui-widget ui-widget-content" onChange="onAvailableDefinitionPropertySelected()"></select></td>
+								<td style="width:2%;">
+									<input type="button" disabled="disabled" id="btnAddDefinitionProperty" class="addDef ui-state-disabled ui-corner-all" value="+" onClick="onAddDefinitionPropertyClicked()"/>
+								</td>
+								<td style="width:2%;">
+									<input type="button" disabled="disabled" id="btnDeleteDefinitionProperty" class="removeDef ui-state-disabled ui-corner-all" value="-" onClick="onRemoveDefinitionPropertyClicked()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;" colspan=4>
+									<select id="lstDefinitionProperties" style="width:100%;" size=20 class="ui-widget ui-widget-content" onChange="onDefinitionPropertySelected()"></select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Instance Properties (Inherited)</a></h3>
+					<div id="divInstanceInherited">
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:100%;">
+									<i>Inherited from the parent asset type.  Cannot be changed.</i>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;">
+									<select id="lstInstPropsInherited" size=20 style="width:100%;" class="ui-widget ui-widget-content" disabled="disabled"/>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Instance Properties (Asset Type-Specific and Children)</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:10%;">Available Properties</td>
+								<td style="width:86%;"><select id="lstAllPropertiesInstance" style="width:100%;" class="ui-widget ui-widget-content" onChange="onAvailableInstancePropertySelected()"></select></td>
+								<td style="width:2%;">
+									<input type="button" disabled="disabled" id="btnAddInstanceProperty" class="addDef ui-state-disabled ui-corner-all" value="+" onClick="onAddInstancePropertyClicked()"/>
+								</td>
+								<td style="width:2%;">
+									<input type="button" disabled="disabled" id="btnDeleteInstanceProperty" class="removeDef ui-state-disabled ui-corner-all" value="-" onClick="onRemoveInstancePropertyClicked()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;" colspan=4>
+									<select id="lstInstanceProperties" style="width:100%;" size=20 class="ui-widget ui-widget-content" onChange="onInstancePropertySelected()"></select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Other</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Created', ttCreated, false, 400, false);" onMouseOut="hideMessage();" ></span>Created</td>
+								<td style="width:80%;" id="tdCreated"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Created By', ttCreatedBy, false, 400, false);" onMouseOut="hideMessage();"></span>Created By</td>
+								<td style="width:80%;" id="tdCreatedBy"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Deleted', ttDeleted, false, 400, false);" onMouseOut="hideMessage();"></span>Deleted</td>
+								<td style="width:80%;" id="tdDeleted"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help adminDef" onMouseOver="showMessage('Deleted By', ttDeletedBy, false, 400, false);" onMouseOut="hideMessage();"></span>Deleted By</td>
+								<td style="width:80%;" id="tdDeletedBy"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<table id="tblButtons" style="display:none;">
+					<tr>
+						<td><input type="button" id="btnMigrate" class="migrateButtons ui-state-disabled ui-corner-all" value="Migrate Asset Type" onClick="onMigrateClicked()"/></td>
+						<td><input type="button" id="btnKill" class="killButtons ui-state-disabled ui-corner-all" value="Kill Asset Type" onClick="onKillClicked()"/></td>
+						<td><input type="button" id="btnDelete" class="deleteButtons ui-state-disabled ui-corner-all" value="Delete Item" onClick="onAssetTypeDeleteClicked()"/></td>
+						<td><input type="button" id="btnReset" class="resetButtons ui-state-disabled ui-corner-all" value="Discard Changes" onClick="onDiscardChanges()"/></td>
+						<td><input type="button" id="btnSubmit" class="submitButtons ui-state-disabled ui-corner-all" value="Save Changes" onClick="onAssetTypeSaveClicked();"/></td>
+					</tr>
+				</table>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default" onkeyup="onRunAsUserChanged(event)"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.api.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.assetTypes.0.1.0.min.js"></script>
+    <script type="text/javascript">$(document).ready(function () { initForm();});</script>
+</html>

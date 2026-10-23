@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -81,6 +83,16 @@ public partial class Program
         }
 
         app.UseSerilogRequestLogging();
+
+        // The original web UI (src/ui; copied into this repository and sanitized at M9) is served at the site root,
+        // on the same origin as the legacy service it calls. LegacyUi:Root overrides the folder (e.g. in a container).
+        var uiRoot = Path.GetFullPath(app.Configuration["LegacyUi:Root"] ?? Path.Combine(app.Environment.ContentRootPath, "..", "ui"));
+        if (Directory.Exists(uiRoot))
+        {
+            var uiFiles = new PhysicalFileProvider(uiRoot);
+            app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = uiFiles, DefaultFileNames = ["default.html"] });
+            app.UseStaticFiles(new StaticFileOptions { FileProvider = uiFiles });
+        }
 
         if (!app.Environment.IsProduction())
         {

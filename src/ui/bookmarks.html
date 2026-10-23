@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='utf-8'/>
+		<title>XDB - Bookmarks</title>
+		<LINK REL="SHORTCUT ICON" href="images/favicon.ico" />
+		<link type="text/css" href="css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+  		<style>
+			/*.ui-accordion {
+				background-color: #EEE;
+				font: normal normal normal 16px/normal 'normal Arial', Helvetica, sans-serif;
+			}*/
+			#accordion .ui-icon { display: none; }
+			#accordion .ui-accordion-header { padding: 0.5em 0.5em 0.5em 0.1em; }
+			#accordion .ui-accordion-header a { padding-left: 0; }
+			.hdrIcon { float:left; padding-left:1px; padding-top:-1px; padding-right:5px; }
+  		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><div id="bookMarks"></div></div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default" onkeyup="onRunAsUserChanged(event)"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/xdb.bookmarks.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); });</script>
+</html>

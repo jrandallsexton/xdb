@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Admin - Help Editor</title>
+		<LINK REL="SHORTCUT ICON" href="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+		<style>
+			.values ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 1px; }
+			.values li { margin: 5px; padding: 5px; width: 400px; }
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><span id="driverCaption">Select a Help Section:</span>
+				<input style="width:25%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<div id="accordion" style="display:none;">
+					<h3><a href="#">General Info</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%">
+								<td style="width:20%">Id</td>
+								<td style="width:80%"><label id="lblId" style="width:100%" class="ui-widget" /></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Title</td>
+								<td style="width:80%;"><input type="text" id="txtTitle" style="width:100%;" class="ui-widget ui-widget-content" onChange="onTitleChanged()"/></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Order</td>
+								<td style="width:80%;"><input type="number" id="txtOrder" style="width:100%;" class="ui-widget ui-widget-content" onChange="onOrderChanged()"/></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Image</td>
+								<td style="width:80%;" id="tdImages"></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Section Content</a></h3>
+					<div id="divSectionContent">
+						<!-- This div will hold the editor. -->
+						<div id="editor"></div>
+						<div id="contents" style="display: none">
+							<p>Edited Contents:</p>
+							<!-- This div will be used to display the editor contents. -->
+							<div id="editorcontents" style="display: none"></div>
+						</div>
+					</div>
+				</div>
+				<table id="tblButtons" style="display:none;">
+					<tr>
+						<td><input type="button" id="btnKill" class="killButtons ui-state-disabled ui-corner-all" value="Kill Help Section" onClick="onKillClicked()"/></td>
+						<td><input type="button" id="btnDelete" class="deleteButtons ui-state-disabled ui-corner-all" value="Delete Help Section" onClick="onDeleteClicked()"/></td>
+						<td><input type="button" id="btnReset" class="resetButtons ui-state-disabled ui-corner-all" value="Discard Changes" onClick="onDiscardChanges()"/></td>
+						<td><input type="button" id="btnSubmit" class="submitButtons ui-state-disabled ui-corner-all" value="Save Changes" onClick="onSaveClicked()"/></td>
+					</tr>
+				</table>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default" onkeyup="onRunAsUserChanged(event)"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../ckeditor/ckeditor.js"></script>
+		<script type="text/javascript" src="../js/xdb.api.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.helpEditor.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); });</script>
+</html>

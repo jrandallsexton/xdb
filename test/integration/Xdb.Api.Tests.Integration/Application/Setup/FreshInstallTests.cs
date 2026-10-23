@@ -37,6 +37,11 @@ public class FreshInstallFixture : IAsyncLifetime
 
     public InitializeDatabaseResult FirstRun { get; private set; } = null!;
 
+    /// <summary>Rows right after the first run, before any test adds its own.</summary>
+    public int AssetsAfterFirstRun { get; private set; }
+
+    public int UserRowsAfterFirstRun { get; private set; }
+
     public async Task InitializeAsync()
     {
         await _sql.StartAsync();
@@ -62,6 +67,15 @@ public class FreshInstallFixture : IAsyncLifetime
 
         await Services.ApplyMigrationsAsync();
         FirstRun = await InitializeAsync(Services);
+
+        await using var connection = new SqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var assets = new SqlCommand("SELECT COUNT(*) FROM [dbo].[Assets]", connection);
+        AssetsAfterFirstRun = (int)(await assets.ExecuteScalarAsync())!;
+        var userTable = GeneratedObjectNames.Table(SystemAssetTypeIds.User, isInstance: false, isRaw: false);
+        var userRawTable = GeneratedObjectNames.Table(SystemAssetTypeIds.User, isInstance: false, isRaw: true);
+        await using var users = new SqlCommand($"SELECT (SELECT COUNT(*) FROM [dbo].[{userTable}]) + (SELECT COUNT(*) FROM [dbo].[{userRawTable}])", connection);
+        UserRowsAfterFirstRun = (int)(await users.ExecuteScalarAsync())!;
     }
 
     public static async Task<InitializeDatabaseResult> InitializeAsync(IServiceProvider services)
@@ -95,12 +109,15 @@ public class FreshInstallTests(FreshInstallFixture fixture) : IClassFixture<Fres
     }
 
     [Fact]
-    public async Task GenTables_AreLoadedWithTheSystemAndFirstAdministrators()
+    public void FreshInstall_HoldsNoAssets()
     {
-        var names = await ListAsync($"SELECT [Name] FROM [dbo].[{UserTable}] ORDER BY [Name]");
+        fixture.AssetsAfterFirstRun.Should().Be(0, "neither the seeded nor the configured first administrator has a User asset");
+        fixture.UserRowsAfterFirstRun.Should().Be(0);
+    }
 
-        names.Should().Equal("Admin", FreshInstallFixture.FirstAdminUserId);
-        (await ScalarAsync<int>($"SELECT COUNT(*) FROM [dbo].[{UserRawTable}]")).Should().Be(2);
+    [Fact]
+    public async Task GenTables_HaveTheirMergeProcedures()
+    {
         (await ScalarAsync<int>($"""
             SELECT COUNT(*) FROM sys.procedures p JOIN sys.sql_modules m ON m.object_id = p.object_id
             WHERE p.name IN ('spr_{UserTable}_Update', 'spr_{UserRawTable}_Update') AND m.uses_ansi_nulls = 1 AND m.uses_quoted_identifier = 1
@@ -117,6 +134,19 @@ public class FreshInstallTests(FreshInstallFixture fixture) : IClassFixture<Fres
     }
 
     [Fact]
+    public async Task FirstAdmin_SeesTheSeededUsersView()
+    {
+        var views = await ListAsync($"""
+            DECLARE @Member uniqueidentifier = (SELECT [Id] FROM [dbo].[Members] WHERE [UserId] = '{FreshInstallFixture.FirstAdminUserId}');
+            DECLARE @Views TABLE ([Id] uniqueidentifier, [DisplayValue] varchar(100));
+            INSERT @Views EXEC [dbo].[spr_ViewDictionary_GetByUserId] @UserId = @Member;
+            SELECT [DisplayValue] FROM @Views;
+            """);
+
+        views.Should().Equal("Users");
+    }
+
+    [Fact]
     public async Task SecondRun_ChangesNothing()
     {
         var result = await FreshInstallFixture.InitializeAsync(fixture.Services);
@@ -129,10 +159,11 @@ public class FreshInstallTests(FreshInstallFixture fixture) : IClassFixture<Fres
     [Fact]
     public async Task MergeProcedure_RefreshesAnAsset()
     {
-        await ExecuteAsync($"UPDATE [dbo].[Assets] SET [DisplayValue] = 'Renamed' WHERE [Id] = '{SystemMemberIds.Admin:D}'");
-        await ExecuteAsync($"EXEC [dbo].[spr_{UserTable}_Update] '{SystemMemberIds.Admin:D}'");
+        var assetId = await AddUserAssetAsync("merge.user");
+        await ExecuteAsync($"UPDATE [dbo].[Assets] SET [DisplayValue] = 'Renamed' WHERE [Id] = '{assetId:D}'");
+        await ExecuteAsync($"EXEC [dbo].[spr_{UserTable}_Update] '{assetId:D}'");
 
-        (await ScalarAsync<string>($"SELECT [DisplayValue] FROM [dbo].[{UserTable}] WHERE [AssetId] = '{SystemMemberIds.Admin:D}'")).Should().Be("Renamed");
+        (await ScalarAsync<string>($"SELECT [DisplayValue] FROM [dbo].[{UserTable}] WHERE [AssetId] = '{assetId:D}'")).Should().Be("Renamed");
     }
 
     [Fact]
@@ -140,6 +171,8 @@ public class FreshInstallTests(FreshInstallFixture fixture) : IClassFixture<Fres
     {
         var reportId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
+        await AddUserAssetAsync("Admin");
+        await AddUserAssetAsync(FreshInstallFixture.FirstAdminUserId);
         await ExecuteAsync($"""
             INSERT INTO [dbo].[Reports] ([Id], [ReportName], [AssetTypeId], [IsInstance], [FilterExpression], [Created], [CreatedBy])
             VALUES ('{reportId:D}', 'Users', '{SystemAssetTypeIds.User:D}', 0, '{ReportFilterLogic}', GETDATE(), '{SystemMemberIds.Admin:D}');
@@ -167,6 +200,19 @@ public class FreshInstallTests(FreshInstallFixture fixture) : IClassFixture<Fres
 
         (await ListAsync($"SELECT [User] FROM [dbo].[{GeneratedObjectNames.ReportView(reportId)}]")).Should().Equal(FreshInstallFixture.FirstAdminUserId);
         (await ListAsync($"SELECT [User] FROM [dbo].[{GeneratedObjectNames.RoleView(roleId, SystemAssetTypeIds.User, 1)}]")).Should().Equal("Admin");
+    }
+
+    /// <summary>A User asset, loaded into the gen tables as a save would.</summary>
+    private async Task<Guid> AddUserAssetAsync(string name)
+    {
+        var id = Guid.NewGuid();
+        await ExecuteAsync($"""
+            INSERT INTO [dbo].[Assets] ([Id], [AssetTypeId], [Name], [DisplayValue], [CreatedBy], [IsInstance])
+            VALUES ('{id:D}', '{SystemAssetTypeIds.User:D}', '{name}', '{name}', '{SystemMemberIds.Admin:D}', 0);
+            EXEC [dbo].[spr_{UserTable}_Update] '{id:D}';
+            EXEC [dbo].[spr_{UserRawTable}_Update] '{id:D}';
+            """);
+        return id;
     }
 
     private async Task ExecuteAsync(string sql)

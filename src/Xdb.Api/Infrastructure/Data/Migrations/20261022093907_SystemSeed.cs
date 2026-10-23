@@ -8,8 +8,9 @@ namespace Xdb.Api.Infrastructure.Data.Migrations
 {
     /// <summary>
     /// Seeds the system rows a fresh install needs and the application hard-codes: the User asset type, the system
-    /// properties, the Admin and DB Admin roles, and the built-in system administrator (member, User asset, Admin
-    /// membership). Idempotent: an existing database already has every row and is left unchanged.
+    /// properties, the Admin and DB Admin roles, and the built-in system administrator (member and Admin
+    /// membership; no User asset: a fresh install holds no assets). Idempotent: an existing database already has every
+    /// row and is left unchanged.
     /// </summary>
     public partial class SystemSeed : Migration
     {

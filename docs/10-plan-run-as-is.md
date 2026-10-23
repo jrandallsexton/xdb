@@ -1,6 +1,6 @@
 # 10 - Plan: Get the Original Running As-Is
 
-Status (2026-10-21): **Phase 1 DONE.** The original 1.5.0.5 release build runs locally as the comparison oracle (jQuery View Engine UI unmodified, WCF REST on .NET Framework 4.8, against the working copy of the production backup). Six HAR captures were recorded as the golden master and are kept privately (they contain non-publishable data). **Phase 2 is next and not started.**
+Status (2026-10-23): **Phase 1 and Phase 2 DONE.** The original's deployed release build runs locally as the comparison oracle (jQuery View Engine UI unmodified, WCF REST on .NET Framework 4.8, against the working copy of the production backup). Six HAR captures were recorded as the golden master and are kept privately (they contain non-publishable data). Phase 2 was completed on 2026-10-23 (see `11-phase2-scope.md`).
 
 Principle (owner's): get the system working **as it was** - the jQuery View Engine UI unmodified, the same database, the same behavior - and only then simplify, de-brand, and build a React UI. The backend is the only part that must change, because its hosting stack (WCF + WCF REST Starter Kit) cannot move to modern .NET.
 
@@ -8,9 +8,9 @@ Principle (owner's): get the system working **as it was** - the jQuery View Engi
 
 | Fact | Evidence | Consequence |
 |---|---|---|
-| Code baseline = the original source tree | It equals the 1.5.0.6 release snapshot except `Service.svc.cs`, 4 Core files and 17 View Engine files - the owner's 2017-2019 git commits ("trying to get this old thing running so i can fork it") | Start from the original git repo; its history is the owner's own. The release snapshot stays as the pristine reference. (Phase 1 was in the end run from the 1.5.0.5 release build.) |
-| Database = the production backup (2013), restored locally | Release 1.5.0.6 <-> DB "1506" | Code and DB are the same version. |
-| **Not** the later 1.6.0.0 solution tree (decided 2026-10-21) | It is release **1.6.0.0** (`AssemblyVersion("1.6.0.0")`, `Utils/v1600.cs`, edits to Dec 2014); v1600 writes HTML to `Processes`, a column the production backup lacks; the backup's newest hand-written proc is dated 2013-11-29, matching the original tree's last edits (Nov-Dec 2013); no jQuery View Engine in that tree | The 1.6.0.0 tree is a later, never-matched-to-this-DB version. Ignore it for the as-is run. |
+| Code baseline = the original source tree | It equals the deployed release's source snapshot except `Service.svc.cs`, 4 Core files and 17 View Engine files - the owner's 2017-2019 git commits ("trying to get this old thing running so i can fork it") | Start from the original git repo; its history is the owner's own. The release snapshot stays as the pristine reference. (Phase 1 was in the end run from the deployed release build.) |
+| Database = the production backup (2013), restored locally | The release and the database schema carry the same version | Code and DB are the same version. |
+| **Not** the later solution tree (decided 2026-10-21) | It is a later release (its assembly version and its upgrade utility say so; edits to Dec 2014); its upgrade code writes HTML to `Processes`, a column the production backup lacks; the backup's newest hand-written proc is dated 2013-11-29, matching the original tree's last edits (Nov-Dec 2013); no jQuery View Engine in that tree | That tree is a later, never-matched-to-this-DB version. Ignore it for the as-is run. |
 | UI baseline = the jQuery View Engine build in the original source tree | Confirmed by owner | 2,411 files, static HTML/JS, ~324 call sites build URLs from `URL_REST_SVC` |
 | Projects already target **.NET Framework 4.8** | `TargetFrameworkVersion v4.8` in Core, UI, External, Utils, REST | The 2017-2019 attempt already did the retarget. |
 | **The Starter Kit dependency is one class** | Only `WebServiceHost2` in `REST/Service.svc` (10-line host factory: max message size, streamed transfer). All 314 operations use stock `System.ServiceModel.Web` attributes (`WebGet` 258, `WebInvoke` 56: 49 POST / 7 GET-via-invoke; 299 Bare, 15 Wrapped/WrappedRequest; 301 JSON, 10 XML; ~99 return `Stream`/`Message`) | WCF WebHttp is still in .NET Framework 4.8. Swap `WebServiceHost2` for the stock `WebServiceHost` + binding config, and the original service can run unchanged on 4.8. |
@@ -59,7 +59,7 @@ flowchart LR
 
 ## Phase 1 - Run the original on .NET Framework 4.8 - DONE (2026-10-21)
 
-**Outcome:** the 1.5.0.5 release build runs locally with the jQuery View Engine UI unmodified (apart from its local URL config), against the working copy. Six HAR captures were recorded as the golden master and are kept privately. The steps below are retained as the record of the approach.
+**Outcome:** the deployed release build runs locally with the jQuery View Engine UI unmodified (apart from its local URL config), against the working copy. Six HAR captures were recorded as the golden master and are kept privately. The steps below are retained as the record of the approach.
 
 Scope = the projects the View Engine needs, nothing else:
 
@@ -91,7 +91,9 @@ Steps:
 
 **Exit:** the original runs on .NET Framework 4.8 with the VE UI unmodified, apart from its LOCAL URLs. Golden master recorded. **Met 2026-10-21.**
 
-## Phase 2 - Port the API to .NET 10 with the same contract (next, not started)
+## Phase 2 - Port the API to .NET 10 with the same contract - DONE (2026-10-23)
+
+**Outcome:** all milestones M0-M9 done; results per milestone in `11-phase2-scope.md`. The UI is copied into `src/ui` and served by the API. The plan below is retained as the record of the approach.
 
 Target: an ASP.NET Core (.NET 10) API that the View Engine can call in place of the WCF service, verified against the golden master recorded from the unmodified View Engine. At cut-over the View Engine is copied into this repository in its entirety and modified there; the original deployment is not redirected to the new API (author decision 2026-10-23).
 

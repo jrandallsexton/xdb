@@ -62,7 +62,7 @@ public sealed class UserQueryHandler(
     private static readonly CultureInfo EnUs = CultureInfo.GetCultureInfo("en-US");
 
     /// <summary>The release-notes setting the client model reads (the deployed release never changed the key).</summary>
-    private const string ReleaseNoticeKey = "relNotes1.5.0.5";
+    private const string ReleaseNoticeKey = "relNotes0.1.0";
 
     /// <summary>PickListIds.NetworkDomains (absent from the data: Domains faults).</summary>
     private static readonly Guid NetworkDomainsPickList = new("cb3203c5-e1e4-4106-865e-6fe0aec0c1c7");

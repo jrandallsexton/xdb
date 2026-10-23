@@ -1,6 +1,6 @@
 # 00 - The Original System, As I Understand It
 
-**Purpose of this document:** to play back, in one place, what the original system (XDB v1) was and how it worked, so its author can confirm the rebuild starts from an accurate mental model. Sources: the original code snapshots (2010-2014), the de-branding attempts (2013-2015), and a copy of the production database (schema version ~v1506). Detailed evidence lives in the private excavation notes, not published.
+**Purpose of this document:** to play back, in one place, what the original system (XDB v1) was and how it worked, so its author can confirm the rebuild starts from an accurate mental model. Sources: the original code snapshots (2010-2014), the de-branding attempts (2013-2015), and a copy of the production database. Detailed evidence lives in the private excavation notes, not published.
 
 Where the code and the live DB disagree, the live DB wins (it is what actually ran).
 
@@ -183,5 +183,5 @@ The README vision for XDB - an object store that "periodically compile[s] code b
 
 Open questions:
 - **"Transfer an asset"**: a to-do file in the original source tree mentions it ("hide transfer an asset on production"), but it appears in no code snapshot and none of the 108 screenshots (2012-2014), including all three generations of Home process lists. The nearest evidence is "assigned to" / "returned to stock" feed events and a submittal changing assignee, location and status together - consistent with a Process-driven transfer that was hidden on production.
-- **Type hierarchy storage**: the live DB uses `AssetTypeRelations`; some code paths and the 2014 v2 AssetType editor (single "Parent Asset Type" field) suggest `AssetTypes.ParentId`. The DB is treated as authoritative for v1506.
-- Which of the duplicate role/trigger/operator tables was the live one by v1506?
+- **Type hierarchy storage**: the live DB uses `AssetTypeRelations`; some code paths and the 2014 v2 AssetType editor (single "Parent Asset Type" field) suggest `AssetTypes.ParentId`. The DB is treated as authoritative for that release.
+- Which of the duplicate role/trigger/operator tables was the live one by that release?

@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>XDB - No Access</title>
+		<LINK REL="SHORTCUT ICON" href="images/favicon.ico" />
+		<link type="text/css" href="css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+		<style type="text/css">
+			div.innerContainer
+			{
+				width:100%;
+				margin:0px;
+				border:1px solid #1F4E79;
+				line-height:150%;
+			}
+			div.header,div.footer
+			{
+				padding:0.5em;
+				color:white;
+				background-color:#1F4E79;
+				clear:left;
+				color:#ffffff;
+				font-family: Arial,sans-serif;
+			}
+			div.left
+			{
+				float:left;
+				width:160px;
+				margin:0;
+				padding:1em;
+				font-family: Arial,sans-serif;
+                border-right:1px solid #1F4E79;
+			}
+			div.innerContent
+			{
+				margin-left:184px;
+				border-left:1px solid #1F4E79;
+				padding:1em;
+				font-family: Arial,sans-serif;
+			}
+			div.hideOnStartup
+			{
+				display:none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content">
+				<div id="divContent" class="innerContainer" style="width:100%;">
+					<img src="images/xdbPrint.png" style="float:right;margin-top:10px;margin-right:25px;" alt="logo"/>
+					<div class="innerContent">
+						<h1>You do not have access to this content.</h1>
+					</div>
+					<div class="footer"></div>
+				</div>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" style="display: none" title="Run-As Another User">
+			<select id='lstUsers' class='ui-widget ui-state-default' style='width:100%'></select>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+	</body>
+		<script type="text/javascript" src="js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/xdb.default.0.1.0.min.js"></script>
+    <script type="text/javascript">$(document).ready(function() { initDefaultHtml(); });</script>
+</html>

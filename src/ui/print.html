@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='utf-8'/>
+		<title>XDB - Print</title>
+		<LINK REL="SHORTCUT ICON" href="images/favicon.ico" />
+		<link type="text/css" href="css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<style type="text/css">
+			body {
+				margin:0px;
+			}
+			ul { /* basic menu styling */
+				margin:		1ex 0;
+				padding:	0;
+				list-style:	none;
+				position:	relative;
+			}
+			li {
+				padding: 0.15em 1em 0.3em 5px;
+			}
+			p, h2 {
+				color:white;
+			}
+			h1 {
+				color:black;
+				text-align:center;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="header"></div>
+		<table style="padding-left:1cm">
+			<tr><td><div id="subHeader"></div></td></tr>
+			<tr><td></td></tr>
+			<tr><td><div id="content"></div></td></tr>
+			<tr><td><div id="footer"></div>	</td></tr>
+		</table>
+	</body>
+		<script type="text/javascript" src="js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/xdb.print.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); })</script>
+</html>

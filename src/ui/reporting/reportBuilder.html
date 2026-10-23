@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Report Builder</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+  		<style>
+			.values ul { list-style-type: none; margin: 0; padding: 0; margin-bottom: 1px; }
+			.values li { margin: 5px; padding: 5px; width: 500px; }
+  		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><span id="driverCaption">Select a Report:</span>
+				<input style="width:25%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<br/><br/>
+				<div id="accordion" style="display:none;">
+					<h3><a href="#">General Info</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%">
+								<td style="width:20%">Id</td>
+								<td style="width:80%"><label id="lblId" style="width:100%" class="ui-widget" /></td>
+							</tr>
+							<tr style="width:100%">
+								<td style="width:20%">Name</td>
+								<td style="width:80%;"><input type="text" id="txtName" style="width:100%;" class="ui-widget ui-widget-content" onChange="onNameChanged()"/></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Asset Type</a></h3>
+					<div>
+						<select id="lstAssetTypes" onchange="onAssetTypeSelected()">
+							<option value="-1">[ Select ]</option>
+						</select><br/><br/>
+						<div id="divRadio"></div>
+					</div>
+					<h3><a href="#">Fields</a></h3>
+					<div id="divProperties">
+						<table style="width:100%;">
+							<tr>
+								<td style="width:20%">Available Attributes:</td>
+								<td style="width:50%">
+									<select id="lstProperties" style="width:100%" onChange="onSelectedPropertyChanged()"></select>
+								</td>
+								<td style="width:15%">
+									<input type="button" disabled="disabled" id="btnAddProperty" class="addButtons ui-state-disabled ui-corner-all" value="Add Attribute to Report" onClick="onAddPropertyClicked()"/>
+								</td>
+							</tr>
+							<tr id="trSubProperties" style="display:none">
+								<td style="width:20%">Available Sub Attributes:</td>
+								<td style="width:50%">
+									<select id="lstSubProperties" style="width:100%" onChange="onSelectedSubPropertyChanged()"></select>
+								</td>
+								<td style="width:15%">
+									<input type="button" disabled="disabled" id="btnAddSubProperty" class="addButtons ui-state-disabled ui-corner-all" value="Add Sub Attribute to Report" onClick="onAddSubPropertyClicked()"/>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;" colspan=3>
+									<label id="lblDrag" class="ui-widget"><i>Drag any existing report attribute to change its display order within the report</i><label>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td colspan=3 style="width:100%;">
+									<div class="values">
+										<ul id="values" class="draggable sortable" style="width:100%;"></ul>
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Filtering</a></h3>
+					<div id="divFilters">
+						<b><i>Not available until an asset type and one or more attributes have been selected</i></b>
+					</div>
+					<h3><a href="#">Grouping</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr>
+								<td style="width:20%">Group By:</td>
+								<td style="width:50%">
+									<select id="lstGroupBy" style="width:100%" onChange="onSelectedGroupByChanged()"></select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Other</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:20%;">Created</td>
+								<td style="width:80%;" id="tdCreated"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Created By</td>
+								<td style="width:80%;" id="tdCreatedBy"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<table id="tblButtons" style="display:none">
+					<tr>
+						<td><input type="button" id="btnMigrate" class="migrateButtons ui-state-disabled ui-corner-all" value="Migrate Report" onClick="onMigrateClicked()"/></td>
+						<td><input type="button" id="btnKill" class="killButtons ui-state-disabled ui-corner-all" value="Kill Report" onClick="onKillReportClicked()"/></td>
+						<td><input type="button" id="btnDelete" class="deleteButtons ui-state-disabled ui-corner-all" value="Delete Report" onClick="onReportDeleteClicked()"/></td>
+						<td><input type="button" id="btnClone" class="cloneButtons ui-state-disabled ui-corner-all" value="Clone" onClick="onCloneClicked()"/></td>
+						<td><input type="button" id="btnReset" class="resetButtons ui-state-disabled ui-corner-all" value="Discard Changes" onClick="onDiscardChanges()"/></td>
+						<td><input type="button" id="btnSubmit" class="submitButtons ui-state-disabled ui-corner-all" value="Save Changes" onClick="onReportSaveClicked()"/></td>
+					</tr>
+				</table>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+		<div id="customPropertyDialog" style="display: none" title="Create Custom Report Field">
+			<table style="width:100%" id="tblCustom">
+				<tr style="width:100%">
+					<td style="width:20%">Field Type:</td>
+					<td style="width:80%">
+						<select id="lstFieldTypes" style="width:100%" onchange="onCustomFieldTypeSelected()">
+							<option value=0>[Select]</option>
+							<option value=1>Calculated</option>
+							<!--<option value=2>Concatentation</option>-->
+							<option value=3>Time Elapsed</option>
+							<!--<option value=4>Range Labels</option>-->
+							<!--<option value=5>Value Labels</option>-->
+						</slect>
+					</td>
+				</tr>
+				<tr style="width:100%; display: none" id="trSourceAttribute" onchange="onCustomSourceAttrChanged()">
+					<td style="width:20%">Source Attribute:</td>
+					<td style="width:80%" id="tdSourceAttributes"></td>
+				</tr>
+				<tr style="width:100%; display: none" id="trSourceAttributes">
+					<td style="width:20%">
+						<input type="button" value="+" onclick="onSourceAdd()" class="deleteButtons ui-corner-all ui-state-default" id="btnAddValue">
+						<input type="button" value="-" onclick="onSourceRemove()" class="deleteButtons ui-corner-all ui-state-default" id="btnRemoveValue">
+					</td>
+					<td style="width:80%" id="tdSourceAttributess">
+						<select style="width:100%;overflow:scroll;" class="ui-widget ui-widget-content" size="5" id="lstSelectedFields" >
+						</select>
+					</td>
+				</tr>
+			</table>
+			<div style="width:100%; display:none;" id="trCalculationLogic">
+				<hr>
+				Calculation Logic: <i>ex. ({0} + {1}). ({0} / {1} * 100), etc.</i><br/>
+				<input type="text" id="txtCalculationLogic" style="width:100%" value="" />
+			</div>
+			<div style="width:100%; display:none;" id="trConcatenationLogic">
+				<hr>
+				Concatenation Logic: <i>ex. ({0} && {1}). ({0} && {1} && {2}), etc.</i><br/>
+				<input type="text" id="txtConcatenationLogic" style="width:100%" value="" />
+			</div>
+			<div style="width:100%; display:none;" id="trTimeElapsed">
+				<hr>
+				<input id="rdoCurrent" type="radio" name="elapsedType" value="1" onchange="onTimeElapsedChanged(1)" />Always Current Date<br />
+				<input id="rdoSpecific" type="radio" name="elapsedType" value="2" onchange="onTimeElapsedChanged(2)" />Specific Date<br/>
+				<div id="dtp" style="width:100%; display: none" >Select a Date:<input type="text" class="datepicker" id="dpTimeElapsed" style="width:100%;"/></div>
+			</div>
+			<div style="width:100%; display:none;" id="trTimeElapsedFormat">
+				<hr>
+				<input id="rdoAbsolute" type="radio" name="elapsedFormat" value="1" />Absolute Timespan (i.e. 0001 11 31)<br />
+				<input id="rdoCalculated" type="radio" name="elapsedFormat" value="2" />Decimal Timespan (i.e. 1.9)<br/>
+			</div>
+			<div style="width:100%; display:none;" id="trReportLabel">
+				<hr>
+				Report Label:<br/><input type="text" id="txtReportLabel" style="width:100%" value="" />
+			</div>
+		</div>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.api.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.builder.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.builder.reports.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function() { initForm(); } );</script>
+</html>

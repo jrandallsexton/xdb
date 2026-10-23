@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Admin - Roles</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><span id="driverCaption">Select a Role:</span>
+				<input style="width:25%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<input type="checkbox" id="chkDeletedItems" class="ui-widget ui-widget-content" onChange="onDeletedItemsChanged()"/>Include Deleted Items?
+				<div id="accordion" style="display:none;">
+					<h3><a href="#">General Info</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%">
+								<td style="width:20%"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Is Stand-Alone?', ttIsStandAlone, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Id</td>
+								<td style="width:80%"><label id="lblId" style="width:100%" class="ui-widget" /></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Is Stand-Alone?', ttIsStandAlone, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Name *</td>
+								<td style="width:80%;"><input type="text" id="txtName" style="width:100%;" class="ui-widget ui-widget-content" onChange="onNameChanged()"/></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Is Stand-Alone?', ttIsStandAlone, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Description *</td>
+								<td style="width:80%;"><input type="text" id="txtDescription" style="width:100%;" class="ui-widget ui-widget-content" onChange="onDescriptionChanged()"/></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Is Stand-Alone?', ttIsStandAlone, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Is Active?</td>
+								<td style="width:80%;"><input type="checkbox" id="chkIsActive" style="width:100%;" class="ui-widget ui-widget-content" onChange="onIsActiveChanged()"/></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Members</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:10%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('All Users', ttIsStandAlone, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>All Users</td>
+								<td style="width:80%;">
+									<input style="width:100%;" id="lstUsers" class="ui-widget ui-widget-content"/>
+									<input type="hidden" id="lstUsers-id"/>
+								</td>
+								<td style="width:5%;">
+									<input type="button" disabled="disabled" id="btnAddUser" class="addUser ui-state-disabled ui-corner-all" value="Add User to Role" onClick="onRoleMemberAddClicked()"/>
+								</td>
+								<td style="width:5%;">
+									<input type="button" disabled="disabled" id="btnDeleteUser" class="removeUser ui-state-disabled ui-corner-all" value="Remove User from Role" onClick="onRoleMemberRemoveClicked()"/>
+								</td>
+							</tr>
+							<tr>
+								<td style="width:100%;" colspan=3>
+									<label style="width:100%;" class="ui-widget"><b>Current Role Members<b></label>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;" colspan=3>
+									<select id="lstRoleMembers" style="width:100%;" size=15 onChange="onRoleMemberSelected()"></select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#" id="atLabel">Asset Types, Role Filters, & Permissions</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr>
+								<td style="width:33%; vertical-align:top;">
+									<div id="accordion1" style="width:100%; float:top;">
+										<h3><a href="#">Asset Types</a></h3>
+										<div>
+											<!--<div><input id="chkInherit" type="checkbox" class="ui-widget" onChange="onInheritAccessCheckChanged()"></input><label id="lblInherit" class="ui-widget">Inherit filter from parent?</label></div>-->
+											<div id="treAssetTypes" style="width:100%; float:top;"></div>
+											<div id="defIns">
+												<input id="rdo0" type="radio" name="group1" value="0" onchange="onAssetRequestTypeChanged(0)" checked><label id="lblDef">Definitions</label>
+												<input id="rdo1" type="radio" name="group1" value="1" onchange="onAssetRequestTypeChanged(1)"><label id="lblIns">Instances</label>
+											</div>
+										</div>
+									</div>
+								</td>
+								<td style="width:28%; vertical-align:top;">
+									<div id="accordion3" style="width:100%;">
+										<h3><a href="#" id='lblPermissions'>Permissions</a></h3>
+										<div id="divPermissions"><label>Select an Asset Type to view/select the applicable permissions</label></div>
+										<h3><a href="#" id='lblViews'>Asset Editor Views</a></h3>
+										<div id="divViews"><label>Select an Asset Type to view/select the applicable views</label></div>
+										<h3><a href="#" id='lblProcesses'>Processes</a></h3>
+										<div id="divProcesses"><label>Select an Asset Type to view/select the applicable processes</label></div>
+									</div>
+								</td>
+								<td style="width:38%; vertical-align:top;">
+									<div id="accordion2" style="width:100%; float:top;">
+										<h3><a href="#" id='lblFilters'>Filters</a></h3>
+										<div id='divFilters'><label>Select an Asset Type to create/edit the applicable filters</label>
+										</div>
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Reports</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:90%;">
+									<input style="width:100%;" id="lstReports" class="ui-widget ui-widget-content"/>
+									<input type="hidden" id="lstReports-id"/>
+								</td>
+								<td style="width:5%;">
+									<input type="button" disabled="disabled" id="btnAddReport" class="addReport ui-state-disabled ui-corner-all" value="Add Report to Role" onClick="onRoleReportAddClicked()"/>
+								</td>
+								<td style="width:5%;">
+									<input type="button" disabled="disabled" id="btnDeleteReport" class="removeReport ui-state-disabled ui-corner-all" value="Remove Report from Role" onClick="onRoleReportRemoveClicked()"/>
+								</td>
+							</tr>
+							<tr>
+								<td style="width:100%;" colspan=3>
+									<label style="width:100%;" class="ui-widget"><b>Current Role Reports<b></label>
+								</td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:100%;" colspan=3>
+									<select id="lstRoleReports" style="width:100%;" size=15 onChange="onRoleReportSelected()"></select>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Other</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:20%;">Created</td>
+								<td style="width:80%;" id="tdCreated"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Created By</td>
+								<td style="width:80%;" id="tdCreatedBy"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Last Modified</td>
+								<td style="width:80%;" id="tdModified"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Last Modified By</td>
+								<td style="width:80%;" id="tdModifiedBy"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Deleted</td>
+								<td style="width:80%;" id="tdDeleted"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;">Deleted By</td>
+								<td style="width:80%;" id="tdDeletedBy"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<table id="tblButtons" style="display:none;">
+					<tr>
+						<td><input type="button" id="btnKill" class="killButtons ui-state-disabled ui-corner-all" value="Kill Role" onClick="onKillClicked()"/></td>
+						<td><input type="button" id="btnDelete" class="deleteButtons ui-state-disabled ui-corner-all" value="Delete Role" onClick="onRoleDeleteClicked()"/></td>
+						<td><input type="button" id="btnClone" class="cloneButtons ui-state-disabled ui-corner-all" value="Clone" onClick="onCloneClicked()"/></td>
+						<td><input type="button" id="btnReset" class="resetButtons ui-state-disabled ui-corner-all" value="Discard Changes" onClick="onDiscardChanges()"/></td>
+						<td><input type="button" id="btnSubmit" class="submitButtons ui-state-disabled ui-corner-all" value="Save Changes" onClick="onRoleSaveClicked()"/></td>
+					</tr>
+				</table>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="newUser" style="display: none" title="Enter New User">
+			<table style="width:100%">
+				<tr>
+					<td id="newPLVItemPrompt" style="width:20%">Last Name</td>
+					<td style="width:80%"><input type="text" id="txtNewPickListValueLastName" style="width:100%" class="ui-widget ui-state-default" /></td>
+				</tr>
+				<tr>
+					<td id="newPLVItemPrompt" style="width:20%">First Name</td>
+					<td style="width:80%"><input type="text" id="txtNewPickListValueFirstName" style="width:100%" class="ui-widget ui-state-default" /></td>
+				</tr>
+			</table>
+		</div>
+		<div id="newPickListValue" style="display: none" title="Enter New Value"></div>
+		<div id="confirmNewItem" style="display: none" title="Add New Item?"></div>
+		<div id="confirmNewPickListValue" style="display: none" title="Add New Item?"></div>
+		<div id="confirmNewUser" style="display: none" title="Add New User?"></div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default" onkeyup="onRunAsUserChanged(event)"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.cookies.2.2.0.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.dynatree.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.api.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.roles.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); });</script>
+</html>

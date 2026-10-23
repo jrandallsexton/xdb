@@ -1,12 +1,12 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 and M8 done (2026-10-23); M9 backend done, UI cut-over in progress.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7, M8 and M9 done (2026-10-23): Phase 2 complete.** Builds on `10-plan-run-as-is.md`.
 
-Goal: replace the original WCF REST service with a .NET 10 API that reproduces the original wire contract exactly, so the original jQuery UI works against it. The UI is **not** pointed at the port where it stands: at cut-over (M9) it is copied into this repository in its entirety and modified there (author decision 2026-10-23). Until then the unmodified original UI and its recorded traffic define the contract. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
+Goal: replace the original WCF REST service with a .NET 10 API that reproduces the original wire contract exactly, so the original jQuery UI works against it. The UI is **not** pointed at the port where it stands: at cut-over (M9) it is copied into this repository in its entirety and modified there (author decision 2026-10-23). Until then the unmodified original UI and its recorded traffic define the contract. **After M9 (author decision 2026-10-23)** byte-identical behaviour is no longer required: defects are fixed in XDB as they are found, each recorded as a behaviour change. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
 ## 1. What the port has to cover
 
-The deployed 1.5.0.5 service contract has **299 operations**, all RPC-style (`Service.svc/Op_Name?param=...`), with 251 GET and 48 POST.
+The deployed release's service contract has **299 operations**, all RPC-style (`Service.svc/Op_Name?param=...`), with 251 GET and 48 POST.
 
 | Bucket | Ops | Treatment |
 |---|---|---|
@@ -21,7 +21,7 @@ That leaves about **225 operations to port for real**, in twelve functional area
 | Area | Ops | Size | Why |
 |---|---|---|---|
 | Assets and values | 47 | L | Submittal/approval save path, read-table refresh side effects, reads that also write (cache and hit logging) |
-| Asset types and properties metadata | 38 | M | Many small reads; inheritance resolution; 4 operations exist only in the 1.5.0.5 binaries and must be decompiled |
+| Asset types and properties metadata | 38 | M | Many small reads; inheritance resolution; 4 operations exist only in the deployed binaries and must be decompiled |
 | Views, property groups, processes | 35 | M | Mostly CRUD; the cached client view model must serialize byte-for-byte |
 | Picklists and lookups | 14 | S | CRUD and cascading lookups |
 | Reports | 19 | L | Runtime view DDL, jqGrid paging over dynamic columns, hand-built JSON, xlsx export |
@@ -439,6 +439,22 @@ A portable implementation of D1-D3 will not be byte-identical to GDI+; its compa
 **Verification:** 152 calls: 143 identical, 9 equivalent (new random ids and the creation clock), none different. Help sections and service modules identical afterwards; neither database's object set changed.
 
 **Known differences:** a module saved without a version or class name cannot be read back (as in the original); every module save clears its download time (the original never sent it).
+
+### M9 result, UI cut-over (2026-10-23)
+
+**Where the UI lives:** `src/ui`, outside the API project. `Xdb.Api` serves it at the site root with `default.html` as the default document, on the same origin as `/legacy/Service.svc`; `LegacyUi:Root` overrides the folder (for example in a container). The original deployment is not redirected.
+
+**Sanitizing:** the copy keeps only the 30 reachable pages and what they load. Before commit it passed a private term scan (including reordered spellings, one of which was found inside a function name), a cross-check of every staged file against the vocabulary of the real data (asset types, views, roles, reports, processes, properties, member and asset names, property values: no real value present), a read-through of every page and of all string literals, comments and identifiers of the application scripts, and an image review. Removed in the process: the release notice and tutorial, release dates and version history, screenshots of the original, icon classes and hard-coded ids tied to the original's records (the mappings page now reads `MAPPINGS_ASSET_TYPE_ID` / `MAPPINGS_VIEW_ID`, empty by default), and the original's palette (now slate blue). Third-party and icon licensing notes are in `src/ui/LICENSES/THIRD-PARTY.md`.
+
+**Version:** reset to **0.1.0** (`Directory.Build.props`, the version operation, the UI constant and the versioned UI script names).
+
+**Fresh install:** a database created by the migrations alone holds **no assets**: neither the built-in system administrator nor the configured first administrator gets a User asset (the original allowed members without one). The `DefaultView` migration seeds one "Users" view for the Admin role when a database has no views, because the UI admits only members who can see a view. Verified on `XdbLocal` (launch profile `Xdb.Api (Local)`, `appsettings.Local.json`, user secrets not loaded): 0 assets, lookup and system rows only, no term hits in any text column, module or object name; the administrator reaches the home page.
+
+**Fixes (behaviour changes from the original):** the home activity feed is empty, not a SQL syntax error, for a member with no editable roles; a cached user the server does not identify (for example after switching databases on the same origin) is discarded instead of reused.
+
+**Verification:** all 30 pages load against the port; four show known items: the chart library from its CDN (refused to headless browsers), two files missing from the original deployment, and the RGraph data call. Image thumbnails and uploads fault (D1-D2), as do bulk uploads (deferred).
+
+**Not done:** the original service remains in the local setup as a reference for now.
 
 ## 6. Milestones and sizing
 

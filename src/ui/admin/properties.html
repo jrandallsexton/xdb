@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Admin - Properties</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content"><span id="driverCaption">Select a Property:</span>
+				<input style="width:25%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<input type="checkbox" id="chkDeletedItems" class="ui-widget ui-widget-content" onChange="onDeletedItemsChanged()"/>Include Deleted Items?
+				<div id="accordion" style="display:none;">
+					<h3><a href="#">General Info</a></h3>
+					<div>
+						<table style="width:100%">
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Id', ttId, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Id
+								</td>
+								<td style="width:80%"><label id="lblId" style="width:100%" class="ui-widget" /></td>
+							</tr>
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Name (Required)', ttName, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Name *
+								</td>
+								<td style="width:80%"><input type="text" id="txtName" style="width:100%" class="ui-widget ui-widget-content" onChange="onNameChanged()"/></td>
+							</tr>
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Display Value (Required)', ttDisplayValue, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Display Value *
+								</td>
+								<td style="width:80%"><input type="text" id="txtDisplayValue" style="width:100%" class="ui-widget ui-widget-content" onChange="onDisplayValueChanged()"/></td>
+							</tr>
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Description (Required)', ttDescription, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Description *
+								</td>
+								<td style="width:80%"><input type="text" id="txtDescription" style="width:100%" class="ui-widget ui-widget-content" onChange="onDescriptionChanged()"/></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Details</a></h3>
+					<div>
+						<table style="width:100%">
+							<tr style="width:100%">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Datatype (Required)', ttDatatype, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Datatype *
+								</td>
+								<td style="width:80;"><select id="lstDataTypes" style="width:100%;" class="ui-widget ui-widget-content" onChange="onSelectedDataTypeChanged()"></select></td>
+							</tr>
+							<tr style="width:100%" id="trPrecision">
+								<td style="width:20%">Precision</td>
+								<td style="width:80%"><input type="text" id="txtPrecision" style="width:100%;" class="ui-widget ui-widget-content"/></td>
+							</tr>
+							<tr style="width:100%" id="trPickLists">
+								<td style="width:20%" id="tdPickList">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Picklist', ttPicklist, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Picklist
+								</td>
+								<td style="width:80%"><select id="lstPickLists" style="width:100%;" class="ui-widget ui-widget-content" onChange="onSelectedPickListChanged()"></select></td>
+							</tr>
+							<tr style="width:100%" id="trAssetTypes">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Asset Type', ttAssetType, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Asset Type *
+								</td>
+								<td style="width:80%"><select id="lstAssetTypes" style="width:100%;" class="ui-widget ui-widget-content" onChange="onSelectedAssetTypeChanged()"></select></td>
+							</tr>
+							<tr style="width:100%" id="trRoles">
+								<td style="width:20%">
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Role', ttRole, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Role *
+								</td>
+								<td style="width:80%"><select id="lstRoles" style="width:100%;" class="ui-widget ui-widget-content" onChange="onSelectedRoleChanged()"></select></td>
+							</tr>
+							<tr style="width:100%" id="trAllowMultiValue">
+								<td style="width:20%" colspan=2>
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Allow Multi-Value?', ttAlowMulti, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>
+									<input type="checkbox" id="chkAllowMultiValue" onChange="onAllowMultiValueChanged()">Allow Multiple Values?</input>
+								</td>
+							</tr>
+							<tr style="width:100%" id="trIsOrdered">
+								<td style="width:20%" colspan=2>
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Is Ordered?', ttIsOrdered, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>
+									<input type="checkbox"id="chkIsOrdered" onChange="onIsOrderedChanged()">Is Ordered?</input>
+								</td>
+							</tr>
+							<tr style="width:100%" id="trAllowNewValues">
+								<td style="width:20%" colspan=2>
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Allow New Values?', ttAllowNew, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>
+									<input type="checkbox" id="chkAllowNewValues" onChange="onAllowNewValuesChanged()">Allow New Values?</input>
+								</td>
+							</tr>
+							<tr style="width:100%" id="trAssetTypeIsInstance">
+								<td style="width:20%" colspan=2>
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Asset Type Is Instance?', ttIsInstance, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>
+									<input type="checkbox" id="chkAssetTypeIsInstance" onChange="onAssetTypeIsInstanceChanged()">Asset Type Is Instance?</input>
+								</td>
+							</tr>
+							<tr style="width:100%" id="trAreFiltered">
+								<td style="width:20%" colspan=2>
+									<span class="ui-icon ui-icon-help" onMouseOver="showMessage('Values are Filtered?', ttAreFilterd, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>
+									<input type="checkbox" id="chkValuesAreFiltered" onChange="onValuesAreFilteredChanged()">Selectable values are filtered?</input>
+								</td>
+							</tr>
+							<tr style="width:100%" id="trFilters">
+								<td style="width:100%" colspan=2><div id="divFilters"></div></td>
+							</tr>
+						</table>
+					</div>
+					<h3><a href="#">Usage by Property Groups</a></h3>
+					<div id="divConsumers">
+					</div>
+					<h3><a href="#">Other</a></h3>
+					<div>
+						<table style="width:100%;">
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Created', ttCreated, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Created</td>
+								<td style="width:80%;" id="tdCreated"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Created By', ttCreatedBy, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Created By</td>
+								<td style="width:80%;" id="tdCreatedBy"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Last Modified', ttModified, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Last Modified</td>
+								<td style="width:80%;" id="tdModified"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Last Modified By', ttModifiedBy, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Last Modified By</td>
+								<td style="width:80%;" id="tdModifiedBy"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Deleted', ttDeleted, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Deleted</td>
+								<td style="width:80%;" id="tdDeleted"></td>
+							</tr>
+							<tr style="width:100%;">
+								<td style="width:20%;"><span class="ui-icon ui-icon-help" onMouseOver="showMessage('Deleted By', ttDeletedBy, false, 400, false);" onMouseOut="hideMessage();" style="float: left; margin-right: .2em;"></span>Deleted By</td>
+								<td style="width:80%;" id="tdDeletedBy"></td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<table id="tblButtons" style="display:none;">
+					<tr>
+						<td><input type="button" id="btnMigrate" class="migrateButtons ui-state-disabled ui-corner-all" value="Migrate Property" onClick="onMigrateClicked()"/></td>
+						<td><input type="button" id="btnDelete" class="deleteButtons ui-state-disabled ui-corner-all" value="Delete Property" onClick="onPropertyDeleteClicked()"/></td>
+						<td><input type="button" id="btnReset" class="resetButtons ui-state-disabled ui-corner-all" value="Discard Changes" onClick="onDiscardChanges()"/></td>
+						<td><input type="button" id="btnSubmit" class="submitButtons ui-state-disabled ui-corner-all" value="Save Changes" onClick="onPropertySaveClicked()"/></td>
+					</tr>
+				</table>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default" onkeyup="onRunAsUserChanged(event)"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none"></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.api.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.admin.properties.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); });</script>
+</html>

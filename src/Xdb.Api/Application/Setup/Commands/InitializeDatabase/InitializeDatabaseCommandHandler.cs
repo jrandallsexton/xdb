@@ -92,16 +92,8 @@ public sealed class InitializeDatabaseCommandHandler(
                 Lname = options.LastName,
                 CreatedBy = SystemMemberIds.Admin
             });
-            // Every member is also an asset of the User type, with the same id.
-            db.Assets.Add(new Asset
-            {
-                Id = memberId.Value,
-                AssetTypeId = SystemAssetTypeIds.User,
-                Name = userId,
-                DisplayValue = $"{options.LastName}, {options.FirstName} [{userId}]",
-                CreatedBy = SystemMemberIds.Admin,
-                IsInstance = false
-            });
+            // No User asset: a fresh install holds no assets (the original allowed members without one; such a
+            // member is only missing from the members pick list).
             created = true;
         }
 

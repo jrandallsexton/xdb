@@ -6,7 +6,8 @@ DECLARE @SystemAdmin uniqueidentifier = '6CACA132-7827-4DE6-81E6-2B7D8DB939B9';
 DECLARE @UserType uniqueidentifier = '6C5DE6FF-1F85-4016-84ED-2F78B7C10517';
 DECLARE @AdminRole uniqueidentifier = '68F8BBAB-C026-4ED4-A875-164C48E8874D';
 
--- The User asset type: every member is an asset of this type, with the member's id.
+-- The User asset type: a member added through the application is also an asset of this type, with the member's id.
+-- A fresh install holds no assets: the seeded members have none (the original allowed members without one).
 IF NOT EXISTS (SELECT 1 FROM [dbo].[AssetTypes] WHERE [Id] = @UserType)
     INSERT INTO [dbo].[AssetTypes] ([Id], [Name], [Pluralization], [DefinitionLabel], [CreatedBy], [AllowAssets], [IsSystem])
     VALUES (@UserType, 'User', 'Users', 'User', @SystemAdmin, 1, 1);
@@ -49,14 +50,10 @@ IF NOT EXISTS (SELECT 1 FROM [dbo].[Roles] WHERE [Id] = '1BCD0F1B-FC8E-4495-BA7E
     INSERT INTO [dbo].[Roles] ([Id], [Name], [Description], [CreatedBy], [IsSystem], [IsActive])
     VALUES ('1BCD0F1B-FC8E-4495-BA7E-D123A7F49D58', 'DB Admin', 'Database admins', @SystemAdmin, 1, 1);
 
--- The built-in system administrator: a member, its User asset, and its Admin membership.
+-- The built-in system administrator: a member and its Admin membership.
 IF NOT EXISTS (SELECT 1 FROM [dbo].[Members] WHERE [Id] = @SystemAdmin)
     INSERT INTO [dbo].[Members] ([Id], [UserId], [LName], [FName], [CreatedBy])
     VALUES (@SystemAdmin, 'admin', 'Administrator', 'System', @SystemAdmin);
-
-IF NOT EXISTS (SELECT 1 FROM [dbo].[Assets] WHERE [Id] = @SystemAdmin)
-    INSERT INTO [dbo].[Assets] ([Id], [AssetTypeId], [Name], [DisplayValue], [CreatedBy], [Approved], [ApprovedBy], [IsInstance])
-    VALUES (@SystemAdmin, @UserType, 'Admin', 'Administrator, System [Admin]', @SystemAdmin, GETDATE(), @SystemAdmin, 0);
 
 IF NOT EXISTS (SELECT 1 FROM [dbo].[RoleMembers] WHERE [RoleId] = @AdminRole AND [MemberId] = @SystemAdmin)
     INSERT INTO [dbo].[RoleMembers] ([RoleId], [MemberId], [CreatedBy])

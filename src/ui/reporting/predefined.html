@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Reports</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/ui.jqgrid.min.css" rel="stylesheet" />
+		<style>
+			.ui-autocomplete {
+				max-height: 100px;
+				overflow-y: auto;
+			}
+			/* http://www.trirand.com/blog/?page_id=393/help/grid-header-height/ */
+			.ui-jqgrid .ui-jqgrid-htable th div {
+			    height:auto;
+			    overflow:hidden;
+			    padding-right:4px;
+			    padding-top:2px;
+			    position:relative;
+			    vertical-align:text-top;
+			    white-space:normal !important;
+			}
+			/* IE 6 doesn't support max-height - we use height instead, but this forces the menu to always be this tall*/
+			* html .ui-autocomplete { height: 100px; }
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content">
+				<div>
+					<select id="lstReports" class="ui-widget ui-state-enabled" onchange="setTimeout(function() { renderReport(); }, 25);">
+                        <option>[ Select a report ]</option>
+                    </select>
+					<select id="lstGroupBy" class="ui-widget ui-state-enabled" onchange="setTimeout(function() { onGroupByChanged(); }, 100);">
+                        <option>[ Group by ... ]</option>
+                    </select>
+					<div id="toolbar">
+						<img width="32" height="32" src="../images/trans32.png" id="btnBookmark" class="tb-fav-add" title="Add to Favorites" onClick="addBookmark()"/>
+						<img width="32" height="32" src="../images/trans32.png" id="btnExport" class="tb-excel" onclick="performGridExport(false)" title="Export to Excel" \/>
+						<img width="32" height="32" src="../images/trans32.png" id="btnExportUpdate" class="tb-excel-update" onclick="performGridExport(true)" title="Export to Excel for Bulk Update"/>
+						<img width="32" height="32" src="../images/trans32.png" id="btnToggle" class="tb-expand" onclick="onToggle()" title="Toggle Grid"/>
+						<img width="32" height="32" src="../images/trans32.png" id="btnRefresh" class="tb-refresh" onclick="onRefreshSelected()" title="Refresh data"/>
+					</div>
+				</div>
+				<div id="gridHolder">
+					<table id="refData"><tr><td></td></tr></table>
+				</div>
+				<div id="pager"></div>
+				<label id="lblStatus" class="tbStatus"></label>
+				<div id="excelDiv"></div>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input id="lstUsers" class="ui-widget ui-state-default"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" ></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input width="24" height="24" class="x-search-24 searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/grid.locale-en.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.jqGrid.src.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.reporting.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function() { initForm(); } );</script>
+</html>

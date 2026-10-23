@@ -227,6 +227,9 @@ public sealed class ActivityQueryHandler(
         else
         {
             var editable = await activity.GetEditableRolesAsync(memberId, cancellationToken);
+            // No editable roles: an empty feed. (The original built an empty UNION here and failed with a syntax error.)
+            if (editable.Count == 0)
+                return new Success<RssChannel>(new RssChannel(FeedTitle, channelLink, FeedDescription, environment.Value.FeedEditor, new List<RssItem>()));
             var inner = new StringBuilder();
             for (var i = 0; i < editable.Count; i++)
             {

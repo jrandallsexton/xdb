@@ -256,9 +256,9 @@ public sealed class MetadataWireController : LegacyWireControllerBase
     [HttpGet("GetServerDateTime")]
     public IActionResult GetServerDateTime([FromServices] IDateTimeProvider clock) => LegacyWire.Typed(clock.UtcNow().ToLocalTime());
 
-    /// <summary>The original's assembly version, with the Content-Type it set explicitly ("text").</summary>
+    /// <summary>The application version, with the Content-Type the original set explicitly ("text").</summary>
     [HttpGet("Service_GetVersion")]
-    public IActionResult ServiceGetVersion() => new LegacyBytesResult(200, "text", Encoding.UTF8.GetBytes("\"1.5.0.5\""));
+    public IActionResult ServiceGetVersion() => new LegacyBytesResult(200, "text", Encoding.UTF8.GetBytes("\"0.1.0\""));
 
     private const string DataTypesJson =
         "[{\"key\":\"9\",\"value\":\"Asset\"},{\"key\":\"14\",\"value\":\"Currency\"},{\"key\":\"0\",\"value\":\"Date\"},{\"key\":\"1\",\"value\":\"DateTime\"}," +

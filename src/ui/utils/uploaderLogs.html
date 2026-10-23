@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - Bulk Upload Logs</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content">
+				<label>Select an upload:</label>
+				<input style="width:50%;" id="lstItems" class="ui-widget ui-widget-content itemSelector"/>
+				<input type="hidden" id="lstItems-id"/>
+				<input type="checkbox" id="chkShowAll" class="ui-widget ui-widget-content" onChange="onShowAllChanged()"/>Show Other Users' Uploads?
+				<input type="radio" name="filter" value="0" onChange="onFilterChanged()" checked> All
+				<input type="radio" name="filter" value="1" onChange="onFilterChanged()">Succeeded
+				<input type="radio" name="filter" value="2" onChange="onFilterChanged()">Failed
+				<br/><br/>
+				<div id="divOptions">
+					<input type="checkbox" checked="checked" id="Info" onChange="onOptionChanged()">Info</input>
+					<input type="checkbox" checked="checked" id="Warning" onChange="onOptionChanged()">Warning</input>
+					<input type="checkbox" checked="checked" id="Error" onChange="onOptionChanged()">Error</input>
+				</div>
+				<div id="processingResults"></div>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none" title=""></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.tmpl.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.uploader.logs.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () { initForm(); });</script>
+</html>

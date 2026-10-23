@@ -4,9 +4,19 @@ XDB is the successor to a metadata-driven object repository I designed and built
 
 ## Status (2026-10-23)
 
-- **Phase 1 - DONE (2026-10-21).** The original 1.5.0.5 release build runs locally as the comparison oracle: jQuery View Engine UI unmodified, WCF REST service on .NET Framework 4.8, against a working copy of the production backup. Six HAR captures were recorded as the golden master (kept privately; they contain non-publishable data).
-- **Phase 2 - in progress (M0-M8 done).** Port the API to .NET 10, reproducing the WCF wire contract, verified by replaying the captures against both the original and the port and diffing the responses. At cut-over (M9) the jQuery UI is copied into this repository and modified here, rather than redirecting the original deployment to the new API.
+- **Phase 1 - DONE (2026-10-21).** The original's deployed release build runs locally as the comparison oracle: jQuery View Engine UI unmodified, WCF REST service on .NET Framework 4.8, against a working copy of the production backup. Six HAR captures were recorded as the golden master (kept privately; they contain non-publishable data).
+- **Phase 2 - DONE (2026-10-23, M0-M9).** The API is ported to .NET 10 with the WCF wire contract, verified by replaying the captures against both the original and the port and diffing the responses. The original jQuery UI is copied into this repository (`src/ui`, sanitized) and served by the API. Version reset to **0.1.0**; from here on, defects are fixed in XDB as they are found rather than reproduced from the original.
 - Later: simplify, then React - as an explorer over data imported from sportDeets.
+
+## Running it locally
+
+`src/Xdb.Api` serves both the API (`/legacy/Service.svc/...`) and the UI (site root, from `src/ui`) on http://localhost:5280. Launch profiles:
+
+| Profile | Database | Use |
+|---|---|---|
+| `Xdb.Api (Local)` | `XdbLocal`, created from nothing by the migrations | A barebones install: no assets, one "Users" view for the configured first administrator (`appsettings.Local.json`; user secrets are not loaded) |
+| `Xdb.Api (UI)` | From user secrets | The UI against an existing database, with the service addresses pointed at the port |
+| `Xdb.Api` | From user secrets | Service addresses from user secrets (used when replaying captures against the original) |
 
 See `docs/10-plan-run-as-is.md` for the phased plan and `docs/07-design-lessons.md` for what is worth keeping from the original design.
 

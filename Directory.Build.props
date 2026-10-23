@@ -8,5 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Latest compiler warning wave. -->
     <WarningLevel>6</WarningLevel>
+    <!-- Product version (UI scripts carry the same number in their file names). -->
+    <Version>0.1.0</Version>
   </PropertyGroup>
 </Project>

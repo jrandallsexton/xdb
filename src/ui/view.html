@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='utf-8'/>
+		<title>XDB - Views</title>
+		<link type="text/css" href="css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+		<link type="text/css" href="css/jquery.fileupload-ui.min.css" rel="stylesheet" />
+		<link type="text/css" href="css/xdb.filterpanel.0.1.0.min.css" rel="stylesheet" />
+   </head>
+   <body>
+		<div id="toppanel">
+			<div id="panel">
+				<div class="pnlContent clearfix filterWidget">
+					<div id="pnl00" class="pnlLeft"></div>
+					<div id="pnl01" class="pnlMiddle"></div>
+					<div id="pnl02" class="pnlLeft pnlRight"></div>
+				</div>
+			</div>
+			<div class="tab">
+				<ul class="login">
+					<li class="left"></li>
+					<li>XDB</li>
+					<li class="sep">|</li>
+					<li id="toggle">
+						<a id="open" class="open" href="#">Filter Assets</a>
+						<a id="close" style="display: none;" class="close" href="#">Close Filter Panel</a>
+					</li>
+					<li class="right"></li>
+				</ul>
+			</div>
+		</div>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content">
+				<div id="divAssets" class="clearfix ui-widget" style="display:none;min-height:35px;">
+					<span id="driverCaption"></span>
+					<span>
+						<input style="display:none;width:50%;" id="lstDriver" class="ui-widget ui-widget-content assetSelector" onkeypress="return monitorLeftRight(event);"/>
+						<input type="hidden" id="lstDriver-id"/>
+					</span>
+					<span><div id="toolbar"></div></span>
+				</div>
+				<div id="divFilterDisplay" class="vwFilter"></div>
+				<div id="innerContainer">
+					<div style="width:99%" id="tabs" class="ui-corner-all"><ul id="tabHeader"></ul></div>
+				</div>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="cloneItem" style="display: none" title="Cloned Item Details">
+			<table style="width:100%">
+				<tr>
+					<td style="width:25%" id="tdCloneItemName"></td>
+					<td style="width:75%"><input type="text" id="txtCloneItemName" style="width:100%" class='ui-widget ui-state-default' /></td>
+				</tr>
+				<tr>
+					<td style="width:25%" id="tdCloneItemResult" colspan="2"></td>
+				</tr>
+			</table>
+		</div>
+		<div id="newItem" style="display: none;" title="New Item Details">
+			<table style="width:100%">
+				<tr>
+					<td style="width:25%" id="tdNewItemName"></td>
+					<td style="width:75%"><input type="text" id="txtNewItemName" style="width:100%" class='ui-widget ui-state-default' /></td>
+				</tr>
+				<tr id="trNewItemParent">
+					<td style="width:25%">Item Parent:</td>
+					<td style="width:75%"><select id="lstNewItemParent" class='ui-widget ui-state-default'><option value='-1'>[Select]</option></select></td>
+				</tr>
+				<tr id="trNewItemType">
+					<td style="width:25%">Asset Type:</td>
+					<td style="width:75%"><select id="lstNewItemType" class='ui-widget ui-state-default'><option value='-1'>[Select]</option></select></td>
+				</tr>
+			</table>
+		</div>
+		<div id="newItemInstance" style="display: none" title="New Item Instance Details"></div>
+		<div id="newPickListValue" style="display: none" title="Enter New Value"></div>
+		<div id="newUser" style="display: none" title="Enter New User">
+			<table style="width:100%">
+				<tr>
+					<td id="newPLVItemPrompt" style="width:20%">Last Name</td>
+					<td style="width:80%"><input type="text" id="txtNewPickListValueLastName" style="width:100%" class="ui-widget ui-state-default" /></td>
+				</tr>
+				<tr>
+					<td id="newPLVItemPrompt" style="width:20%">First Name</td>
+					<td style="width:80%"><input type="text" id="txtNewPickListValueFirstName" style="width:100%" class="ui-widget ui-state-default" /></td>
+				</tr>
+			</table>
+		</div>
+		<div id="confirmNewItem" style="display: none" title="Add New Item?"></div>
+		<div id="confirmNewPickListValue" style="display: none" title="Add New Item?"></div>
+		<div id="confirmNewUser" style="display: none" title="Add New User?"></div>
+		<div id="confirmSubmit" style="display: none" title="Confirm Submittal"></div>
+		<div id="messageDialog" style="display: none" title=""></div>
+		<div id="tutorial" style="display: none" title=""></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input width="24" height="24" class="x-search-24 searchbutton" type="button" onclick="onSearch()" />
+		</form>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="deletionResultDialog" style="display: none" title="Deletion Result">
+			<table style="width:100%">
+				<tr><td style="width:100%"><table id="deletionResultDialogContent" style="width:100%"></table></td></tr>
+			</table>
+			<div id="deletionResultDialogContent"></div>
+		</div>
+		<div id="effect" style="position:absolute;top:0px;right:140px;display:none;width:300px;height:145px;background-color:#D8D8D8;" class="ui-corner-all ui-state-enabled">
+			<div>
+				<h3 style="display:inline;margin-left:5px;color:#FFFFFF">Quick Filters</h3>
+				<span class="ui-icon ui-icon-closethick" title="Close" style="float:right;margin-left:15px;margin-right:2px;" onclick="showFilterDialog()"></span>
+				<span id="qfApply" class="ui-icon ui-icon-check" title="Apply QuickFilter" style="display:none;float:right;margin-right:2px;" onclick="applyQuickFilter()"></span>
+				<span id="qfReport" class="ui-icon ui-icon-document" title="Create Report from QuickFilter" style="display:none;float:right;margin-right:2px;" onclick="createReport()"></span>
+				<span id="qfDelete" class="ui-icon ui-icon-trash" title="Delete QuickFilter" style="display:none;float:right;margin-right:2px;" onclick="deleteQuickFilter()"></span>
+			</div>
+			<select id="lstQFilters" class="ui-widget ui-state-enabled" size="5" style="margin-left:3px;margin-right:3px;width:98%;height:120px;"></select>
+		</div>
+   </body>
+		<script type="text/javascript" src="js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/jquery.tmpl.min.js"></script>
+		<script type="text/javascript" src="js/jquery.iframe-transport.min.js"></script>
+		<script type="text/javascript" src="js/jquery.fileupload.min.js"></script>
+		<script type="text/javascript" src="js/jquery.fileupload-ui.min.js"></script>
+		<script type="text/javascript" src="ckeditor/ckeditor.js"></script>
+		<script type="text/javascript" src="ckeditor/adapters/jquery.js"></script>
+		<script type="text/javascript" src="js/underscore-min.js"></script>
+		<script type="text/javascript" src="js/jquery.contextmenu.min.js"></script>
+		<script type="text/javascript" src="js/jquery.watermark.min.js"></script>
+		<script type="text/javascript" src="js/xdb.filtering.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/xdb.filterpanel.0.1.0.min.js"></script>
+		<script type="text/javascript" src="js/xdb.view.0.1.0.min.js"></script>
+	<script id="template-upload" type="text/x-jquery-tmpl">
+		<tr class="template-upload{{if error}} ui-state-error{{/if}}">
+		    <td class="preview"></td>
+		    <td class="name">${name}</td>
+		    <td class="size">${sizef}</td>
+		    {{if error}}
+		        <td class="error" colspan="2">Error:
+		            {{if error === 'maxFileSize'}}File is too big
+		            {{else error === 'minFileSize'}}File is too small
+		            {{else error === 'acceptFileTypes'}}Filetype not allowed
+		            {{else error === 'maxNumberOfFiles'}}Max number of files exceeded
+		            {{else}}${error}
+		            {{/if}}
+		        </td>
+		    {{else}}
+		        <td class="progress"><div></div></td>
+		        <td class="start"><button>Start</button></td>
+		    {{/if}}
+		    <td class="cancel"><button>Cancel</button></td>
+		</tr>
+	</script>
+	<script id="template-download" type="text/x-jquery-tmpl">
+		<tr class="template-download{{if error}} ui-state-error{{/if}}">
+		    {{if error}}
+		        <td></td>
+		        <td class="name">${name}</td>
+		        <td class="size">${sizef}</td>
+		        <td class="error" colspan="2">Error:
+		            {{if error === 1}}File exceeds upload_max_filesize (php.ini directive)
+		            {{else error === 2}}File exceeds MAX_FILE_SIZE (HTML form directive)
+		            {{else error === 3}}File was only partially uploaded
+		            {{else error === 4}}No File was uploaded
+		            {{else error === 5}}Missing a temporary folder
+		            {{else error === 6}}Failed to write file to disk
+		            {{else error === 7}}File upload stopped by extension
+		            {{else error === 'maxFileSize'}}File is too big
+		            {{else error === 'minFileSize'}}File is too small
+		            {{else error === 'acceptFileTypes'}}Filetype not allowed
+		            {{else error === 'maxNumberOfFiles'}}Max number of files exceeded
+		            {{else error === 'uploadedBytes'}}Uploaded bytes exceed file size
+		            {{else error === 'emptyResult'}}Empty file upload result
+		            {{else}}${error}
+		            {{/if}}
+		        </td>
+		    {{else}}
+		        <td class="preview">
+		            {{if thumbnail_url}}
+		                <a href="${url}" target="_blank"><img src="${thumbnail_url}"/></a>
+		            {{/if}}
+		        </td>
+		        <td class="name">
+		            <a href="${url}" {{if thumbnail_url}} target="_blank" {{/if}}>${name}</a>
+		        </td>
+		        <td class="size">${sizef}</td>
+		        <td colspan="2"></td>
+		    {{/if}}
+		    <td class="delete">
+		        <button data-type="${delete_type}" data-url="${delete_url}">Delete</button>
+		    </td>
+		</tr>
+	</script>
+    <script type="text/javascript">$(document).ready(function() { initViewHtml(); });</script>
+</html>

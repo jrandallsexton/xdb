@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>XDB - WMI Query</title>
+		<LINK REL="SHORTCUT ICON" HREF="../images/favicon.ico" />
+		<link type="text/css" href="../css/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" />
+		<link type="text/css" href="../css/xdb.core.0.1.0.min.css" rel="stylesheet" />
+		<style type="text/css">
+			div.header,div.footer
+			{
+				padding:0.5em;
+				color:white;
+				background-color:#1F4E79;
+				clear:left;
+				color:#ffffff;
+				font-family: Arial,sans-serif;
+			}
+			.ui-multiAccord-span {
+				background:none;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="header"></div>
+			<div id="navigation"></div>
+			<div id="content" style="overflow:auto">
+				<div id="qObjects" style="float:left; width:20%;"></div>
+				<div id="accordion" style="float:left; width:80%;"><div id="progressbar"></div></div>
+			</div>
+			<div id="footer"></div>
+		</div>
+		<div id="runAsDialog" title="Run-As Another User">
+			<input style="width:100%;" id="lstUsers" class="ui-widget ui-state-default"/>
+			<input type="hidden" id="lstUsers-id"/>
+		</div>
+		<div id="messageDialog" style="display: none" title=""></div>
+		<span id="spanGreeting"></span>
+		<form class="searchform" onsubmit="return false;">
+			<input id="txtSearchField" class="searchfield" type="text" value="Search..." onfocus="onSearchAreaFocus(this)" onblur="onSearchAreaBlur(this)" onkeyup="onSearchPhraseChanged(event)" />
+			<input class="searchbutton" type="button" onClick="onSearch()" />
+		</form>
+	</body>
+		<script type="text/javascript" src="../js/xdb.core.0.1.0.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.multi-accordion-1.5.3.min.js"></script>
+		<script type="text/javascript" src="../js/xdb.wmi.0.1.0.min.js"></script>
+	<script type="text/javascript">$(document).ready(function () {	initForm(); });</script>
+</html>
