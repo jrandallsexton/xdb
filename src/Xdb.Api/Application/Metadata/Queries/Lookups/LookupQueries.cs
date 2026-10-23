@@ -156,6 +156,9 @@ public sealed class LegacyEnvironmentOptions
     /// <summary>The product name the original's activity feeds start their titles with. Set it locally.</summary>
     public string ProductName { get; set; } = string.Empty;
 
+    /// <summary>The company name the original wrote into exported workbooks' properties. Set it locally, never commit it.</summary>
+    public string CompanyName { get; set; } = string.Empty;
+
     /// <summary>The managing editor address the original's activity feeds named. Environment data; set it locally, never commit it.</summary>
     public string FeedEditor { get; set; } = string.Empty;
 

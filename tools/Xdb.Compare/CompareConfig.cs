@@ -44,6 +44,15 @@ public sealed class CompareConfig
     /// <summary>Per-operation array paths compared as multisets (results whose order the original does not guarantee).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Unordered { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
+    /// <summary>
+    /// Calls expected to differ while a Windows-only dependency of the original is deferred: a differing call that
+    /// matches (operation, and the relative URL against the regex) is graded Deferred instead of Different.
+    /// </summary>
+    public IReadOnlyList<ExpectDifferentRule> ExpectDifferent { get; init; } = [];
+
+    /// <summary>Operations returning xlsx workbooks, compared as packages (see ComparisonOptions.Xlsx).</summary>
+    public IReadOnlyList<string> Xlsx { get; init; } = [];
+
     /// <summary>Operations whose RSS items are compared as a multiset (see ComparisonOptions.UnorderedXmlItems).</summary>
     public IReadOnlyList<string> UnorderedXmlItems { get; init; } = [];
 
@@ -62,4 +71,12 @@ public sealed class CompareConfig
             values.AddRange(specific);
         return values;
     }
+}
+
+/// <summary>A call expected to differ for a recorded reason (e.g. "D1": a deferred Windows-only image decoder).</summary>
+public sealed record ExpectDifferentRule(string Op, string QueryRegex, string Reason)
+{
+    public bool Matches(string operation, string relativeUrl) =>
+        string.Equals(Op, operation, System.StringComparison.OrdinalIgnoreCase)
+        && System.Text.RegularExpressions.Regex.IsMatch(relativeUrl, QueryRegex);
 }

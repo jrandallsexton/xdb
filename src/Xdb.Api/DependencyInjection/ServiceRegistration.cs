@@ -4,15 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Xdb.Api.Application.Activity;
 using Xdb.Api.Application.Assets;
+using Xdb.Api.Application.BulkUploads;
 using Xdb.Api.Application.Assets.Queries;
 using Xdb.Api.Application.Assets.Writes;
 using Xdb.Api.Application.Charts.Commands;
 using Xdb.Api.Application.Charts.Queries;
 using Xdb.Api.Application.Common.Identity;
 using Xdb.Api.Application.Common.Legacy;
+using Xdb.Api.Application.Files;
 using Xdb.Api.Application.Metadata.Commands;
 using Xdb.Api.Application.Reports;
 using Xdb.Api.Application.Reports.Commands;
+using Xdb.Api.Application.Reports.Export;
 using Xdb.Api.Application.Reports.Queries;
 using Xdb.Api.Application.Roles.Commands;
 using Xdb.Api.Application.Views.Commands;
@@ -228,6 +231,19 @@ public static class ServiceRegistration
         services.AddScoped<IActivityQueryHandler, ActivityQueryHandler>();
         services.AddScoped<ISearchQueryHandler, SearchQueryHandler>();
         services.AddScoped<ITriggerCommandHandler, TriggerCommandHandler>();
+
+        // Bulk uploads
+        services.AddScoped<IBulkUploadProcedures, BulkUploadProcedures>();
+        services.AddScoped<IBulkUploadQueryHandler, BulkUploadQueryHandler>();
+
+        // Image and document streams and uploads
+        services.AddScoped<IFileProcedures, FileProcedures>();
+        services.AddSingleton<UploadProgress>();
+        services.AddScoped<IFileQueryHandler, FileQueryHandler>();
+        services.AddScoped<IUploadCommandHandler, UploadCommandHandler>();
+
+        // Report export (xlsx)
+        services.AddScoped<IReportExportHandler, ReportExportHandler>();
 
         // Report builder and administration
         services.AddScoped<ReportLoader>();

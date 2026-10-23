@@ -63,6 +63,7 @@ public static class Program
             ? null
             : TimeSpan.FromMinutes(int.Parse(timeoutMinutes, System.Globalization.CultureInfo.InvariantCulture)));
         var grades = new Dictionary<ComparisonGrade, int>();
+        var deferred = 0;
         foreach (var call in calls)
         {
             // Background work started by a previous call (e.g. closing a report log) may need time to finish,
@@ -78,10 +79,21 @@ public static class Program
                 new IgnoreRules(config.IgnoredPathsFor(call.Operation)),
                 new BodyMasks(config.MasksFor(call.Operation)),
                 new IgnoreRules(config.UnorderedPathsFor(call.Operation)),
-                config.UnorderedXmlItems.Contains(call.Operation, StringComparer.OrdinalIgnoreCase)));
+                config.UnorderedXmlItems.Contains(call.Operation, StringComparer.OrdinalIgnoreCase),
+                config.Xlsx.Contains(call.Operation, StringComparer.OrdinalIgnoreCase)));
 
-            grades[result.Grade] = grades.GetValueOrDefault(result.Grade) + 1;
-            Console.WriteLine($"#{call.Index,-4} {call.Method,-4} {call.Operation,-40} {result.Grade}");
+            var grade = result.Grade.ToString();
+            if (result.Grade == ComparisonGrade.Different
+                && config.ExpectDifferent.FirstOrDefault(r => r.Matches(call.Operation, call.RelativeUrl)) is { } expected)
+            {
+                grade = $"Deferred ({expected.Reason})";
+                deferred++;
+            }
+            else
+            {
+                grades[result.Grade] = grades.GetValueOrDefault(result.Grade) + 1;
+            }
+            Console.WriteLine($"#{call.Index,-4} {call.Method,-4} {call.Operation,-40} {grade}");
             foreach (var d in result.Differences.Take(20))
                 Console.WriteLine($"       {(d.Ignored ? "(ignored) " : string.Empty)}{d.Kind} {d.Path}: {Show(d.Legacy, showValues)} -> {Show(d.Port, showValues)}");
             if (result.Differences.Count > 20)
@@ -89,7 +101,8 @@ public static class Program
         }
 
         Console.WriteLine();
-        Console.WriteLine($"{calls.Count} calls: " + string.Join(", ", grades.OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Value}")));
+        Console.WriteLine($"{calls.Count} calls: " + string.Join(", ", grades.OrderBy(g => g.Key).Select(g => $"{g.Key} {g.Value}"))
+            + (deferred > 0 ? $", Deferred {deferred}" : string.Empty));
         return grades.GetValueOrDefault(ComparisonGrade.Different) == 0 ? 0 : 1;
     }
 

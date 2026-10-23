@@ -41,7 +41,8 @@ public static class HarReader
                 Header(request, "Content-Type") ?? PostMimeType(request),
                 response.GetProperty("status").GetInt32(),
                 Header(response, "Content-Type"),
-                content.ValueKind == JsonValueKind.Object ? Body(content) : null));
+                content.ValueKind == JsonValueKind.Object ? Body(content) : null,
+                BinaryPostData(request)));
         }
         return calls;
     }
@@ -52,6 +53,13 @@ public static class HarReader
                 .Where(h => string.Equals(h.GetProperty("name").GetString(), name, StringComparison.OrdinalIgnoreCase))
                 .Select(h => h.GetProperty("value").GetString())
                 .FirstOrDefault()
+            : null;
+
+    /// <summary>A request body recorded as base64 (binary uploads): sent as these bytes, never re-encoded as text.</summary>
+    private static byte[]? BinaryPostData(JsonElement request) =>
+        request.TryGetProperty("postData", out var post) && post.TryGetProperty("encoding", out var encoding)
+            && string.Equals(encoding.GetString(), "base64", StringComparison.OrdinalIgnoreCase) && post.TryGetProperty("text", out var text)
+            ? Convert.FromBase64String(text.GetString() ?? string.Empty)
             : null;
 
     /// <summary>A request body's type as HAR records it (postData.mimeType), for captures without request headers.</summary>

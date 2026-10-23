@@ -51,8 +51,22 @@ public static class ResponseComparer
         if ((legacy.ErrorIdHeader is null) != (port.ErrorIdHeader is null))
             differences.Add(new Difference("$header.ErrorId", DifferenceKind.ErrorIdHeader, Presence(legacy.ErrorIdHeader), Presence(port.ErrorIdHeader)));
 
+        if (options.Xlsx && !string.Equals(legacy.ContentDisposition, port.ContentDisposition, StringComparison.Ordinal)
+            && string.Equals(MaskFileDate(legacy.ContentDisposition), MaskFileDate(port.ContentDisposition), StringComparison.Ordinal))
+            differences.Add(new Difference("$header.Content-Disposition", DifferenceKind.ContentDisposition, legacy.ContentDisposition, port.ContentDisposition, Ignored: true));
+        else if (!string.Equals(legacy.ContentDisposition, port.ContentDisposition, StringComparison.Ordinal))
+            differences.Add(new Difference("$header.Content-Disposition", DifferenceKind.ContentDisposition, legacy.ContentDisposition, port.ContentDisposition));
+
         if (!legacy.Body.AsSpan().SequenceEqual(port.Body))
-            CompareBodies(legacy.Body, port.Body, options, differences);
+        {
+            if (options.Xlsx && XlsxComparer.Compare(legacy.Body, port.Body, differences))
+            {
+            }
+            else if (IsBinary(legacy) || IsBinary(port))
+                differences.Add(new Difference("$body(binary)", DifferenceKind.NonJsonBody, Fingerprint(legacy.Body), Fingerprint(port.Body)));
+            else
+                CompareBodies(legacy.Body, port.Body, options, differences);
+        }
 
         return new ComparisonResult(differences);
     }
@@ -83,6 +97,35 @@ public static class ResponseComparer
                 differences.Add(new Difference("$body", DifferenceKind.WhitespaceOnly, null, null));
         }
     }
+
+    /// <summary>The "_ddMMMyyyy.xlsx" date the original put in exported file names.</summary>
+    private static string? MaskFileDate(string? disposition) =>
+        disposition is null ? null : System.Text.RegularExpressions.Regex.Replace(disposition, "_[0-9]{2}[A-Z][a-z]{2}[0-9]{4}[.]xlsx$", "_DATE.xlsx");
+
+    /// <summary>
+    /// File streams (images, documents, workbooks) are never parsed or printed: they may hold real data and megabytes.
+    /// A body that is not valid UTF-8 counts as binary too.
+    /// </summary>
+    internal static bool IsBinary(CapturedResponse response)
+    {
+        var type = response.ContentType?.Split(';')[0].Trim().ToLowerInvariant() ?? string.Empty;
+        if (type.StartsWith("image/", StringComparison.Ordinal) || type is "application/octet-stream" or "application/pdf" or "application/msword"
+            or "application/x-excel" or "application/x-msexcel" or "application/x-rtf" or "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            return true;
+        try
+        {
+            _ = new UTF8Encoding(false, throwOnInvalidBytes: true).GetString(response.Body);
+            return false;
+        }
+        catch (DecoderFallbackException)
+        {
+            return true;
+        }
+    }
+
+    /// <summary>A body's length and SHA-256 (hex), the only way binary bodies are reported.</summary>
+    internal static string Fingerprint(byte[] body) =>
+        $"len={body.Length} sha256={Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(body)).ToLowerInvariant()}";
 
     /// <summary>Equal text before the first &lt;item&gt; and after the last &lt;/item&gt;, and the same items in any order.</summary>
     internal static bool SameXmlItems(string legacy, string port)

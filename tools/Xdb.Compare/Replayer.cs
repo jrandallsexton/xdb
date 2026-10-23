@@ -28,9 +28,9 @@ public sealed class Replayer(TimeSpan? timeout = null) : IDisposable
     public async Task<CapturedResponse> SendAsync(string baseUrl, RecordedCall call, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(new HttpMethod(call.Method), baseUrl.TrimEnd('/') + "/" + call.RelativeUrl);
-        if (call.RequestBody is not null)
+        if (call.RequestBodyBytes is not null || call.RequestBody is not null)
         {
-            request.Content = new ByteArrayContent(Encoding.UTF8.GetBytes(call.RequestBody));
+            request.Content = new ByteArrayContent(call.RequestBodyBytes ?? Encoding.UTF8.GetBytes(call.RequestBody!));
             if (call.RequestContentType is not null)
                 request.Content.Headers.TryAddWithoutValidation("Content-Type", call.RequestContentType);
         }
@@ -50,7 +50,8 @@ public sealed class Replayer(TimeSpan? timeout = null) : IDisposable
         var body = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         var contentType = response.Content.Headers.TryGetValues("Content-Type", out var values) ? string.Join(",", values) : null;
         var errorId = response.Headers.TryGetValues("ErrorId", out var ids) ? ids.FirstOrDefault() : null;
-        return new CapturedResponse((int)response.StatusCode, contentType, body, errorId);
+        var disposition = response.Content.Headers.TryGetValues("Content-Disposition", out var dispositions) ? string.Join(",", dispositions) : null;
+        return new CapturedResponse((int)response.StatusCode, contentType, body, errorId, disposition);
     }
 
     public void Dispose() => _http.Dispose();

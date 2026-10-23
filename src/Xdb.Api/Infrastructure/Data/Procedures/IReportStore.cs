@@ -25,6 +25,8 @@ public interface IReportStore
     Task<Guid> GetCreatedByAsync(Guid reportId, CancellationToken cancellationToken);
     /// <summary>spr_Reports_GetDictionary (all live reports) or spr_ReportList_GetByMemberId (the member's role reports).</summary>
     Task<IReadOnlyList<KeyValuePair<Guid, string>>> GetReportsDictionaryAsync(Guid? memberId, CancellationToken cancellationToken);
+    /// <summary>CurrencySymbolLayer.GetValuesDisplayValues: (Value, Display) ordered by Value (a repeated Value fails).</summary>
+    Task<IReadOnlyList<KeyValuePair<string, string>>> GetCurrencyDisplaysAsync(CancellationToken cancellationToken);
     /// <summary>spr_ReportCache_View.</summary>
     Task<IReadOnlyList<ReportCacheRow>> GetCacheAsync(CancellationToken cancellationToken);
 

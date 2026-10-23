@@ -95,6 +95,24 @@ public sealed class ReportStore(XdbDataContext db) : LegacyGatewayBase(db), IRep
                 : Procedure("spr_Reports_GetDictionary", null, cancellationToken),
             skipNulls: false, cancellationToken, unique: true);
 
+    public async Task<IReadOnlyList<KeyValuePair<string, string>>> GetCurrencyDisplaysAsync(CancellationToken cancellationToken)
+    {
+        var result = new List<KeyValuePair<string, string>>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await (await OpenAsync(cancellationToken)).ExecuteReaderAsync(Inline(
+            "SELECT [Value], [Display] FROM [CurrencySymbols] WITH (NoLock) ORDER BY [Value]", null, cancellationToken));
+        if (!reader.HasRows)
+            return result;
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var value = reader.GetString(0);
+            if (!seen.Add(value))
+                throw new ArgumentException($"An item with the same key has already been added: {value}");
+            result.Add(new KeyValuePair<string, string>(value, reader.GetString(1)));
+        }
+        return result;
+    }
+
     public async Task<IReadOnlyList<ReportCacheRow>> GetCacheAsync(CancellationToken cancellationToken)
     {
         var rows = new List<ReportCacheRow>();

@@ -19,4 +19,9 @@
     <ProjectReference Include="..\..\..\src\Xdb.Api\Xdb.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Synthetic EPPlus 2.9 workbooks (no real data): the Report_Export writer is compared against them. -->
+    <None Include="Application\Reports\Golden\*.xlsx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

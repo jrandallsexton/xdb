@@ -5,6 +5,7 @@ public enum DifferenceKind
     Status,
     ContentType,
     ErrorIdHeader,
+    ContentDisposition,
     Value,
     ValueKind,
     MissingProperty,

@@ -10,7 +10,8 @@ namespace Xdb.Compare.Comparison;
 /// For a non-JSON body: compare the RSS &lt;item&gt; elements as a multiset (the text before the first item and after
 /// the last one exactly), for feeds whose item order the original does not guarantee.
 /// </param>
-public sealed record ComparisonOptions(IgnoreRules Ignore, BodyMasks Masks, IgnoreRules Unordered, bool UnorderedXmlItems = false)
+/// <param name="Xlsx">Compare workbook bodies as packages (XlsxComparer) and the Content-Disposition with its file-name date masked.</param>
+public sealed record ComparisonOptions(IgnoreRules Ignore, BodyMasks Masks, IgnoreRules Unordered, bool UnorderedXmlItems = false, bool Xlsx = false)
 {
     public static ComparisonOptions Strict { get; } = new(IgnoreRules.None, BodyMasks.None, IgnoreRules.None);
 }

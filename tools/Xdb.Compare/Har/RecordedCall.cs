@@ -12,4 +12,5 @@ public sealed record RecordedCall(
     string? RequestContentType,
     int RecordedStatus,
     string? RecordedContentType,
-    string? RecordedBody);
+    string? RecordedBody,
+    byte[]? RequestBodyBytes = null);

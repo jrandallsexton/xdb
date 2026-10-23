@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 done (2026-10-23); M8 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 and M8 done (2026-10-23); M9 next.** Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
@@ -386,6 +386,44 @@ Operations the UI never references (two asset getters) are not ported.
 - The search highlight compares with ICU rather than NLS; the two differ only for some non-ASCII expansions and ignorable characters.
 - `UserData_Get` called a directory service that does not exist in this environment and always faulted; the port faults without the call.
 - The feeds' product name and editor address come from configuration.
+
+### M8 result (2026-10-23)
+
+**Scope:** image and document streams and uploads, the bulk upload reads, and `Report_Export` (moved here from M5). Specified from the deployed release in two parts (files and images; bulk upload and workbooks), read operations measured on the original, synthetic captures replayed against both hosts, and the written tables compared afterwards.
+
+**Author decisions (2026-10-23):**
+- The port runs in a Linux container: no Windows-only package or reference is taken. Behaviour of the original that needed one is deferred and flagged (below), with a stated interim behaviour and harness rule.
+- Bulk uploads are set aside: the workbook upload (`Upload`), the import behind it, the two bulk template generators and the bulk-update export are deferred. The bulk upload reads are ported.
+- Image steps that needed GDI+ fail meanwhile, as the original failed for images GDI+ rejected.
+- The image re-save bug (the save procedure passes two arguments in swapped order, so re-saving an existing image stores one byte) is kept, as the M5 precedent.
+
+**Code:**
+- **Files:** `Application/Files`: `getImageStream`, `Image_GetDimensions`, `getUploadStatus`, `Image_Upload`, `UploadDocument`, `prepareUploadObjectPropertyValue`, with the `FileProcedures` gateway. `LegacyMultipart` reproduces the original's multipart handling as the byte transformation it was (three header lines cut, the closing delimiter removed anywhere); `UploadProgress` replaces the per-process cache that `getUploadStatus` read.
+- **Bulk reads:** `Application/BulkUploads`: `BulkUpload_Get`, `BulkUploads_Get`, `BulkUploadLogs_Get`.
+- **Export:** `Application/Reports/Export`: `ReportWorkbook` writes the workbook part by part as EPPlus 2.9 did (entry order, BOMs, shared strings, styles), with no spreadsheet package.
+- **Wire:** `LegacyRawBody` (an operation that reads its own body: form readers removed); response header values are written as UTF-8, as the original host did.
+
+**Wire facts established (measured):**
+- The upload operations declared no response format: any failure is the Request Error page. A JSON-typed upload never reaches the operation.
+- Excel sheet names are cut at 31 characters; a report without rows lists only its first column; an empty document property keeps its indentation; a report without properties still exports.
+
+**Verification:**
+- **Files:** 792 calls: 557 identical, 235 deferred (calls that reach the deferred image decoder or thumbnails), none different. Images and documents identical afterwards (the deferred image rows left out).
+- **Bulk reads and export:** 201 calls: 181 identical, 13 equivalent (workbooks: random relationship ids, the generation time, column widths), 7 deferred (bulk-update export), none different. Database state identical.
+
+**Harness changes:** binary request bodies sent as bytes; binary responses reported by length and hash only; `Content-Disposition` compared; workbooks compared part by part; an expect-different list grades deferred calls as Deferred.
+
+**Deferred Windows-only dependencies (to resolve later):**
+
+| Id | Original behaviour | Component | Port meanwhile |
+|---|---|---|---|
+| D1 | Image width and height on upload | GDI+ (`System.Drawing`) | upload fails at that step (Request Error page), nothing written |
+| D2 | Thumbnails (`getImageStream` with `createThumbnail=true`) | GDI+ | fault |
+| D3 | Workbook column widths (export, templates) | GDI+ text measurement | default width for every column |
+| D4 | Reading uploaded bulk workbooks | Jet 4.0 OLE DB (32-bit) | `Upload` faults (bulk uploads deferred) |
+| D5 | Address-service lookup inside the bulk import | WCF with Windows authentication | not reached while D4 holds |
+
+A portable implementation of D1-D3 will not be byte-identical to GDI+; its comparison rule (dimensions, pixel tolerance, width tolerance) is decided when it is taken up.
 
 ## 6. Milestones and sizing
 

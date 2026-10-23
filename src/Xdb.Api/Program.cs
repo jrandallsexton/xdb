@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -45,6 +46,9 @@ public partial class Program
             args = args[1..];
 
         var builder = WebApplication.CreateBuilder(args);
+        // The original host (IIS) wrote response header values as UTF-8 bytes (e.g. a file name with "é" in
+        // Content-disposition); Kestrel would refuse a non-ASCII value.
+        builder.WebHost.ConfigureKestrel(kestrel => kestrel.ResponseHeaderEncodingSelector = _ => Encoding.UTF8);
         var isTestingEnv = builder.Environment.IsEnvironment(TestingEnvironmentName);
 
         builder.Host.UseSerilog((context, configuration) => configuration
