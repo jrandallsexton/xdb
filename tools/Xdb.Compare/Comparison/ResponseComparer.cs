@@ -65,6 +65,11 @@ public static class ResponseComparer
         {
             legacyDoc?.Dispose();
             portDoc?.Dispose();
+            if (options.UnorderedXmlItems && SameXmlItems(Encoding.UTF8.GetString(legacy), Encoding.UTF8.GetString(port)))
+            {
+                differences.Add(new Difference("$body(sorted items)", DifferenceKind.NonJsonBody, Encoding.UTF8.GetString(legacy), Encoding.UTF8.GetString(port), Ignored: true));
+                return;
+            }
             differences.Add(new Difference("$body", DifferenceKind.NonJsonBody, Encoding.UTF8.GetString(legacy), Encoding.UTF8.GetString(port)));
             return;
         }
@@ -77,6 +82,35 @@ public static class ResponseComparer
             if (differences.Count == before)
                 differences.Add(new Difference("$body", DifferenceKind.WhitespaceOnly, null, null));
         }
+    }
+
+    /// <summary>Equal text before the first &lt;item&gt; and after the last &lt;/item&gt;, and the same items in any order.</summary>
+    internal static bool SameXmlItems(string legacy, string port)
+    {
+        var (legacyPrefix, legacyItems, legacySuffix) = SplitItems(legacy);
+        var (portPrefix, portItems, portSuffix) = SplitItems(port);
+        return legacyPrefix == portPrefix && legacySuffix == portSuffix
+            && legacyItems.Order(StringComparer.Ordinal).SequenceEqual(portItems.Order(StringComparer.Ordinal), StringComparer.Ordinal);
+    }
+
+    private static (string Prefix, List<string> Items, string Suffix) SplitItems(string body)
+    {
+        var items = new List<string>();
+        var start = body.IndexOf("<item>", StringComparison.Ordinal);
+        if (start < 0)
+            return (body, items, string.Empty);
+        var prefix = body[..start];
+        var position = start;
+        while (body.IndexOf("<item>", position, StringComparison.Ordinal) == position)
+        {
+            var end = body.IndexOf("</item>", position, StringComparison.Ordinal);
+            if (end < 0)
+                break;
+            end += "</item>".Length;
+            items.Add(body[position..end]);
+            position = end;
+        }
+        return (prefix, items, body[position..]);
     }
 
     /// <summary>A path as the rules see it: the "(sorted)" markers of unordered arrays removed.</summary>

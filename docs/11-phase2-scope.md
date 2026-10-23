@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 and M4 done (2026-10-22); M5 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 done (2026-10-23); M8 next.** Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
@@ -355,6 +355,35 @@ Operations the UI never references (two asset getters) are not ported.
 - Background failures that stopped the original's worker process (a submittal for an unknown asset, a missing gen-table procedure, a narrative over 255 characters) are logged by the port instead. No response bytes differ.
 - Migration to the own instance runs locally, as the original did; to any other target it faults without writing.
 - The asset migration skips the value loader for a live asset (every value already exists, so nothing is written either way).
+
+### M7 result (2026-10-23)
+
+**Scope:** members and users, errors and feedback, alerts and questions (20 operations ported, one environment stub, four dead), and submittals, triggers, activity feeds and search (11 ported, three dead). Each half was specified from the deployed release, its read operations measured on the original, and a synthetic capture replayed against both hosts on reverted snapshots; the written tables were compared afterwards.
+
+**Code:**
+- **Users:** `Application/Users` with the `UserProcedures` gateway. `UserClient_Get` is the bootstrap model: the original ran its five dictionary reads in parallel and waited for all of them; the port runs them in turn, and any failure still fails the call. `User_Create` keeps the original's member-save procedure, whose update path is followed by an insert that always fails. `QuestionsRespond` saves every answer before any value work, then replaces a rejected value through the M6 submittal engine.
+- **Activity:** `Application/Activity` with the `ActivityProcedures` gateway: submittal reads (values decoded by the M4 loader), trigger reads, the activity feeds, search and tag search.
+- **Wire pieces in `LegacyWire`:** an RSS writer (`LegacyRss`: the formatter's element order, escaping and date formats), .NET Framework link escaping (`LegacyUri`), and `LegacyXmlOperation`: an exception in a feed operation is the Request Error page, not the JSON fault.
+- **Bugs kept as behaviour:** `TriggerCreate` sends a parameter name its procedure does not declare, so the database rejects every save and no trigger is ever written. `SystemActivity` builds a statement that never compiles. `Domains` reads a picklist that does not exist.
+
+**Wire facts established (measured):**
+- A repeated string query parameter binds as its values joined by commas; an empty or white-space value is passed as is. The port's binder had turned both into something else (first value, null); fixed in `LegacyBindingFilter` for every operation.
+- A request body is read only with a JSON content type (wrapped and bare alike); `text/plain` is the Request Error page.
+- A wrapped body holding a string longer than 8,192 characters (the binding's default reader quota) resets the connection.
+- An empty wrapped body for an operation with Int32 parameters is the Request Error page.
+
+**Verification:**
+- **Users:** 466 calls, all identical after the body fixes; the written tables (members, assets, client cache, settings, preferences, bugs, suggestions, questions, values, submittals, gen rows) were identical afterwards.
+- **Activity:** 385 calls, no port differences. Ten calls differ between runs on the original itself (below). The search log rows and every trigger table were identical afterwards; neither database's object set changed.
+
+**Harness changes:** feed items can be compared as a multiset (`unorderedXmlItems`), for feeds whose item order the original does not fix.
+
+**Known differences and deviations:**
+- Two queries are nondeterministic on the original: the type-2 search (`TOP 100` with no `ORDER BY`) and the role-based activity feed (`TOP n` over minute-resolution times). Identical calls to the original return different sets; the port's results are among them.
+- `SearchTag` ran two reads on parallel threads into one unsynchronized dictionary, which interleaves and, on large results, loses entries. The port runs them in turn: one of the original's possible outputs, never a corrupted one.
+- The search highlight compares with ICU rather than NLS; the two differ only for some non-ASCII expansions and ignorable characters.
+- `UserData_Get` called a directory service that does not exist in this environment and always faulted; the port faults without the call.
+- The feeds' product name and editor address come from configuration.
 
 ## 6. Milestones and sizing
 

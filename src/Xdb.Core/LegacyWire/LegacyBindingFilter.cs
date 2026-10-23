@@ -12,7 +12,7 @@ namespace Xdb.Core.LegacyWire;
 /// value ("x="), a parameter given twice, or an absent enum parameter all produce the host's 1047-byte HTML
 /// request-error page (HTTP 500); absent Guid/int/bool parameters bind their defaults. Enums accept names in any
 /// case and any integer, defined or not, which ASP.NET's own binder rejects, so they are converted here.
-/// String parameters never fail at binding.
+/// String parameters never fail at binding; a repeated one binds its values joined by commas.
 /// </summary>
 public sealed class LegacyBindingFilter : IAsyncActionFilter
 {
@@ -27,10 +27,14 @@ public sealed class LegacyBindingFilter : IAsyncActionFilter
                 continue;
             if (type == typeof(string))
             {
-                // The original passed an empty value as "" (only an absent one is null); ASP.NET would bind null.
+                // The original passed the decoded text as is (only an absent value is null) and a repeated parameter
+                // as its values joined by commas; ASP.NET binds empty and white-space values as null and a repeated
+                // one as its first value.
                 var text = query[parameter.BindingInfo?.BinderModelName ?? parameter.Name];
-                if (text.Count == 1 && text[0] == string.Empty)
-                    context.ActionArguments[parameter.Name] = string.Empty;
+                if (text.Count == 1)
+                    context.ActionArguments[parameter.Name] = text[0];
+                else if (text.Count > 1)
+                    context.ActionArguments[parameter.Name] = string.Join(",", text.ToArray());
                 continue;
             }
             if (!IsSimple(type))

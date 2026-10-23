@@ -28,6 +28,16 @@ public abstract class LegacyGatewayBase(XdbDataContext db)
     protected static readonly Guid NullStringKey = Guid.Empty;
     protected static readonly Guid EmptyStringKey = new("99999999-9999-9999-9999-999999999999");
 
+    /// <summary>Parameters as the original added them: a null value was "not supplied" (the procedure default applies, inline text fails).</summary>
+    protected static DynamicParameters Supplied(params (string Name, object? Value)[] values)
+    {
+        var parameters = new DynamicParameters();
+        foreach (var (name, value) in values)
+            if (value is not null)
+                parameters.Add(name, value);
+        return parameters;
+    }
+
     protected static string Lines(params string[] lines) => string.Join(NewLine, lines) + NewLine;
 
     protected static void Line(StringBuilder sb, string text) => sb.Append(text).Append(NewLine);

@@ -44,6 +44,9 @@ public sealed class CompareConfig
     /// <summary>Per-operation array paths compared as multisets (results whose order the original does not guarantee).</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Unordered { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
+    /// <summary>Operations whose RSS items are compared as a multiset (see ComparisonOptions.UnorderedXmlItems).</summary>
+    public IReadOnlyList<string> UnorderedXmlItems { get; init; } = [];
+
     public IReadOnlyList<string> IgnoredPathsFor(string operation) => For(Ignore, operation);
 
     public IReadOnlyList<string> UnorderedPathsFor(string operation) => For(Unordered, operation);

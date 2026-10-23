@@ -77,7 +77,8 @@ public static class Program
             var result = ResponseComparer.Compare(legacy, port, new ComparisonOptions(
                 new IgnoreRules(config.IgnoredPathsFor(call.Operation)),
                 new BodyMasks(config.MasksFor(call.Operation)),
-                new IgnoreRules(config.UnorderedPathsFor(call.Operation))));
+                new IgnoreRules(config.UnorderedPathsFor(call.Operation)),
+                config.UnorderedXmlItems.Contains(call.Operation, StringComparer.OrdinalIgnoreCase)));
 
             grades[result.Grade] = grades.GetValueOrDefault(result.Grade) + 1;
             Console.WriteLine($"#{call.Index,-4} {call.Method,-4} {call.Operation,-40} {result.Grade}");

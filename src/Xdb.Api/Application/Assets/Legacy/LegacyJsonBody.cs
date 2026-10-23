@@ -53,14 +53,30 @@ public static class LegacyJsonBody
         // A body without a Content-Type never reaches the operation (measured: the request-error page).
         if (string.IsNullOrEmpty(request.ContentType))
             return (null, LegacyWire.RequestError());
-        // A wrapped body needs a JSON content type to be read at all (measured: text/plain is the request-error page).
-        if (wrapped && !request.ContentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        // A body needs a JSON content type to be read at all; the host handed any other to its XML reader (measured
+        // for wrapped and bare bodies: text/plain is the request-error page).
+        if (!request.ContentType.Contains("json", StringComparison.OrdinalIgnoreCase))
             return (null, LegacyWire.RequestError());
         if (Malformed(body) is { } rejected)
             return (null, rejected);
         var root = JsonDocument.Parse(body).RootElement;
+        // The host read bodies with the default reader quotas: a wrapped body holding a string longer than 8192
+        // characters failed in the reader, and the host reset the connection (measured).
+        if (wrapped && LongestString(root) > MaxStringContentLength)
+            return (null, new LegacyConnectionReset());
         return (root.ValueKind == JsonValueKind.Null ? null : root, null);
     }
+
+    /// <summary>The default XmlDictionaryReaderQuotas.MaxStringContentLength of the original's binding.</summary>
+    private const int MaxStringContentLength = 8192;
+
+    private static int LongestString(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.String => element.GetString()!.Length,
+        JsonValueKind.Object => element.EnumerateObject().Select(p => LongestString(p.Value)).DefaultIfEmpty(0).Max(),
+        JsonValueKind.Array => element.EnumerateArray().Select(LongestString).DefaultIfEmpty(0).Max(),
+        _ => 0
+    };
 
     /// <summary>The host's answer to a body that is not valid JSON, or null when it parses.</summary>
     public static IActionResult? Malformed(string body)

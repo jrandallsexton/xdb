@@ -11,16 +11,6 @@ namespace Xdb.Api.Infrastructure.Data.Procedures;
 
 public sealed class MetadataWriteProcedures(XdbDataContext db) : LegacyGatewayBase(db), IMetadataWriteProcedures
 {
-    /// <summary>The original's <c>new SqlParameter(name, value)</c> list: a null value is not sent.</summary>
-    private static DynamicParameters Supplied(params (string Name, object? Value)[] values)
-    {
-        var parameters = new DynamicParameters();
-        foreach (var (name, value) in values)
-            if (value is not null)
-                parameters.Add(name, value);
-        return parameters;
-    }
-
     private static string? NullIfEmpty(string? text) => string.IsNullOrEmpty(text) ? null : text;
 
     private async Task ProcedureAsync(string name, DynamicParameters parameters, CancellationToken cancellationToken) =>

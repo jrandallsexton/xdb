@@ -98,7 +98,11 @@ public static class LegacyWire
         new LegacyBytesResult(500, StreamJsonContentType, "false"u8.ToArray(), new Dictionary<string, string> { ["ErrorId"] = errorId });
 
     /// <summary>An operation that returned a null Stream: 200 with an empty body.</summary>
-    public static IActionResult NullStream() => new EmptyResult();
+    /// <remarks>Measured byte- and header-identical to <see cref="NullTyped"/>.</remarks>
+    public static IActionResult NullStream() => NullTyped();
+
+    /// <summary>An Rss20FeedFormatter return (see <see cref="LegacyRss"/>).</summary>
+    public static IActionResult Rss(RssChannel channel) => new LegacyBytesResult(200, LegacyRss.ContentType, LegacyRss.Write(channel));
 
     /// <summary>A typed return value, serialized by DataContractJsonSerializer as WCF did (UTF-8, no BOM).</summary>
     public static IActionResult Typed<T>(T value) => TypedBytesResult(TypedBytes(value));

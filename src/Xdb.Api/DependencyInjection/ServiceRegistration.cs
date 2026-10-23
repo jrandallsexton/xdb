@@ -2,6 +2,7 @@ using FluentValidation;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using Xdb.Api.Application.Activity;
 using Xdb.Api.Application.Assets;
 using Xdb.Api.Application.Assets.Queries;
 using Xdb.Api.Application.Assets.Writes;
@@ -31,6 +32,8 @@ using Xdb.Api.Application.Reports.Queries.GetReportClient;
 using Xdb.Api.Application.Reports.Queries.GetReportData;
 using Xdb.Api.Application.Reports.Queries.GetReportExecutionStats;
 using Xdb.Api.Application.Setup.Commands.InitializeDatabase;
+using Xdb.Api.Application.Users.Commands;
+using Xdb.Api.Application.Users.Queries;
 using Xdb.Api.Application.Views;
 using Xdb.Api.Application.Views.Queries;
 using Xdb.Api.Infrastructure.Background;
@@ -212,6 +215,19 @@ public static class ServiceRegistration
         services.AddScoped<NarrativeWriter>();
         services.AddScoped<IAssetCommandHandler, AssetCommandHandler>();
         services.AddScoped<IBookmarkCommandHandler, BookmarkCommandHandler>();
+
+        // Members, errors and feedback, alerts and questions
+        services.AddScoped<IUserProcedures, UserProcedures>();
+        services.AddScoped<MemberLoader>();
+        services.AddScoped<IUserQueryHandler, UserQueryHandler>();
+        services.AddScoped<IUserCommandHandler, UserCommandHandler>();
+
+        // Submittal reads, triggers, activity feeds, search
+        services.AddScoped<IActivityProcedures, ActivityProcedures>();
+        services.AddScoped<SubmittalSummaryLoader>();
+        services.AddScoped<IActivityQueryHandler, ActivityQueryHandler>();
+        services.AddScoped<ISearchQueryHandler, SearchQueryHandler>();
+        services.AddScoped<ITriggerCommandHandler, TriggerCommandHandler>();
 
         // Report builder and administration
         services.AddScoped<ReportLoader>();

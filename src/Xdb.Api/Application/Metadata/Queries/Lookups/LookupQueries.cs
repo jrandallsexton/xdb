@@ -153,6 +153,12 @@ public sealed class LegacyEnvironmentOptions
     /// <summary>The chart subtitle the original hard-coded on new charts ("Source: " and the product name). Set it locally.</summary>
     public string ChartSubtitle { get; set; } = string.Empty;
 
+    /// <summary>The product name the original's activity feeds start their titles with. Set it locally.</summary>
+    public string ProductName { get; set; } = string.Empty;
+
+    /// <summary>The managing editor address the original's activity feeds named. Environment data; set it locally, never commit it.</summary>
+    public string FeedEditor { get; set; } = string.Empty;
+
     /// <summary>
     /// The original's full type name of its asset request type enum, which its serializer quoted when a wrapped body's
     /// requestType could not be read. Environment data; set it locally, never commit it.
