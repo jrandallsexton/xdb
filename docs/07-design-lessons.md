@@ -90,4 +90,4 @@ Minimum viable shape, for reference only:
 - [ ] An old public repository from the 2014 rewrite attempt contains a plaintext SQL credential in a test config. Make it private or archive it, and ensure that credential is not in use anywhere.
 - [ ] Plaintext credentials also exist in local copies of the old source trees (a service config and some spike scripts). Local only, but scrub before anything is ever pushed.
 - [ ] Keep the excavation notes, the scripted legacy schema and the golden-master captures out of this public repository - they contain former-employer vocabulary and real data.
-- [ ] The production backup and its working copy on Bender contain real personal data. Retain or delete per your own obligations; don't copy them anywhere else.
+- [ ] The production backup and its local working copy contain real personal data. Retain or delete per your own obligations; don't copy them anywhere else.

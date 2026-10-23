@@ -1,6 +1,6 @@
 # 10 - Plan: Get the Original Running As-Is
 
-Status (2026-10-21): **Phase 1 DONE.** The original 1.5.0.5 release build runs locally on Bender as the comparison oracle (jQuery View Engine UI unmodified, WCF REST on .NET Framework 4.8, against the working copy of the production backup). Six HAR captures were recorded as the golden master and are kept privately (they contain non-publishable data). **Phase 2 is next and not started.**
+Status (2026-10-21): **Phase 1 DONE.** The original 1.5.0.5 release build runs locally as the comparison oracle (jQuery View Engine UI unmodified, WCF REST on .NET Framework 4.8, against the working copy of the production backup). Six HAR captures were recorded as the golden master and are kept privately (they contain non-publishable data). **Phase 2 is next and not started.**
 
 Principle (owner's): get the system working **as it was** - the jQuery View Engine UI unmodified, the same database, the same behavior - and only then simplify, de-brand, and build a React UI. The backend is the only part that must change, because its hosting stack (WCF + WCF REST Starter Kit) cannot move to modern .NET.
 
@@ -9,7 +9,7 @@ Principle (owner's): get the system working **as it was** - the jQuery View Engi
 | Fact | Evidence | Consequence |
 |---|---|---|
 | Code baseline = the original source tree | It equals the 1.5.0.6 release snapshot except `Service.svc.cs`, 4 Core files and 17 View Engine files - the owner's 2017-2019 git commits ("trying to get this old thing running so i can fork it") | Start from the original git repo; its history is the owner's own. The release snapshot stays as the pristine reference. (Phase 1 was in the end run from the 1.5.0.5 release build.) |
-| Database = the production backup (2013), restored on Bender | Release 1.5.0.6 <-> DB "1506" | Code and DB are the same version. |
+| Database = the production backup (2013), restored locally | Release 1.5.0.6 <-> DB "1506" | Code and DB are the same version. |
 | **Not** the later 1.6.0.0 solution tree (decided 2026-10-21) | It is release **1.6.0.0** (`AssemblyVersion("1.6.0.0")`, `Utils/v1600.cs`, edits to Dec 2014); v1600 writes HTML to `Processes`, a column the production backup lacks; the backup's newest hand-written proc is dated 2013-11-29, matching the original tree's last edits (Nov-Dec 2013); no jQuery View Engine in that tree | The 1.6.0.0 tree is a later, never-matched-to-this-DB version. Ignore it for the as-is run. |
 | UI baseline = the jQuery View Engine build in the original source tree | Confirmed by owner | 2,411 files, static HTML/JS, ~324 call sites build URLs from `URL_REST_SVC` |
 | Projects already target **.NET Framework 4.8** | `TargetFrameworkVersion v4.8` in Core, UI, External, Utils, REST | The 2017-2019 attempt already did the retarget. |
@@ -40,10 +40,10 @@ flowchart LR
 - The port is written fresh against the recorded wire contract. Names, routes and identifiers in this repo are neutral; any legacy name the old UI requires on the wire lives in configuration, not in code.
 - Credentials: none in source. Use local-only config (user secrets / untracked file) for connection strings. The old trees contain plaintext secrets and must not be mined for config.
 
-**0.2a Run database (DONE 2026-10-21): the working copy on Bender** - a full copy of the production backup, verified identical (objects and row counts). The legacy app runs against this copy, never the original backup; the app emits DDL at runtime (report/role views, gen tables), so the copy is expected to drift. Golden-master recordings taken against it contain real data and stay private - never committed.
+**0.2a Run database (DONE 2026-10-21): the local working copy** - a full copy of the production backup, verified identical (objects and row counts). The legacy app runs against this copy, never the original backup; the app emits DDL at runtime (report/role views, gen tables), so the copy is expected to drift. Golden-master recordings taken against it contain real data and stay private - never committed.
 
 **0.2 Development database: a scrubbed clone of the production backup** (for fixtures and anything shared; not needed for the first as-is run)
-- Never run against the production backup itself. Clone it on Bender as `XDB_Dev` (backup/restore).
+- Never run against the production backup itself. Clone it locally as `XDB_Dev` (backup/restore).
 - Scrub in the clone (script kept in the repo):
   - `Members` and `User` assets: replace names, emails, logins and badge numbers with generated values; keep ids so references hold.
   - Free-text values (`Memo`/`HTML`/`String` property values, submittal `Notes`/`Narrative`): replace with lorem text of similar length.
@@ -59,7 +59,7 @@ flowchart LR
 
 ## Phase 1 - Run the original on .NET Framework 4.8 - DONE (2026-10-21)
 
-**Outcome:** the 1.5.0.5 release build runs locally on Bender with the jQuery View Engine UI unmodified (apart from its local URL config), against the working copy. Six HAR captures were recorded as the golden master and are kept privately. The steps below are retained as the record of the approach.
+**Outcome:** the 1.5.0.5 release build runs locally with the jQuery View Engine UI unmodified (apart from its local URL config), against the working copy. Six HAR captures were recorded as the golden master and are kept privately. The steps below are retained as the record of the approach.
 
 Scope = the projects the View Engine needs, nothing else:
 
