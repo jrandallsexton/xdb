@@ -14,6 +14,8 @@ namespace Xdb.Core.LegacyWire;
 /// </summary>
 public static class LegacyWire
 {
+    static LegacyWire() => LegacyTimeZone.Apply();
+
     /// <summary>Route prefix of the legacy surface. Neutral by design; the original UI's private config points here.</summary>
     public const string BaseRoute = "legacy/Service.svc";
 

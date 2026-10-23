@@ -8,4 +8,9 @@
     <PackageReference Include="FluentValidation" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The legacy wire's local time zone on non-Windows hosts (see LegacyTimeZone). -->
+    <None Include="LegacyWire\Eastern.tzif" Link="Eastern.tzif" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

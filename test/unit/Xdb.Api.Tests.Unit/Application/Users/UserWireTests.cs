@@ -80,7 +80,6 @@ public class UserWireTests
 
     /// <summary>DT1: an unset DateTime is the local (Eastern) offset of year 1 under Windows rules, not a local-mean-time offset.</summary>
     [Fact]
-    [Trait("Requires", "EasternWindowsTimeZone")]
     public void UnsetDate_SerializesWithTheStandardEasternOffset()
     {
         var bytes = Encoding.UTF8.GetString(LegacyWire.TypedBytes(new QuestionGroupContract()));
@@ -88,7 +87,6 @@ public class UserWireTests
     }
 
     [Fact]
-    [Trait("Requires", "EasternWindowsTimeZone")]
     public void AlertClient_MatchesTheOriginalBytes()
     {
         var alert = new AlertClientContract

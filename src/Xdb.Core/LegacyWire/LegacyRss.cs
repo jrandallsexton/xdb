@@ -20,6 +20,8 @@ public sealed record RssChannel(string Title, string Link, string Description, s
 /// </summary>
 public static class LegacyRss
 {
+    static LegacyRss() => LegacyTimeZone.Apply();
+
     public const string ContentType = "application/xml; charset=utf-8";
 
     public static byte[] Write(RssChannel channel)

@@ -10,7 +10,6 @@ using Xunit;
 namespace Xdb.Core.Tests.Unit.LegacyWire;
 
 /// <summary>Feed bytes and link escaping against the original's formatter (FX F, D and U vectors; Eastern host time zone).</summary>
-[Trait("Requires", "EasternWindowsTimeZone")]
 public class LegacyRssTests
 {
     private const string Head = "<rss version=\"2.0\" xmlns:a10=\"http://www.w3.org/2005/Atom\"><channel><title>F</title><link>http://h/svc/SystemActivity</link><description>d</description><managingEditor>ed@example.com</managingEditor>";

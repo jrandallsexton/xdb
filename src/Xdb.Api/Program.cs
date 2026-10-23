@@ -37,6 +37,9 @@ public partial class Program
 
     public static async Task<int> Main(string[] args)
     {
+        // Before anything reads the local time zone (logging included): the legacy wire writes US Eastern dates.
+        LegacyTimeZone.Apply();
+
         var regenerateAll = args.Length > 0 && args[0] == RegenerateAllVerb;
         if (regenerateAll)
             args = args[1..];
