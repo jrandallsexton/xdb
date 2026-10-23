@@ -93,7 +93,7 @@ Steps:
 
 ## Phase 2 - Port the API to .NET 10 with the same contract (next, not started)
 
-Target: an ASP.NET Core (.NET 10) API that the **unmodified** View Engine can call in place of the WCF service, verified against the golden master.
+Target: an ASP.NET Core (.NET 10) API that the View Engine can call in place of the WCF service, verified against the golden master recorded from the unmodified View Engine. At cut-over the View Engine is copied into this repository in its entirety and modified there; the original deployment is not redirected to the new API (author decision 2026-10-23).
 
 **2.1 Business layer to .NET 10**
 - Retarget Core and UI to `net10.0`. Expected changes:
@@ -129,7 +129,7 @@ ASP.NET Core Negotiate (Windows) authentication locally, mapping the Windows ide
 - Rerun the Phase 1 smoke checklist with the VE pointed at the new API.
 - The ~590 legacy NUnit integration tests are a behavior spec. Port the ones covering Core / UI against `XDB_Dev` if useful, but don't block on it.
 
-**Exit:** the VE UI runs entirely against the .NET 10 API; checklist passes; golden-master diff clean. WCF and .NET Framework retired.
+**Exit:** the VE UI, copied into this repository, runs entirely against the .NET 10 API; checklist passes; golden-master diff clean. WCF and .NET Framework retired.
 
 **Rough effort:** 1-3 weeks. Dominated by the 314 actions (mostly mechanical) and serialization edge cases.
 

@@ -47,8 +47,16 @@ public static class LegacyWire
     /// The host's page for a known operation called with the wrong HTTP verb (status 405, Content-Type text/html). It
     /// links the service help page by the original machine's address, which is configuration.
     /// </summary>
-    public static string MethodNotAllowedPage(string helpUrl) =>
-        "<html version=\"-//W3C//DTD XHTML 2.0//EN\" xml:lang=\"en\" xsi:schemaLocation=\"http://www.w3.org/1999/xhtml http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd\" xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><HEAD><TITLE>Request Error</TITLE></HEAD><BODY><DIV id=\"content\"><P class=\"heading1\"><B>Error Description:</B> 'HTTP Method not allowed'</P><P><B>This may be because an invalid URI or HTTP method was specified. Please see the <A HREF=\""
+    public static string MethodNotAllowedPage(string helpUrl) => DescriptionPage("HTTP Method not allowed", helpUrl);
+
+    /// <summary>
+    /// The host's page for a path under the service that is no operation (status 404, Content-Type text/html): the
+    /// 405 page with a different description.
+    /// </summary>
+    public static string NotFoundPage(string helpUrl) => DescriptionPage("Resource does not exist", helpUrl);
+
+    private static string DescriptionPage(string description, string helpUrl) =>
+        "<html version=\"-//W3C//DTD XHTML 2.0//EN\" xml:lang=\"en\" xsi:schemaLocation=\"http://www.w3.org/1999/xhtml http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd\" xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><HEAD><TITLE>Request Error</TITLE></HEAD><BODY><DIV id=\"content\"><P class=\"heading1\"><B>Error Description:</B> '" + description + "'</P><P><B>This may be because an invalid URI or HTTP method was specified. Please see the <A HREF=\""
         + helpUrl + "\">service help page</A> for constructing valid requests to the service.</B></P>"
         + "<!-- Padding " + new string('x', 512) + "--></DIV></BODY></html>";
 

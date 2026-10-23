@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
+using Xdb.Api.Application.Admin.Legacy;
 using Xdb.Api.Application.Assets.Legacy;
 using Xdb.Api.Application.Metadata.Legacy;
 using Xdb.Api.Application.Roles.Legacy;
@@ -112,6 +113,9 @@ public sealed class DcjsReader(Func<DateTime> localNow)
                 "Deleted DeletedBy LastModified LastModifiedBy", "AllowCloning AllowNewValues FilterLogic Filters IsAutoApprove PropertyGroups",
                 ("DisplayValue", Caption), ("Name", Caption)),
             ["PropertyGroupMembers"], NullGetOnlyListFails: true),
+        [typeof(ServiceModuleMetadataContract)] = new(Dirty.NoStamp,
+            Rules("AssemblyData AssemblyName AssemblyNamespace AssemblyVersion ClassName Created Deleted Description Downloaded Id IsActive LastCompleted LastRan",
+                "", "IsNew", ("Name", new MemberRule(Setter.Changed, 50, 49))), []),
         [typeof(ViewPropertyGroupRelationContract)] = new(Dirty.NoStamp,
             Rules("Created CreatedBy Deleted Id Order PropertyGroupId ViewId", "DeletedBy"), [])
     };
@@ -255,9 +259,28 @@ public sealed class DcjsReader(Func<DateTime> localNow)
         }
         if (target == typeof(DateTime))
             return RoleBodies.Date(value);
+        if (target == typeof(byte[]))
+            return ReadBytes(value);
         if (target.IsGenericType && target.GetGenericTypeDefinition() == typeof(List<>))
             return ReadList(target, value);
         return ReadObject(target, value);
+    }
+
+    /// <summary>A byte array as the serializer read it: an array of numbers 0-255; an object reads as empty; anything else fails.</summary>
+    private static byte[] ReadBytes(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+            return [];
+        if (value.ValueKind != JsonValueKind.Array)
+            throw new LegacyBodyException("Expecting state 'Element'.");
+        var bytes = new List<byte>();
+        foreach (var item in value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Number || !item.TryGetByte(out var b))
+                throw new LegacyBodyException($"The value '{LegacyJsonBody.Text(item)}' cannot be parsed as the type 'Byte'.");
+            bytes.Add(b);
+        }
+        return [.. bytes];
     }
 
     private IList ReadList(Type listType, JsonElement value)

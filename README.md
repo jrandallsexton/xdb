@@ -2,10 +2,10 @@
 
 XDB is the successor to a metadata-driven object repository I designed and built in 2010-2014 (referred to here as "the original system" or "XDB v1"): EAV assets and properties, Definition/Instance types, submittal-based history and approval, SQL compiled from metadata, a jQuery View Engine UI and a WCF REST backend. This repository is about rebuilding it on .NET 10 with, eventually, a React UI.
 
-## Status (2026-10-21)
+## Status (2026-10-23)
 
 - **Phase 1 - DONE (2026-10-21).** The original 1.5.0.5 release build runs locally as the comparison oracle: jQuery View Engine UI unmodified, WCF REST service on .NET Framework 4.8, against a working copy of the production backup. Six HAR captures were recorded as the golden master (kept privately; they contain non-publishable data).
-- **Phase 2 - next, not started.** Port the API to .NET 10, reproducing the WCF wire contract, verified by replaying the captures against both the original and the port and diffing the responses.
+- **Phase 2 - in progress (M0-M8 done).** Port the API to .NET 10, reproducing the WCF wire contract, verified by replaying the captures against both the original and the port and diffing the responses. At cut-over (M9) the jQuery UI is copied into this repository and modified here, rather than redirecting the original deployment to the new API.
 - Later: simplify, then React - as an explorer over data imported from sportDeets.
 
 See `docs/10-plan-run-as-is.md` for the phased plan and `docs/07-design-lessons.md` for what is worth keeping from the original design.

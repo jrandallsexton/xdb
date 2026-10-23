@@ -88,16 +88,25 @@ public partial class Program
             app.UseSwaggerUI();
         }
 
-        // A known operation called with the wrong verb: the original host's 405 page instead of an empty body.
+        // A known operation called with the wrong verb: the original host's 405 page instead of an empty body. A path
+        // under the service that is no operation: its 404 page (other paths, such as health, keep their behaviour).
         app.Use(async (context, next) =>
         {
             await next();
-            if (context.Response.StatusCode == StatusCodes.Status405MethodNotAllowed && !context.Response.HasStarted)
-            {
-                var helpUrl = context.RequestServices.GetRequiredService<IOptions<LegacyEnvironmentOptions>>().Value.ServiceHelpUrl;
-                context.Response.ContentType = "text/html";
-                await context.Response.Body.WriteAsync(Encoding.ASCII.GetBytes(LegacyWire.MethodNotAllowedPage(helpUrl)));
-            }
+            if (context.Response.HasStarted)
+                return;
+            var helpUrl = context.RequestServices.GetRequiredService<IOptions<LegacyEnvironmentOptions>>().Value.ServiceHelpUrl;
+            string? page = null;
+            if (context.Response.StatusCode == StatusCodes.Status405MethodNotAllowed)
+                page = LegacyWire.MethodNotAllowedPage(helpUrl);
+            else if (context.Response.StatusCode == StatusCodes.Status404NotFound && context.GetEndpoint() is null
+                     && context.Request.Path.StartsWithSegments("/" + LegacyWire.BaseRoute, StringComparison.OrdinalIgnoreCase))
+                page = LegacyWire.NotFoundPage(helpUrl);
+            if (page is null)
+                return;
+            context.Response.ContentType = "text/html";
+            context.Response.Headers.CacheControl = "private";
+            await context.Response.Body.WriteAsync(Encoding.ASCII.GetBytes(page));
         });
 
         app.MapControllers();

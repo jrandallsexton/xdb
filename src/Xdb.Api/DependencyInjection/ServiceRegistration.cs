@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 using Xdb.Api.Application.Activity;
+using Xdb.Api.Application.Admin;
 using Xdb.Api.Application.Assets;
 using Xdb.Api.Application.BulkUploads;
 using Xdb.Api.Application.Assets.Queries;
@@ -244,6 +245,11 @@ public static class ServiceRegistration
 
         // Report export (xlsx)
         services.AddScoped<IReportExportHandler, ReportExportHandler>();
+
+        // Administration
+        services.AddScoped<IAdminProcedures, AdminProcedures>();
+        services.AddScoped<IAdminQueryHandler, AdminQueryHandler>();
+        services.AddScoped<IAdminCommandHandler, AdminCommandHandler>();
 
         // Report builder and administration
         services.AddScoped<ReportLoader>();

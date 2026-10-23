@@ -1,8 +1,8 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 and M8 done (2026-10-23); M9 next.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7 and M8 done (2026-10-23); M9 backend done, UI cut-over in progress.** Builds on `10-plan-run-as-is.md`.
 
-Goal: replace the original WCF REST service with a .NET 10 API that the **unmodified** original jQuery UI can use. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
+Goal: replace the original WCF REST service with a .NET 10 API that reproduces the original wire contract exactly, so the original jQuery UI works against it. The UI is **not** pointed at the port where it stands: at cut-over (M9) it is copied into this repository in its entirety and modified there (author decision 2026-10-23). Until then the unmodified original UI and its recorded traffic define the contract. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
 ## 1. What the port has to cover
 
@@ -425,6 +425,21 @@ Operations the UI never references (two asset getters) are not ported.
 
 A portable implementation of D1-D3 will not be byte-identical to GDI+; its comparison rule (dimensions, pixel tolerance, width tolerance) is decided when it is taken up.
 
+### M9 result, backend (2026-10-23)
+
+**Scope:** the administration operations still unported: environment list, help-section creation and save, service-module metadata (create, read, save, list, the upload preparation), the list of hardware query types, and the Windows-only operations. Specified from the deployed release, read operations measured on the original, a synthetic capture replayed against both hosts.
+
+**Code:** `Application/Admin` with the `AdminProcedures` gateway. `DcjsReader` reads byte arrays (an array of 0-255; an object reads as empty) and the service-module body rules (a name over 50 characters keeps 49).
+
+**Author decisions (2026-10-23):**
+- Operations of the original without a client stay unrouted (recorded deviation): they answer the unknown-operation page. Operations that change external state (directory groups, the Windows service, an unauthenticated delete) are never routed.
+- Deferred Windows-only or external dependencies, routed with a fault that matches the original for every input it answers here: the Windows service status (D6), hardware queries through WMI (D7), mail through the internal relay (D8). Directory-group operations (D9) and service start/stop (D10) are not routed.
+- The unknown-operation page: a path under the service that is no operation answers the original's 404 page (the 405 page with "Resource does not exist").
+
+**Verification:** 152 calls: 143 identical, 9 equivalent (new random ids and the creation clock), none different. Help sections and service modules identical afterwards; neither database's object set changed.
+
+**Known differences:** a module saved without a version or class name cannot be read back (as in the original); every module save clears its download time (the original never sent it).
+
 ## 6. Milestones and sizing
 
 Sizes are in **focused sessions**: a few hours of Claude implementing with the author reviewing. They are rough, and the L areas carry the most uncertainty.
@@ -440,7 +455,7 @@ Sizes are in **focused sessions**: a few hours of Claude implementing with the a
 | M6 | Asset writes | Submittal/approval save path, read-table refresh, narrative; metadata writes (asset types, properties, picklists, property groups, views, view filters; author decision 2026-10-22) with their generated-object side effects; the asset edit capture matches | 7-10 |
 | M7 | Members, submittals and history, search | Including RSS and the parallel user fan-out | 5-7 |
 | M8 | Files, images, bulk upload | Multipart parser, 202-then-poll, image streams, xlsx (incl. `Report_Export`, moved from M5) | 4-6 |
-| M9 | Admin and stubs; cut-over | Stubs in place; the original UI runs entirely on the port; the original service retired from the local setup | 2-3 |
+| M9 | Admin and stubs; cut-over | Stubs in place; the original UI copied into this repository in its entirety and modified there to run on the port (not redirected in place; author decision 2026-10-23); the original service retired from the local setup | 2-3 |
 | | **Total** | | **~41-56** |
 
 **Calendar:** at three to four sessions a week, that is roughly **3-4 months**. The author's new captures (M4 onward) run alongside and are not counted.
