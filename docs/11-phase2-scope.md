@@ -327,6 +327,35 @@ Operations the UI never references (two asset getters) are not ported.
 - `MigrateReport` (other environments' databases) is a stub. The configured own instance re-saves the report, as the original did. Any other target faults without writing.
 - Environment strings that the original hard-coded (a chart subtitle and two type names quoted in error pages) come from configuration.
 
+### M6 result (2026-10-22)
+
+**Scope:** asset writes (13 operations: value submittals, asset create/instance/clone/delete, picklist value creation, asset bookmarks, the process type lookup, a migration stub) and, by author decision, the metadata writes (21 operations: asset type, property, picklist, property group and view factories, clones, saves and kills, quick filters, five migration stubs). Each half was specified from the deployed release, then a synthetic capture was replayed against the original and the port on reverted snapshots. After each replay, the written tables were compared between the two databases.
+
+**Code:**
+- **Request bodies:** `Application/Common/Legacy/DcjsReader` emulates the original serializer setter by setter. It creates objects without running constructors, applies members in posted order through the original setters (which dirty the object, truncate captions and stamp `LastModified` with the server clock), checks required members at every depth, rejects duplicate members, and applies the lists' add rules. The saves depend on what it produces: a posted `IsDirty: false` almost always ends true.
+- **Metadata:** `Application/Metadata/Commands` (asset type, property and picklist savers; migration stubs) and `Application/Views/Commands` (property groups, views, quick filters, clones), with the `MetadataWriteProcedures` gateway. As in the deployed release, none of these saves touches the generated objects.
+- **Assets:** `Application/Assets/Writes`:
+  - `SubmittalEngine`: there is no pending-approval path. Every save is approved by the acting member in two passes, then relations, renames and the asset's update stamp.
+  - `AssetWriter`, `GenTableRefresher` (gen-table insert, refresh and delete as background work) and `NarrativeWriter` (the activity sentences).
+  - `AssetWriteProcedures` gateway.
+- **Bugs kept as behaviour:** the asset type parent-removal and `DeletedBy` failures, the view filter insert that always fails, the picklist re-save and soft-delete failures, and the parent relation rule that detaches every sibling.
+
+**Wire facts established:**
+- A known operation called with the wrong verb answers the host's 405 page (`LegacyWire.MethodNotAllowedPage`). It links the original machine's help page, so the address is configuration.
+- A wrapped body whose dictionary member cannot be read resets the connection; the port aborts it too.
+- A wrapped body sent as `text/plain` is the Request Error page.
+
+**Verification:**
+- **Metadata:** 690 calls. All writes identical; the remaining differences were harness rules for new random ids and the 405 page (both fixed). The written tables were identical afterwards (rows with server-generated ids matched by content), and neither database's object set changed.
+- **Assets:** 320 calls. The first run differed only in a serializer type error in `Bookmarks_Get` and the `text/plain` rule; after both fixes, a confirmation run had 0 differences. The written tables were identical afterwards, including 1.6 million property values and the gen-table rows of the created assets, apart from the clone's random id.
+
+**Harness changes:** a connection reset is recorded as a result (status 0); the replay script takes a config file (`compare-m6.json` holds the write-phase rules).
+
+**Known differences and deviations:**
+- Background failures that stopped the original's worker process (a submittal for an unknown asset, a missing gen-table procedure, a narrative over 255 characters) are logged by the port instead. No response bytes differ.
+- Migration to the own instance runs locally, as the original did; to any other target it faults without writing.
+- The asset migration skips the value loader for a live asset (every value already exists, so nothing is written either way).
+
 ## 6. Milestones and sizing
 
 Sizes are in **focused sessions**: a few hours of Claude implementing with the author reviewing. They are rough, and the L areas carry the most uncertainty.
@@ -339,11 +368,11 @@ Sizes are in **focused sessions**: a few hours of Claude implementing with the a
 | M3 | `RegenerateAll()` | Regenerated objects match the originals on the reconciled copy; fresh DB plus seed plus regenerate gives a working app | 2-3 |
 | M4 | Read paths: metadata, then assets | Types/properties, views, picklists reads; `AssetClient_Get` and `ViewClient_Get` byte-identical | 6-8 |
 | M5 | Reports, charts, roles | Report builder save (view DDL), charts, role save (row-security views) match their captures | 9-11 |
-| M6 | Asset writes | Submittal/approval save path, read-table refresh, narrative; the asset edit capture matches | 4-6 |
+| M6 | Asset writes | Submittal/approval save path, read-table refresh, narrative; metadata writes (asset types, properties, picklists, property groups, views, view filters; author decision 2026-10-22) with their generated-object side effects; the asset edit capture matches | 7-10 |
 | M7 | Members, submittals and history, search | Including RSS and the parallel user fan-out | 5-7 |
 | M8 | Files, images, bulk upload | Multipart parser, 202-then-poll, image streams, xlsx (incl. `Report_Export`, moved from M5) | 4-6 |
 | M9 | Admin and stubs; cut-over | Stubs in place; the original UI runs entirely on the port; the original service retired from the local setup | 2-3 |
-| | **Total** | | **~38-52** |
+| | **Total** | | **~41-56** |
 
 **Calendar:** at three to four sessions a week, that is roughly **3-4 months**. The author's new captures (M4 onward) run alongside and are not counted.
 

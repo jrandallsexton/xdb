@@ -53,6 +53,9 @@ public static class LegacyJsonBody
         // A body without a Content-Type never reaches the operation (measured: the request-error page).
         if (string.IsNullOrEmpty(request.ContentType))
             return (null, LegacyWire.RequestError());
+        // A wrapped body needs a JSON content type to be read at all (measured: text/plain is the request-error page).
+        if (wrapped && !request.ContentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+            return (null, LegacyWire.RequestError());
         if (Malformed(body) is { } rejected)
             return (null, rejected);
         var root = JsonDocument.Parse(body).RootElement;

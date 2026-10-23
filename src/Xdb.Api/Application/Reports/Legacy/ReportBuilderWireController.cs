@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using Xdb.Api.Application.Assets.Legacy;
 using Xdb.Api.Application.Common.Identity;
+using Xdb.Api.Application.Common.Legacy;
 using Xdb.Api.Application.Reports.Commands;
 using Xdb.Api.Application.Reports.Queries;
 using Xdb.Api.Infrastructure.Data.Procedures;
@@ -111,7 +112,7 @@ public sealed class ReportBuilderWireController : LegacyWireControllerBase
         {
             return e.ToResult();
         }
-        return await LogicalAsync(errors, async () => await handler.ExecuteAsync(new SaveReportCommand(report), cancellationToken), cancellationToken);
+        return await errors.HandleAsync(async () => await handler.ExecuteAsync(new SaveReportCommand(report), cancellationToken), cancellationToken);
     }
 
     [HttpGet("Report_CreateFromMemberFilter")]
@@ -137,34 +138,16 @@ public sealed class ReportBuilderWireController : LegacyWireControllerBase
         var (root, error) = await LegacyJsonBody.ReadAsync(Request, cancellationToken);
         if (error is not null)
             return error;
-        string? key, target;
+        Guid key;
+        int target;
         try
         {
-            (key, var value) = LegacyJsonBody.KeyValue(root);
-            if (key is not null && !Guid.TryParse(key, out _))
-                throw new LegacyBodyException("Not a Guid.");
-            target = value is null ? "0" : int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number)
-                ? number.ToString(CultureInfo.InvariantCulture)
-                : throw new LegacyBodyException("Not a number.");
-            key ??= Guid.Empty.ToString("D");
+            (key, target) = MigrateBody.Read(root);
         }
         catch (LegacyBodyException e)
         {
             return e.ToResult();
         }
-        return await LogicalAsync(errors, async () => await handler.ExecuteAsync(new MigrateReportCommand(key, target), cancellationToken), cancellationToken);
-    }
-
-    /// <summary>HandleLogicalException: a logical failure saves an Errors row and answers 500 with its id; anything else faults.</summary>
-    private static async Task<IActionResult> LogicalAsync(LegacyErrorLog errors, Func<Task<Result<bool>>> run, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return (await run()).ToLegacyResult(ok => LegacyWire.Typed(ok));
-        }
-        catch (LegacyLogicalException e)
-        {
-            return LegacyWire.LogicalFailure(await errors.SaveAsync(e.Message, cancellationToken));
-        }
+        return await errors.HandleAsync(async () => await handler.ExecuteAsync(new MigrateReportCommand(key, target), cancellationToken), cancellationToken);
     }
 }

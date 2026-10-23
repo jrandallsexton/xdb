@@ -111,6 +111,9 @@ public sealed class LegacyEnvironmentOptions
 {
     public const string SectionName = "LegacyEnvironment";
 
+    /// <summary>The original service's help page address, linked from its wrong-verb (405) page.</summary>
+    public string ServiceHelpUrl { get; set; } = string.Empty;
+
     /// <summary>
     /// The original service's own address (its restSvcAddress setting, no trailing slash), used to build image
     /// stream URLs. Environment-specific; set it locally, never commit it.

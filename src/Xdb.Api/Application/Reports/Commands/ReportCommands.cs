@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using Microsoft.Extensions.Options;
 
+using Xdb.Api.Application.Common.Legacy;
 using Xdb.Api.Application.Common.Metadata;
 using Xdb.Api.Application.Metadata.Queries.Lookups;
 using Xdb.Api.Application.Reports.Legacy;
@@ -131,7 +132,7 @@ public sealed class KillReportCommandHandler(IReportStore store, IMetadataProced
     }
 }
 
-public sealed record MigrateReportCommand(string? ReportId, string? Target);
+public sealed record MigrateReportCommand(Guid ReportId, int Target);
 
 public interface IMigrateReportCommandHandler
 {
@@ -147,9 +148,8 @@ public sealed class MigrateReportCommandHandler(ReportLoader loader, ReportSaver
 {
     public async Task<Result<bool>> ExecuteAsync(MigrateReportCommand command, CancellationToken cancellationToken = default)
     {
-        var reportId = new Guid(command.ReportId ?? throw new ArgumentNullException(nameof(command), "key is null."));
-        var report = (await loader.LoadAsync(reportId, cancellationToken)).Report;
-        if (command.Target != environment.Value.ApplicationInstance)
+        var report = (await loader.LoadAsync(command.ReportId, cancellationToken)).Report;
+        if (!MigrateBody.IsOwnInstance(command.Target, environment.Value.ApplicationInstance))
             throw new InvalidOperationException("The target instance is not available.");
         report.IsNew = true;
         return new Success<bool>(await saver.SaveAsync(report, cancellationToken));

@@ -1,18 +1,23 @@
 using System;
+using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Serilog;
 
 using Xdb.Api.Application.GeneratedObjects.Commands.RegenerateAll;
 using Xdb.Api.Application.Setup.Commands.InitializeDatabase;
 using Xdb.Api.DependencyInjection;
+using Xdb.Api.Application.Metadata.Queries.Lookups;
 using Xdb.Api.Infrastructure.Data;
+using Xdb.Core.LegacyWire;
 
 namespace Xdb.Api;
 
@@ -75,6 +80,18 @@ public partial class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
+        // A known operation called with the wrong verb: the original host's 405 page instead of an empty body.
+        app.Use(async (context, next) =>
+        {
+            await next();
+            if (context.Response.StatusCode == StatusCodes.Status405MethodNotAllowed && !context.Response.HasStarted)
+            {
+                var helpUrl = context.RequestServices.GetRequiredService<IOptions<LegacyEnvironmentOptions>>().Value.ServiceHelpUrl;
+                context.Response.ContentType = "text/html";
+                await context.Response.Body.WriteAsync(Encoding.ASCII.GetBytes(LegacyWire.MethodNotAllowedPage(helpUrl)));
+            }
+        });
 
         app.MapControllers();
         app.MapHealthChecks("/health");

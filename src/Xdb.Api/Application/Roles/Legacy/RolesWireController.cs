@@ -92,7 +92,7 @@ public sealed class RolesWireController : LegacyWireControllerBase
         {
             return e.ToResult();
         }
-        return await LogicalAsync(errors, async () => await handler.ExecuteAsync(new SaveRoleCommand(role), cancellationToken), cancellationToken);
+        return await errors.HandleAsync(async () => await handler.ExecuteAsync(new SaveRoleCommand(role), cancellationToken), cancellationToken);
     }
 
     [HttpPost("Role_SaveViewRelations")]
@@ -111,7 +111,7 @@ public sealed class RolesWireController : LegacyWireControllerBase
         {
             return e.ToResult();
         }
-        return await LogicalAsync(errors, async () => await handler.ExecuteAsync(new SaveRoleViewRelationsCommand(relations), cancellationToken), cancellationToken);
+        return await errors.HandleAsync(async () => await handler.ExecuteAsync(new SaveRoleViewRelationsCommand(relations), cancellationToken), cancellationToken);
     }
 
     [HttpPost("Role_SaveProcessRelations")]
@@ -130,26 +130,13 @@ public sealed class RolesWireController : LegacyWireControllerBase
         {
             return e.ToResult();
         }
-        return await LogicalAsync(errors, async () => await handler.ExecuteAsync(new SaveRoleProcessRelationsCommand(relations), cancellationToken), cancellationToken);
+        return await errors.HandleAsync(async () => await handler.ExecuteAsync(new SaveRoleProcessRelationsCommand(relations), cancellationToken), cancellationToken);
     }
 
     [HttpGet("Role_Kill")]
     public async Task<IActionResult> RoleKill([FromServices] IKillRoleCommandHandler handler, [FromServices] LegacyErrorLog errors, [FromQuery] Guid roleId,
         [FromQuery] Guid userId, CancellationToken cancellationToken) =>
-        await LogicalAsync(errors, async () => await handler.ExecuteAsync(new KillRoleCommand(roleId, userId), cancellationToken), cancellationToken);
-
-    /// <summary>HandleLogicalException: a logical failure saves an Errors row and answers 500 with its id; anything else faults.</summary>
-    private static async Task<IActionResult> LogicalAsync(LegacyErrorLog errors, Func<Task<Result<bool>>> run, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return (await run()).ToLegacyResult(ok => LegacyWire.Typed(ok));
-        }
-        catch (LegacyLogicalException e)
-        {
-            return LegacyWire.LogicalFailure(await errors.SaveAsync(e.Message, cancellationToken));
-        }
-    }
+        await errors.HandleAsync(async () => await handler.ExecuteAsync(new KillRoleCommand(roleId, userId), cancellationToken), cancellationToken);
 
     private static IActionResult Html(IReadOnlyList<KeyValuePair<Guid, string>> values) => LegacyWire.HtmlStream(LegacyFormatters.FormatDictionary(values));
 }

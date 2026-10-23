@@ -35,7 +35,18 @@ public sealed class Replayer(TimeSpan? timeout = null) : IDisposable
                 request.Content.Headers.TryAddWithoutValidation("Content-Type", call.RequestContentType);
         }
 
-        using var response = await _http.SendAsync(request, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await _http.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            // The host closed the connection without a response (the original resets it on some wrapped bodies):
+            // recorded as status 0, so a reset on both sides compares equal and a reset on one side differs.
+            return new CapturedResponse(0, null, []);
+        }
+        using var disposable = response;
         var body = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         var contentType = response.Content.Headers.TryGetValues("Content-Type", out var values) ? string.Join(",", values) : null;
         var errorId = response.Headers.TryGetValues("ErrorId", out var ids) ? ids.FirstOrDefault() : null;

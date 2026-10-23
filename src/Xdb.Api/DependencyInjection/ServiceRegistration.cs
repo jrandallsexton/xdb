@@ -4,13 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Xdb.Api.Application.Assets;
 using Xdb.Api.Application.Assets.Queries;
+using Xdb.Api.Application.Assets.Writes;
 using Xdb.Api.Application.Charts.Commands;
 using Xdb.Api.Application.Charts.Queries;
 using Xdb.Api.Application.Common.Identity;
+using Xdb.Api.Application.Common.Legacy;
+using Xdb.Api.Application.Metadata.Commands;
 using Xdb.Api.Application.Reports;
 using Xdb.Api.Application.Reports.Commands;
 using Xdb.Api.Application.Reports.Queries;
 using Xdb.Api.Application.Roles.Commands;
+using Xdb.Api.Application.Views.Commands;
 using Xdb.Api.Application.Roles.Queries;
 using Xdb.Api.Application.Common.Metadata;
 using Xdb.Api.Application.GeneratedObjects;
@@ -185,6 +189,29 @@ public static class ServiceRegistration
         services.AddScoped<IGetAssetsFromPropertyValueQueryHandler, GetAssetsFromPropertyValueQueryHandler>();
         services.AddScoped<IGetAssetsInPropertyValueQueryHandler, GetAssetsInPropertyValueQueryHandler>();
         services.AddScoped<IGetAssetsGroupedQueryHandler, GetAssetsGroupedQueryHandler>();
+
+        // Metadata and view writes
+        services.AddScoped<DcjsReader>(sp => new DcjsReader(() => sp.GetRequiredService<IDateTimeProvider>().UtcNow().ToLocalTime()));
+        services.AddScoped<IMetadataWriteProcedures, MetadataWriteProcedures>();
+        services.AddScoped<AssetTypeSaver>();
+        services.AddScoped<PropertySaver>();
+        services.AddScoped<PickListSaver>();
+        services.AddScoped<PropertyGroupSaver>();
+        services.AddScoped<ViewSaver>();
+        services.AddScoped<IMetadataSaveCommandHandler, MetadataSaveCommandHandler>();
+        services.AddScoped<IMetadataMigrateCommandHandler, MetadataMigrateCommandHandler>();
+        services.AddScoped<IViewCommandHandler, ViewCommandHandler>();
+        services.AddScoped<IViewCloneQueryHandler, ViewCloneQueryHandler>();
+        services.AddScoped<IViewMigrateCommandHandler, ViewMigrateCommandHandler>();
+
+        // Asset writes, submittals, bookmarks
+        services.AddScoped<IAssetWriteProcedures, AssetWriteProcedures>();
+        services.AddScoped<GenTableRefresher>();
+        services.AddScoped<AssetWriter>();
+        services.AddScoped<SubmittalEngine>();
+        services.AddScoped<NarrativeWriter>();
+        services.AddScoped<IAssetCommandHandler, AssetCommandHandler>();
+        services.AddScoped<IBookmarkCommandHandler, BookmarkCommandHandler>();
 
         // Report builder and administration
         services.AddScoped<ReportLoader>();

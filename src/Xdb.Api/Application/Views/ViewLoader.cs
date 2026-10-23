@@ -27,9 +27,12 @@ public sealed class ViewLoader(IViewProcedures views, IMetadataProcedures metada
     /// <summary>Thrown as the original's LogicalException (the legacy wire returns the generic fault).</summary>
     public sealed class LogicalException(string message) : Exception(message);
 
-    public async Task<ViewContract> ViewAsync(Guid viewId, Guid userId, CancellationToken cancellationToken)
+    /// <summary>ViewDal.Get: the view row, its relations, groups, group properties and filters; null when absent (deleted views load).</summary>
+    public async Task<ViewContract?> ViewRowsAsync(Guid viewId, CancellationToken cancellationToken)
     {
-        var row = await views.GetViewAsync(viewId, cancellationToken) ?? throw new LogicalException("Invalid view id");
+        var row = await views.GetViewAsync(viewId, cancellationToken);
+        if (row is null)
+            return null;
         var view = new ViewContract
         {
             Id = viewId,
@@ -98,6 +101,13 @@ public sealed class ViewLoader(IViewProcedures views, IMetadataProcedures metada
                 Operator = filter.Operator, Value = filter.Value, Order = filter.Order
             });
         }
+
+        return view;
+    }
+
+    public async Task<ViewContract> ViewAsync(Guid viewId, Guid userId, CancellationToken cancellationToken)
+    {
+        var view = await ViewRowsAsync(viewId, cancellationToken) ?? throw new LogicalException("Invalid view id");
 
         await AttachTriggersAsync(view, cancellationToken);
 
