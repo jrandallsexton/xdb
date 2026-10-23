@@ -15,4 +15,18 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
-      - run: dotnet test --no-build -c Release --logger "console;verbosity=normal"
+      # Tests of the original host's local dates run in the Windows job below.
+      - run: dotnet test --no-build -c Release --filter "Requires!=EasternWindowsTimeZone" --logger "console;verbosity=normal"
+
+  # The legacy wire reproduces the original host's dates: Windows time zone rules for US Eastern.
+  unit-eastern-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: tzutil /s "Eastern Standard Time"
+      - run: dotnet test test/unit/Xdb.Core.Tests.Unit -c Release --logger "console;verbosity=normal"
+      - run: dotnet test test/unit/Xdb.Api.Tests.Unit -c Release --logger "console;verbosity=normal"
+      - run: dotnet test test/unit/Xdb.Compare.Tests.Unit -c Release --logger "console;verbosity=normal"
