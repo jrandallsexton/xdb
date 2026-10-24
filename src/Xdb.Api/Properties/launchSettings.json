@@ -27,6 +27,31 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Local"
       }
+    },
+    "Xdb.Api (sportDeets)": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "",
+      "applicationUrl": "http://localhost:5280",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "SportDeets"
+      }
+    },
+    "Xdb.Api (sportDeets import)": {
+      "commandName": "Project",
+      "commandLineArgs": "import-sportdeets",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "SportDeets"
+      }
+    },
+    "Xdb.Api (sportDeets reset + import)": {
+      "commandName": "Project",
+      "commandLineArgs": "import-sportdeets --reset",
+      "launchBrowser": false,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "SportDeets"
+      }
     }
   }
 }
