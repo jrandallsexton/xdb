@@ -37,6 +37,13 @@ public sealed class CreatePropertyCommandValidator : AbstractValidator<CreatePro
         RuleFor(x => x.AssetTypeId)
             .Must(id => id is null || id == SystemAssetTypeIds.User).When(x => x.DataType == DataType.User)
             .WithMessage("A User property always refers to the User type.");
+        RuleFor(x => x.AssetTypeId)
+            .Null().When(x => x.DataType is not (DataType.Asset or DataType.User))
+            .WithMessage("Only an Asset or User property refers to an asset type.");
+        // The handler sets a User property's level itself.
+        RuleFor(x => x.AssetTypeIsInstance)
+            .Null().When(x => x.DataType != DataType.Asset)
+            .WithMessage("Only an Asset property says whether it refers to instances or definitions.");
 
         RuleFor(x => x.RoleId)
             .Null().When(x => x.DataType != DataType.User).WithMessage("Only a User property can be limited to a role.");

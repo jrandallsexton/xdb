@@ -95,6 +95,31 @@ public class CreatePropertyCommandValidatorTests
         _validator.Validate(Valid(DataType.User) with { AssetTypeId = SystemAssetTypeIds.User }).IsValid.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData(DataType.String)]
+    [InlineData(DataType.PickList)]
+    public void NonReferenceProperty_TakesNoAssetType(DataType type)
+    {
+        var command = Valid(type) with
+        {
+            PickListId = type == DataType.PickList ? Guid.NewGuid() : null,
+            AssetTypeId = Guid.NewGuid(),
+            AssetTypeIsInstance = true
+        };
+
+        var result = _validator.Validate(command);
+
+        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(CreatePropertyCommand.AssetTypeId));
+        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(CreatePropertyCommand.AssetTypeIsInstance));
+    }
+
+    [Fact]
+    public void UserProperty_TakesNoLevel()
+    {
+        _validator.Validate(Valid(DataType.User) with { AssetTypeIsInstance = true }).Errors
+            .Should().ContainSingle(e => e.PropertyName == nameof(CreatePropertyCommand.AssetTypeIsInstance));
+    }
+
     [Fact]
     public void Role_IsOnlyForUserProperties()
     {
