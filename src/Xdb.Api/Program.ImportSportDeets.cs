@@ -30,7 +30,7 @@ using DataType = Xdb.Api.Application.Common.Metadata.DataType;
 namespace Xdb.Api;
 
 /// <summary>
-/// The first sportDeets import (docs/13-import-venue.md), run with <c>dotnet run -- import-sportdeets [--reset]</c> under
+/// The sportDeets import (docs/13-import-venue.md), run with <c>dotnet run -- import-sportdeets [--reset]</c> under
 /// the SportDeets environment. Not the long-term home: it reads the Producer database directly and writes through the
 /// Create* slices. Every step looks for what it would create (by name) and reuses it, so a re-run, or a new type that
 /// shares properties and pick lists, only adds what is missing. Rows whose asset already exists are skipped.
@@ -61,83 +61,265 @@ public partial class Program
 
     /// <param name="PickList">The pick list's name, for PickList properties; shared by every property naming it.</param>
     /// <param name="FixedValues">The list's values; null takes the distinct values found in the rows.</param>
-    private sealed record ImportProperty(string Name, DataType DataType, string? PickList = null, IReadOnlyList<string>? FixedValues = null);
+    /// <param name="TargetType">For Asset properties: the name of the type referred to, imported earlier.</param>
+    /// <param name="TargetIsInstance">For Asset properties: whether the values are that type's instances or its definitions.</param>
+    private sealed record ImportProperty(string Name, DataType DataType, string? PickList = null, IReadOnlyList<string>? FixedValues = null,
+        string? TargetType = null, bool TargetIsInstance = false);
 
     /// <param name="Properties">Import property names, or a key of <see cref="SystemProperties"/>.</param>
     private sealed record ImportGroup(string Name, IReadOnlyList<string> Properties);
 
-    /// <param name="Values">Property name to text; null or blank writes no value. Pick list values are given as their text.</param>
-    private sealed record ImportRow(Guid Id, string Name, IReadOnlyDictionary<string, string?> Values);
+    /// <param name="Values">
+    /// Property name to text; null or blank writes no value. Pick list values are given as their text, Asset values as the
+    /// referenced row's sportDeets id (assets keep that id).
+    /// </param>
+    /// <param name="DefinitionId">For an instance row: the sportDeets id of its definition's row.</param>
+    private sealed record ImportRow(Guid Id, string Name, IReadOnlyDictionary<string, string?> Values, Guid? DefinitionId = null);
 
-    /// <summary>One sportDeets table as one asset type: a single definition, each row an instance of it.</summary>
-    private sealed record ImportType(
-        string Name,
-        string Pluralization,
-        string DefinitionLabel,
-        string InstanceLabel,
-        string DefinitionName,
+    /// <summary>One level of a type: its properties, groups and default view, and the Producer rows that become its assets.</summary>
+    /// <param name="Label">The level's label (the type's DefinitionLabel or InstanceLabel); also the view's driver caption.</param>
+    private sealed record ImportLevel(
+        string Label,
         IReadOnlyList<ImportProperty> Properties,
         IReadOnlyList<ImportGroup> Groups,
         string ViewName,
         string Query,
         Func<DbDataReader, ImportRow> Map);
 
+    /// <summary>
+    /// One sportDeets entity as one asset type. Definitions are the lasting identities (a venue, a franchise); instances,
+    /// for a type that has them, are occurrences of one (a franchise's seasons). A type without instances is definition-only.
+    /// </summary>
+    private sealed record ImportType(string Name, string Pluralization, ImportLevel Definitions, ImportLevel? Instances = null);
+
     // ---- What to import ----
+
+    private static readonly IReadOnlyList<string> YesNo = ["Yes", "No"];
 
     private static readonly ImportType Venue = new(
         Name: "Venue",
         Pluralization: "Venues",
-        DefinitionLabel: "Venue Kind",
-        InstanceLabel: "Venue",
-        DefinitionName: "Venue",
-        Properties:
-        [
-            new("Short Name", DataType.String),
-            new("Surface", DataType.PickList, PickList: "Surface", FixedValues: ["Grass", "Artificial turf"]),
-            new("Setting", DataType.PickList, PickList: "Setting", FixedValues: ["Outdoor", "Indoor"]),
-            new("Capacity", DataType.Int),
-            new("City", DataType.String),
-            new("State", DataType.PickList, PickList: "State"),
-            new("Postal Code", DataType.String),
-            new("Country", DataType.PickList, PickList: "Country"),
-            new("Latitude", DataType.Float),
-            new("Longitude", DataType.Float),
-            new("Slug", DataType.String)
-        ],
-        Groups:
-        [
-            new("Facility", ["AssetName", "InstanceOf", "Short Name", "Surface", "Setting", "Capacity"]),
-            new("Location", ["City", "State", "Postal Code", "Country", "Latitude", "Longitude"]),
-            new("sportDeets", ["Slug"])
-        ],
-        ViewName: "Venues",
-        // Producer, sdProducer.FootballNcaa (NCAAFB only, for now). Read-only.
-        Query: """
-            SELECT "Id", "Name", "ShortName", "IsGrass", "IsIndoor", "Slug", "Capacity",
-                   "City", "State", "PostalCode", "Country", "Latitude", "Longitude"
-            FROM public."Venue"
-            ORDER BY "Name"
-            """,
-        Map: reader => new ImportRow(
-            reader.GetGuid(reader.GetOrdinal("Id")),
-            reader.GetString(reader.GetOrdinal("Name")).Trim(),
-            new Dictionary<string, string?>
+        Definitions: new ImportLevel(
+            Label: "Venue",
+            Properties:
+            [
+                new("Short Name", DataType.String),
+                new("Surface", DataType.PickList, PickList: "Surface", FixedValues: ["Grass", "Artificial turf"]),
+                new("Setting", DataType.PickList, PickList: "Setting", FixedValues: ["Outdoor", "Indoor"]),
+                new("Capacity", DataType.Int),
+                new("City", DataType.String),
+                new("State", DataType.PickList, PickList: "State"),
+                new("Postal Code", DataType.String),
+                new("Country", DataType.PickList, PickList: "Country"),
+                new("Latitude", DataType.Float),
+                new("Longitude", DataType.Float),
+                new("Slug", DataType.String)
+            ],
+            Groups:
+            [
+                new("Facility", ["AssetName", "Short Name", "Surface", "Setting", "Capacity"]),
+                new("Location", ["City", "State", "Postal Code", "Country", "Latitude", "Longitude"]),
+                new("sportDeets", ["Slug"])
+            ],
+            ViewName: "Venues",
+            // Producer, sdProducer.FootballNcaa (NCAAFB only, for now). Read-only.
+            Query: """
+                SELECT "Id", "Name", "ShortName", "IsGrass", "IsIndoor", "Slug", "Capacity",
+                       "City", "State", "PostalCode", "Country", "Latitude", "Longitude"
+                FROM public."Venue"
+                ORDER BY "Name"
+                """,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                reader.GetString(reader.GetOrdinal("Name")).Trim(),
+                new Dictionary<string, string?>
+                {
+                    ["Short Name"] = Text(reader, "ShortName"),
+                    ["Surface"] = reader.GetBoolean(reader.GetOrdinal("IsGrass")) ? "Grass" : "Artificial turf",
+                    ["Setting"] = reader.GetBoolean(reader.GetOrdinal("IsIndoor")) ? "Indoor" : "Outdoor",
+                    // Every NCAAFB row has 0 today: unknown, so no value.
+                    ["Capacity"] = reader.GetInt32(reader.GetOrdinal("Capacity")) is > 0 and var capacity ? capacity.ToString(CultureInfo.InvariantCulture) : null,
+                    ["City"] = Text(reader, "City"),
+                    ["State"] = Text(reader, "State"),
+                    ["Postal Code"] = Text(reader, "PostalCode"),
+                    ["Country"] = Text(reader, "Country"),
+                    ["Latitude"] = Number(reader, "Latitude"),
+                    ["Longitude"] = Number(reader, "Longitude"),
+                    ["Slug"] = Text(reader, "Slug")
+                })));
+
+    private static readonly ImportType Franchise = new(
+        Name: "Franchise",
+        Pluralization: "Franchises",
+        Definitions: new ImportLevel(
+            Label: "Franchise",
+            Properties:
+            [
+                new("Team Name", DataType.String),
+                new("Location", DataType.String),
+                new("Short Name", DataType.String),
+                new("Abbreviation", DataType.String),
+                new("Color", DataType.String),
+                new("Alternate Color", DataType.String),
+                new("Active", DataType.PickList, PickList: "Yes/No", FixedValues: YesNo),
+                new("Home Venue", DataType.Asset, TargetType: "Venue"),
+                new("Slug", DataType.String)
+            ],
+            Groups:
+            [
+                new("Franchise", ["AssetName", "Team Name", "Location", "Short Name", "Abbreviation", "Active"]),
+                new("Colors", ["Color", "Alternate Color"]),
+                new("Home", ["Home Venue"]),
+                new("sportDeets", ["Slug"])
+            ],
+            ViewName: "Franchises",
+            Query: """
+                SELECT "Id", "DisplayName", "Name", "Location", "DisplayNameShort", "Abbreviation",
+                       "ColorCodeHex", "ColorCodeAltHex", "IsActive", "VenueId", "Slug"
+                FROM public."Franchise"
+                ORDER BY "DisplayName"
+                """,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                reader.GetString(reader.GetOrdinal("DisplayName")).Trim(),
+                new Dictionary<string, string?>
+                {
+                    ["Team Name"] = Text(reader, "Name"),
+                    ["Location"] = Text(reader, "Location"),
+                    ["Short Name"] = Text(reader, "DisplayNameShort"),
+                    ["Abbreviation"] = Text(reader, "Abbreviation"),
+                    ["Color"] = Text(reader, "ColorCodeHex"),
+                    ["Alternate Color"] = Text(reader, "ColorCodeAltHex"),
+                    ["Active"] = reader.GetBoolean(reader.GetOrdinal("IsActive")) ? "Yes" : "No",
+                    // An all-zero VenueId (179 rows) means none.
+                    ["Home Venue"] = Reference(reader, "VenueId"),
+                    ["Slug"] = Text(reader, "Slug")
+                })),
+        Instances: new ImportLevel(
+            Label: "Season",
+            Properties:
+            [
+                new("Season Year", DataType.Int),
+                new("Classification", DataType.PickList, PickList: "Classification"),
+                new("Conference", DataType.PickList, PickList: "Conference"),
+                new("Conference Division", DataType.PickList, PickList: "Conference Division"),
+                new("Venue", DataType.Asset, TargetType: "Venue"),
+                new("All-Star", DataType.PickList, PickList: "Yes/No", FixedValues: YesNo),
+                new("Wins", DataType.Int),
+                new("Losses", DataType.Int),
+                new("Ties", DataType.Int),
+                new("Conference Wins", DataType.Int),
+                new("Conference Losses", DataType.Int),
+                new("Conference Ties", DataType.Int),
+                new("Points Scored Avg", DataType.Float),
+                new("Points Scored Max", DataType.Int),
+                new("Points Scored Min", DataType.Int),
+                new("Points Allowed Avg", DataType.Float),
+                new("Points Allowed Max", DataType.Int),
+                new("Points Allowed Min", DataType.Int),
+                new("Win Margin Avg", DataType.Float),
+                new("Win Margin Max", DataType.Int),
+                new("Win Margin Min", DataType.Int),
+                new("Loss Margin Avg", DataType.Float),
+                new("Loss Margin Max", DataType.Int),
+                new("Loss Margin Min", DataType.Int)
+            ],
+            Groups:
+            [
+                new("Season", ["AssetName", "InstanceOf", "Season Year", "Classification", "Conference", "Conference Division", "Venue", "All-Star"]),
+                new("Record", ["Wins", "Losses", "Ties", "Conference Wins", "Conference Losses", "Conference Ties"]),
+                new("Scoring", ["Points Scored Avg", "Points Scored Max", "Points Scored Min", "Points Allowed Avg", "Points Allowed Max",
+                    "Points Allowed Min", "Win Margin Avg", "Win Margin Max", "Win Margin Min", "Loss Margin Avg", "Loss Margin Max", "Loss Margin Min"])
+            ],
+            ViewName: "Franchise Seasons",
+            // The season's group and its ancestors, nearest first; SeasonGroups picks the conference and classification out of them.
+            Query: """
+                WITH RECURSIVE chain AS (
+                    SELECT s."Id" AS "SeasonId", g."ParentId", g."Name", g."IsConference", 0 AS "Depth"
+                    FROM public."FranchiseSeason" s
+                    JOIN public."GroupSeason" g ON g."Id" = s."GroupSeasonId"
+                    UNION ALL
+                    SELECT c."SeasonId", p."ParentId", p."Name", p."IsConference", c."Depth" + 1
+                    FROM chain c
+                    JOIN public."GroupSeason" p ON p."Id" = c."ParentId"
+                    WHERE c."Depth" < 10
+                ), groups AS (
+                    SELECT "SeasonId", array_agg("Name" ORDER BY "Depth") AS "GroupNames", array_agg("IsConference" ORDER BY "Depth") AS "GroupIsConference"
+                    FROM chain
+                    GROUP BY "SeasonId"
+                )
+                SELECT s."Id", s."FranchiseId", s."SeasonYear", s."DisplayName", s."VenueId", s."IsAllStar",
+                       s."Wins", s."Losses", s."Ties", s."ConferenceWins", s."ConferenceLosses", s."ConferenceTies",
+                       s."PtsScoredAvg", s."PtsScoredMax", s."PtsScoredMin", s."PtsAllowedAvg", s."PtsAllowedMax", s."PtsAllowedMin",
+                       s."MarginWinAvg", s."MarginWinMax", s."MarginWinMin", s."MarginLossAvg", s."MarginLossMax", s."MarginLossMin",
+                       g."GroupNames", g."GroupIsConference"
+                FROM public."FranchiseSeason" s
+                LEFT JOIN groups g ON g."SeasonId" = s."Id"
+                ORDER BY s."SeasonYear", s."DisplayName"
+                """,
+            Map: reader =>
             {
-                ["Short Name"] = Text(reader, "ShortName"),
-                ["Surface"] = reader.GetBoolean(reader.GetOrdinal("IsGrass")) ? "Grass" : "Artificial turf",
-                ["Setting"] = reader.GetBoolean(reader.GetOrdinal("IsIndoor")) ? "Indoor" : "Outdoor",
-                // Every NCAAFB row has 0 today: unknown, so no value.
-                ["Capacity"] = reader.GetInt32(reader.GetOrdinal("Capacity")) is > 0 and var capacity ? capacity.ToString(CultureInfo.InvariantCulture) : null,
-                ["City"] = Text(reader, "City"),
-                ["State"] = Text(reader, "State"),
-                ["Postal Code"] = Text(reader, "PostalCode"),
-                ["Country"] = Text(reader, "Country"),
-                ["Latitude"] = reader.GetDecimal(reader.GetOrdinal("Latitude")).ToString(CultureInfo.InvariantCulture),
-                ["Longitude"] = reader.GetDecimal(reader.GetOrdinal("Longitude")).ToString(CultureInfo.InvariantCulture),
-                ["Slug"] = Text(reader, "Slug")
+                var groups = SeasonGroups(reader);
+                return new ImportRow(
+                    reader.GetGuid(reader.GetOrdinal("Id")),
+                    $"{reader.GetInt32(reader.GetOrdinal("SeasonYear"))} {reader.GetString(reader.GetOrdinal("DisplayName")).Trim()}",
+                    new Dictionary<string, string?>
+                    {
+                        ["Season Year"] = Number(reader, "SeasonYear"),
+                        ["Classification"] = groups.Classification,
+                        ["Conference"] = groups.Conference,
+                        ["Conference Division"] = groups.Division,
+                        ["Venue"] = Reference(reader, "VenueId"),
+                        ["All-Star"] = reader.GetBoolean(reader.GetOrdinal("IsAllStar")) ? "Yes" : "No",
+                        ["Wins"] = Number(reader, "Wins"),
+                        ["Losses"] = Number(reader, "Losses"),
+                        ["Ties"] = Number(reader, "Ties"),
+                        ["Conference Wins"] = Number(reader, "ConferenceWins"),
+                        ["Conference Losses"] = Number(reader, "ConferenceLosses"),
+                        ["Conference Ties"] = Number(reader, "ConferenceTies"),
+                        ["Points Scored Avg"] = Number(reader, "PtsScoredAvg"),
+                        ["Points Scored Max"] = Number(reader, "PtsScoredMax"),
+                        ["Points Scored Min"] = Number(reader, "PtsScoredMin"),
+                        ["Points Allowed Avg"] = Number(reader, "PtsAllowedAvg"),
+                        ["Points Allowed Max"] = Number(reader, "PtsAllowedMax"),
+                        ["Points Allowed Min"] = Number(reader, "PtsAllowedMin"),
+                        ["Win Margin Avg"] = Number(reader, "MarginWinAvg"),
+                        ["Win Margin Max"] = Number(reader, "MarginWinMax"),
+                        ["Win Margin Min"] = Number(reader, "MarginWinMin"),
+                        ["Loss Margin Avg"] = Number(reader, "MarginLossAvg"),
+                        ["Loss Margin Max"] = Number(reader, "MarginLossMax"),
+                        ["Loss Margin Min"] = Number(reader, "MarginLossMin")
+                    },
+                    DefinitionId: reader.GetGuid(reader.GetOrdinal("FranchiseId")));
             }));
 
-    private static readonly IReadOnlyList<ImportType> SportDeetsTypes = [Venue];
+    /// <summary>In order: a type's Asset properties refer to types listed before it.</summary>
+    private static readonly IReadOnlyList<ImportType> SportDeetsTypes = [Venue, Franchise];
+
+    /// <summary>
+    /// From a season's group chain (its group first, then ancestors): the nearest conference, the group below it (a
+    /// conference's division, e.g. East/West), and the classification: the group above the conference, or the season's own
+    /// group when no conference is in the chain (Division II/III, NAIA). Older classification names are folded into today's.
+    /// </summary>
+    private static (string? Conference, string? Division, string? Classification) SeasonGroups(DbDataReader reader)
+    {
+        var namesOrdinal = reader.GetOrdinal("GroupNames");
+        if (reader.IsDBNull(namesOrdinal))
+            return (null, null, null);
+        var names = reader.GetFieldValue<string[]>(namesOrdinal);
+        var isConference = reader.GetFieldValue<bool[]>(reader.GetOrdinal("GroupIsConference"));
+
+        var conference = Array.IndexOf(isConference, true);
+        var classification = (conference < 0 ? names[0] : names.ElementAtOrDefault(conference + 1)) switch
+        {
+            "FBS (I-A)" => "FBS",
+            "FCS (I-AA)" => "FCS",
+            var name => name
+        };
+        return conference < 0
+            ? (null, null, classification)
+            : (names[conference], conference > 0 ? names[conference - 1] : null, classification);
+    }
 
     // ---- The run ----
 
@@ -161,48 +343,94 @@ public partial class Program
     /// <returns>The number of failures: rows not created, and gen-table builds or refreshes that failed.</returns>
     private static async Task<int> ImportTypeAsync(IServiceProvider services, ImportType type, string producer, ILogger logger, CancellationToken cancellationToken)
     {
-        var rows = await ReadRowsAsync(producer, type, cancellationToken);
-        logger.LogInformation("{Type}: read {Count} rows", type.Name, rows.Count);
+        var definitionRows = await ReadRowsAsync(producer, type.Definitions, cancellationToken);
+        var instanceRows = type.Instances is null ? [] : await ReadRowsAsync(producer, type.Instances, cancellationToken);
+        logger.LogInformation("{Type}: read {Definitions} definition and {Instances} instance rows", type.Name, definitionRows.Count, instanceRows.Count);
 
-        // Schema: pick lists, properties, the type, its definition, groups and the default view.
+        // A property linked at both levels of one type has two relations that some readers cannot tell apart.
+        var bothLevels = type.Definitions.Properties.Select(p => p.Name)
+            .Intersect(type.Instances?.Properties.Select(p => p.Name) ?? [], StringComparer.OrdinalIgnoreCase).ToList();
+        if (bothLevels.Count > 0)
+            throw new InvalidOperationException($"{type.Name}: properties at both levels: {string.Join(", ", bothLevels)}.");
+
+        // Schema: pick lists, properties, the type, then each level's groups and default view.
         var propertyIds = new Dictionary<string, Guid>(SystemProperties, StringComparer.OrdinalIgnoreCase);
         var pickListValues = new Dictionary<string, Dictionary<string, Guid>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var property in type.Properties)
+        foreach (var (level, rows) in Levels(type, definitionRows, instanceRows))
         {
-            Guid? pickListId = null;
-            if (property.DataType == DataType.PickList)
+            foreach (var property in level.Properties)
             {
-                var values = property.FixedValues ?? rows
-                    .Select(r => r.Values.GetValueOrDefault(property.Name)?.Trim())
-                    .Where(v => !string.IsNullOrEmpty(v))
-                    .Select(v => v!)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .Order(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-                var (listId, valueIds) = await EnsurePickListAsync(services, property.PickList ?? property.Name, values, logger, cancellationToken);
-                pickListId = listId;
-                pickListValues[property.Name] = valueIds;
+                Guid? pickListId = null;
+                if (property.DataType == DataType.PickList)
+                {
+                    var values = property.FixedValues ?? rows
+                        .Select(r => r.Values.GetValueOrDefault(property.Name)?.Trim())
+                        .Where(v => !string.IsNullOrEmpty(v))
+                        .Select(v => v!)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Order(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    var (listId, valueIds) = await EnsurePickListAsync(services, property.PickList ?? property.Name, values, logger, cancellationToken);
+                    pickListId = listId;
+                    pickListValues[property.Name] = valueIds;
+                }
+                propertyIds[property.Name] = await EnsurePropertyAsync(services, property, pickListId, logger, cancellationToken);
             }
-            propertyIds[property.Name] = await EnsurePropertyAsync(services, property, pickListId, logger, cancellationToken);
         }
 
-        var (typeId, typeGenFailures) = await EnsureAssetTypeAsync(services, type, type.Properties.Select(p => propertyIds[p.Name]).ToList(), logger, cancellationToken);
-        var definitionId = await EnsureDefinitionAsync(services, typeId, type.DefinitionName, logger, cancellationToken);
-        var groupIds = new List<Guid>();
-        foreach (var group in type.Groups)
-            groupIds.Add(await EnsureGroupAsync(services, typeId, group, propertyIds, logger, cancellationToken));
-        await EnsureViewAsync(services, typeId, type, groupIds, logger, cancellationToken);
+        var (typeId, genFailures) = await EnsureAssetTypeAsync(services, type,
+            type.Definitions.Properties.Select(p => propertyIds[p.Name]).ToList(),
+            type.Instances?.Properties.Select(p => propertyIds[p.Name]).ToList() ?? [],
+            logger, cancellationToken);
+        foreach (var (level, isInstance) in new[] { (type.Definitions, false), (type.Instances, true) })
+        {
+            if (level is null)
+                continue;
+            var groupIds = new List<Guid>();
+            foreach (var group in level.Groups)
+                groupIds.Add(await EnsureGroupAsync(services, typeId, isInstance, group, propertyIds, logger, cancellationToken));
+            await EnsureViewAsync(services, typeId, type, level, isInstance, groupIds, logger, cancellationToken);
+        }
 
-        // Rows: one instance each, keeping the sportDeets id as the asset id.
-        var rowIds = rows.Select(r => r.Id).ToList();
-        var existing = await InScopeAsync(services, sp => sp.GetRequiredService<XdbDataContext>().Assets.AsNoTracking()
-            .Where(a => rowIds.Contains(a.Id)).Select(a => a.Id).ToListAsync(cancellationToken));
-        var skip = existing.ToHashSet();
+        // Assets, keeping the sportDeets ids: definitions first, so instances can name theirs.
+        var failed = 0;
+        foreach (var (level, rows) in Levels(type, definitionRows, instanceRows))
+        {
+            var (levelFailed, levelGenFailures) = await CreateAssetsAsync(services, typeId, level, rows, propertyIds, pickListValues, logger, cancellationToken);
+            failed += levelFailed;
+            genFailures += levelGenFailures;
+        }
 
-        int created = 0, failed = 0, genFailures = typeGenFailures;
+        // A rerun skips assets that already exist, so it cannot repair their gen-table rows; a rebuild does.
+        if (genFailures > 0)
+            logger.LogError("{Type}: {Count} gen-table failures; the assets exist but are missing from the gen tables. Rebuild them with " +
+                "the {Verb} verb in the SportDeets environment.", type.Name, genFailures, RegenerateAllVerb);
+        return failed + genFailures;
+    }
+
+    private static IEnumerable<(ImportLevel Level, IReadOnlyList<ImportRow> Rows)> Levels(ImportType type,
+        IReadOnlyList<ImportRow> definitionRows, IReadOnlyList<ImportRow> instanceRows)
+    {
+        yield return (type.Definitions, definitionRows);
+        if (type.Instances is not null)
+            yield return (type.Instances, instanceRows);
+    }
+
+    /// <returns>Rows that failed, and gen-table refreshes that failed for rows that were created.</returns>
+    private static async Task<(int Failed, int GenFailures)> CreateAssetsAsync(IServiceProvider services, Guid typeId, ImportLevel level,
+        IReadOnlyList<ImportRow> rows, IReadOnlyDictionary<string, Guid> propertyIds, IReadOnlyDictionary<string, Dictionary<string, Guid>> pickListValues,
+        ILogger logger, CancellationToken cancellationToken)
+    {
+        var existing = new HashSet<Guid>();
+        // Chunked: SQL Server takes at most 2100 parameters.
+        foreach (var chunk in rows.Select(r => r.Id).Chunk(2000))
+            existing.UnionWith(await InScopeAsync(services, sp => sp.GetRequiredService<XdbDataContext>().Assets.AsNoTracking()
+                .Where(a => chunk.Contains(a.Id)).Select(a => a.Id).ToListAsync(cancellationToken)));
+
+        int created = 0, failed = 0, genFailures = 0;
         foreach (var row in rows)
         {
-            if (skip.Contains(row.Id))
+            if (existing.Contains(row.Id))
                 continue;
 
             var values = new List<CreateAssetValue>();
@@ -220,42 +448,38 @@ public partial class Program
                 Id = row.Id,
                 AssetTypeId = typeId,
                 Name = row.Name,
-                InstanceOfId = definitionId,
+                InstanceOfId = row.DefinitionId,
                 Values = values
             }, cancellationToken));
 
             if (result is Failure<CreateAssetResult> failure)
             {
                 failed++;
-                logger.LogError("{Type} {Id} '{Name}' failed: {Errors}", type.Name, row.Id, row.Name, Describe(failure.Errors));
+                logger.LogError("{Level} {Id} '{Name}' failed: {Errors}", level.Label, row.Id, row.Name, Describe(failure.Errors));
                 continue;
             }
             foreach (var genFailure in result.Value.Failures)
             {
                 genFailures++;
-                logger.LogError("{Type} {Id}: gen-table refresh failed: {Error}", type.Name, row.Id, genFailure.Error);
+                logger.LogError("{Level} {Id}: gen-table refresh failed: {Error}", level.Label, row.Id, genFailure.Error);
             }
-            if (++created % 100 == 0)
-                logger.LogInformation("{Type}: {Created} created", type.Name, created);
+            if (++created % 500 == 0)
+                logger.LogInformation("{Level}: {Created} created", level.Label, created);
         }
 
-        logger.LogInformation("{Type}: {Created} created, {Skipped} already present, {Failed} failed", type.Name, created, skip.Count, failed);
-        // A rerun skips assets that already exist, so it cannot repair their gen-table rows; a rebuild does.
-        if (genFailures > 0)
-            logger.LogError("{Type}: {Count} gen-table failures; the assets exist but are missing from the gen tables. Rebuild them with " +
-                "the {Verb} verb in the SportDeets environment.", type.Name, genFailures, RegenerateAllVerb);
-        return failed + genFailures;
+        logger.LogInformation("{Level}: {Created} created, {Skipped} already present, {Failed} failed", level.Label, created, existing.Count, failed);
+        return (failed, genFailures);
     }
 
-    private static async Task<List<ImportRow>> ReadRowsAsync(string producer, ImportType type, CancellationToken cancellationToken)
+    private static async Task<List<ImportRow>> ReadRowsAsync(string producer, ImportLevel level, CancellationToken cancellationToken)
     {
         var rows = new List<ImportRow>();
         await using var connection = new NpgsqlConnection(producer);
         await connection.OpenAsync(cancellationToken);
-        await using var command = new NpgsqlCommand(type.Query, connection);
+        await using var command = new NpgsqlCommand(level.Query, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
-            rows.Add(type.Map(reader));
+            rows.Add(level.Map(reader));
         return rows;
     }
 
@@ -308,23 +532,41 @@ public partial class Program
         return (listId.Value, ids.GroupBy(v => v.Value, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase));
     }
 
-    /// <summary>Properties are global: a live one with the same name is reused when its data type (and list) agree.</summary>
+    /// <summary>
+    /// Properties are global: a live one with the same name is reused when its data type agrees, and its pick list or
+    /// target (type and level) for PickList and Asset properties.
+    /// </summary>
     private static async Task<Guid> EnsurePropertyAsync(IServiceProvider services, ImportProperty property, Guid? pickListId, ILogger logger,
         CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
-        var matches = await scope.ServiceProvider.GetRequiredService<XdbDataContext>().Properties.AsNoTracking()
+        var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
+
+        Guid? targetTypeId = null;
+        bool? targetIsInstance = null;
+        if (property.DataType == DataType.Asset)
+        {
+            var targetName = property.TargetType ?? throw new InvalidOperationException($"Asset property '{property.Name}' names no target type.");
+            targetTypeId = await db.AssetTypes.AsNoTracking().Where(t => t.Name == targetName && t.Deleted == null)
+                    .Select(t => (Guid?)t.Id).SingleOrDefaultAsync(cancellationToken)
+                ?? throw new InvalidOperationException($"Asset property '{property.Name}' refers to type '{targetName}', which is not imported yet.");
+            targetIsInstance = property.TargetIsInstance;
+        }
+
+        var matches = await db.Properties.AsNoTracking()
             .Where(p => p.Name == property.Name && p.Deleted == null && !p.IsSystem)
-            .Select(p => new { p.Id, p.DataTypeId, p.PickListId })
+            .Select(p => new { p.Id, p.DataTypeId, p.PickListId, p.AssetTypeId, p.AssetTypeIsInstance })
             .ToListAsync(cancellationToken);
 
         switch (matches.Count)
         {
-            case 1 when (DataType)matches[0].DataTypeId == property.DataType && matches[0].PickListId == pickListId:
+            case 1 when (DataType)matches[0].DataTypeId == property.DataType && matches[0].PickListId == pickListId
+                        && matches[0].AssetTypeId == targetTypeId && matches[0].AssetTypeIsInstance == targetIsInstance:
                 return matches[0].Id;
             case 1:
                 throw new InvalidOperationException($"Property '{property.Name}' exists as {(DataType)matches[0].DataTypeId} " +
-                    $"(pick list {matches[0].PickListId?.ToString() ?? "none"}); the import wants {property.DataType} (pick list {pickListId?.ToString() ?? "none"}).");
+                    $"(pick list {matches[0].PickListId?.ToString() ?? "none"}, target {matches[0].AssetTypeId?.ToString() ?? "none"}); the import wants " +
+                    $"{property.DataType} (pick list {pickListId?.ToString() ?? "none"}, target {targetTypeId?.ToString() ?? "none"}).");
             case > 1:
                 throw new InvalidOperationException($"{matches.Count} live properties are named '{property.Name}'; the import cannot tell which to use.");
         }
@@ -334,16 +576,18 @@ public partial class Program
             ActorId = SystemMemberIds.Admin,
             Name = property.Name,
             DataType = property.DataType,
-            PickListId = pickListId
+            PickListId = pickListId,
+            AssetTypeId = targetTypeId,
+            AssetTypeIsInstance = targetIsInstance
         }, cancellationToken);
         var id = Require(result, $"property '{property.Name}'");
         logger.LogInformation("Created property '{Name}' ({DataType})", property.Name, property.DataType);
         return id;
     }
 
-    /// <summary>The type, matched by name; all imported properties are instance-level.</summary>
-    private static async Task<(Guid Id, int GenFailures)> EnsureAssetTypeAsync(IServiceProvider services, ImportType type, IReadOnlyList<Guid> propertyIds, ILogger logger,
-        CancellationToken cancellationToken)
+    /// <summary>The type, matched by name, with each level's properties linked at that level.</summary>
+    private static async Task<(Guid Id, int GenFailures)> EnsureAssetTypeAsync(IServiceProvider services, ImportType type,
+        IReadOnlyList<Guid> definitionPropertyIds, IReadOnlyList<Guid> instancePropertyIds, ILogger logger, CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
@@ -355,8 +599,9 @@ public partial class Program
 
             // No slice adds links to an existing type yet: a property added to the import after the type was created needs a reset.
             var linked = await db.AssetTypesProperties.AsNoTracking()
-                .Where(l => l.AssetTypeId == existing.Id && l.IsInstance && l.Deleted == null).Select(l => l.PropertyId).ToListAsync(cancellationToken);
-            var unlinked = propertyIds.Except(linked).Count();
+                .Where(l => l.AssetTypeId == existing.Id && l.Deleted == null).Select(l => new { l.PropertyId, l.IsInstance }).ToListAsync(cancellationToken);
+            var unlinked = definitionPropertyIds.Count(id => !linked.Contains(new { PropertyId = id, IsInstance = false }))
+                + instancePropertyIds.Count(id => !linked.Contains(new { PropertyId = id, IsInstance = true }));
             if (unlinked > 0)
                 logger.LogWarning("Asset type '{Name}' lacks {Count} of the import's properties; their values will fail. Rerun with {Reset}.",
                     type.Name, unlinked, ResetOption);
@@ -368,9 +613,12 @@ public partial class Program
             ActorId = SystemMemberIds.Admin,
             Name = type.Name,
             Pluralization = type.Pluralization,
-            DefinitionLabel = type.DefinitionLabel,
-            InstanceLabel = type.InstanceLabel,
-            Properties = propertyIds.Select(id => new CreateAssetTypeProperty(id, IsInstance: true)).ToList()
+            DefinitionLabel = type.Definitions.Label,
+            // Null for a definition-only type: it has no instance level.
+            InstanceLabel = type.Instances?.Label,
+            Properties = definitionPropertyIds.Select(id => new CreateAssetTypeProperty(id, IsInstance: false))
+                .Concat(instancePropertyIds.Select(id => new CreateAssetTypeProperty(id, IsInstance: true)))
+                .ToList()
         }, cancellationToken);
         var created = Require(result, $"asset type '{type.Name}'");
         foreach (var failure in created.Failures)
@@ -379,32 +627,12 @@ public partial class Program
         return (created.Id, created.Failures.Count);
     }
 
-    private static async Task<Guid> EnsureDefinitionAsync(IServiceProvider services, Guid typeId, string name, ILogger logger, CancellationToken cancellationToken)
-    {
-        await using var scope = services.CreateAsyncScope();
-        var existing = await scope.ServiceProvider.GetRequiredService<XdbDataContext>().Assets.AsNoTracking()
-            .Where(a => a.AssetTypeId == typeId && !a.IsInstance && a.Name == name && a.Deleted == null)
-            .Select(a => (Guid?)a.Id).FirstOrDefaultAsync(cancellationToken);
-        if (existing is { } id)
-            return id;
-
-        var result = await scope.ServiceProvider.GetRequiredService<ICreateAssetCommandHandler>().ExecuteAsync(new CreateAssetCommand
-        {
-            ActorId = SystemMemberIds.Admin,
-            AssetTypeId = typeId,
-            Name = name
-        }, cancellationToken);
-        var created = Require(result, $"definition '{name}'");
-        logger.LogInformation("Created definition '{Name}'", name);
-        return created.Id;
-    }
-
-    private static async Task<Guid> EnsureGroupAsync(IServiceProvider services, Guid typeId, ImportGroup group, IReadOnlyDictionary<string, Guid> propertyIds,
-        ILogger logger, CancellationToken cancellationToken)
+    private static async Task<Guid> EnsureGroupAsync(IServiceProvider services, Guid typeId, bool isInstance, ImportGroup group,
+        IReadOnlyDictionary<string, Guid> propertyIds, ILogger logger, CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
         var existing = await scope.ServiceProvider.GetRequiredService<XdbDataContext>().PropertyGroups.AsNoTracking()
-            .Where(g => g.AssetTypeId == typeId && g.IsInstance && g.Name == group.Name && g.Deleted == null)
+            .Where(g => g.AssetTypeId == typeId && g.IsInstance == isInstance && g.Name == group.Name && g.Deleted == null)
             .Select(g => (Guid?)g.Id).SingleOrDefaultAsync(cancellationToken);
         if (existing is { } id)
             return id;
@@ -413,7 +641,7 @@ public partial class Program
         {
             ActorId = SystemMemberIds.Admin,
             AssetTypeId = typeId,
-            IsInstance = true,
+            IsInstance = isInstance,
             Name = group.Name,
             Properties = group.Properties
                 .Select(name => new CreatePropertyGroupProperty(propertyIds[name], IsRequired: propertyIds[name] == SystemPropertyIds.AssetName))
@@ -424,29 +652,29 @@ public partial class Program
         return created;
     }
 
-    /// <summary>The instance view, made the type's default instance view when created.</summary>
-    private static async Task EnsureViewAsync(IServiceProvider services, Guid typeId, ImportType type, IReadOnlyList<Guid> groupIds, ILogger logger,
-        CancellationToken cancellationToken)
+    /// <summary>The level's view, made the type's default view for that level when created.</summary>
+    private static async Task EnsureViewAsync(IServiceProvider services, Guid typeId, ImportType type, ImportLevel level, bool isInstance,
+        IReadOnlyList<Guid> groupIds, ILogger logger, CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
         if (await scope.ServiceProvider.GetRequiredService<XdbDataContext>().Views.AsNoTracking()
-                .AnyAsync(v => v.AssetTypeId == typeId && v.Name == type.ViewName && v.Deleted == null, cancellationToken))
+                .AnyAsync(v => v.AssetTypeId == typeId && v.Name == level.ViewName && v.Deleted == null, cancellationToken))
             return;
 
         var result = await scope.ServiceProvider.GetRequiredService<ICreateViewCommandHandler>().ExecuteAsync(new CreateViewCommand
         {
             ActorId = SystemMemberIds.Admin,
             AssetTypeId = typeId,
-            IsInstance = true,
-            Name = type.ViewName,
-            Description = $"{type.Pluralization} imported from sportDeets",
-            DriverCaption = type.InstanceLabel,
-            NewItemCaption = $"Create {type.InstanceLabel}",
+            IsInstance = isInstance,
+            Name = level.ViewName,
+            Description = $"{level.ViewName} imported from sportDeets",
+            DriverCaption = level.Label,
+            NewItemCaption = $"Create {level.Label}",
             PropertyGroupIds = groupIds,
             IsDefault = true
         }, cancellationToken);
-        Require(result, $"view '{type.ViewName}'");
-        logger.LogInformation("Created view '{Name}'", type.ViewName);
+        Require(result, $"view '{level.ViewName}' of {type.Name}");
+        logger.LogInformation("Created view '{Name}'", level.ViewName);
     }
 
     // ---- Reset and helpers ----
@@ -492,5 +720,19 @@ public partial class Program
     {
         var ordinal = reader.GetOrdinal(column);
         return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal).Trim();
+    }
+
+    /// <summary>An int or numeric column as invariant text; NULL writes no value.</summary>
+    private static string? Number(DbDataReader reader, string column)
+    {
+        var ordinal = reader.GetOrdinal(column);
+        return reader.IsDBNull(ordinal) ? null : Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>A reference to another imported row, by its sportDeets id (which its asset keeps); NULL or all-zero writes no value.</summary>
+    private static string? Reference(DbDataReader reader, string column)
+    {
+        var ordinal = reader.GetOrdinal(column);
+        return reader.IsDBNull(ordinal) || reader.GetGuid(ordinal) == Guid.Empty ? null : reader.GetGuid(ordinal).ToString("D");
     }
 }

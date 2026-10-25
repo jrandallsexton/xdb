@@ -45,7 +45,7 @@ Country, Latitude, Longitude, CreatedUtc, ModifiedUtc, CreatedBy, ModifiedBy
 ## 5. Import flow
 
 1. **Export** `venue.ndjson` + `manifest.json` (types, files, source migration id, export timestamp).
-2. **Ensure schema (idempotent):** a code-defined `VenueTypeDefinition` creates the AssetType, the single "Venue" definition asset, picklists and values, instance-level properties, groups and the default instance view, with fixed GUIDs so re-runs are no-ops.
+2. **Ensure schema (idempotent):** a code-defined `VenueTypeDefinition` creates the AssetType (definition-only; see 7.1), picklists and values, definition-level properties, groups and the default view, with fixed GUIDs so re-runs are no-ops.
 3. **Upsert rows** through application commands as a dedicated "sportDeets import" system user; submittals auto-approved.
 4. **Record** each row in the map table.
 5. **Recompile** the Venue gen table; verify in the UI.
@@ -59,12 +59,11 @@ Country, Latitude, Longitude, CreatedUtc, ModifiedUtc, CreatedBy, ModifiedBy
 
 ## 7. Open decisions
 
-1. **Definition or Instance: settled, one "Venue" definition; each sportDeets row is an instance.** In XdbDev, definitions are *kinds* and instances are the real things: the four largest two-level types hold ~44.5k instances under 18-111 definitions each (82-304 instances per definition), and single-definition types exist (1 definition with 43 instances; 1 with 9). Every instance has an `InstanceOfId` pointing at a definition of the same type; no type is instance-only.
-   - **Definition:** a single "Venue" (sportDeets has no venue-kind column to split on). It holds properties shared by all venues, none yet.
-   - **Instances:** one per row, `InstanceOfId` = the Venue definition; all mapped properties are instance-level.
-   - **Views:** the main grid is `AssetTypes.DefaultInstanceViewId`; `DefaultViewId` covers the definition list.
-   - **Later:** if a meaningful kind appears (Stadium / Arena / Ballpark, or by sport), split the definition and re-parent instances by changing `InstanceOfId`; no data is lost.
-   - The same reading applies to Franchise: a franchise is a real thing, so an instance of a "Franchise" definition; FranchiseSeason then relates to it by reference, not through Definition/Instance (to be decided with that type).
+1. **Definition or Instance: revised (2026-10-25). A definition is the lasting identity; an instance is one occurrence of it.** The first import followed the legacy reading (definitions are *kinds*, instances the real things) and put every venue under one "Venue" definition, whose `InstanceOf` then said nothing. sportDeets has few kinds but many occurrences, so:
+   - **Venue: definition-only** (no `InstanceLabel`). Each row is a definition; properties, groups and the default view (`DefaultViewId`) are at the definition level.
+   - **Franchise: definition = the franchise, instance = a FranchiseSeason.** One `Franchise` type labelled Franchise / Season; each season's `InstanceOfId` is its franchise (sportDeets `FranchiseId`). Franchise properties (names, colors, Home Venue) are definition-level; season properties (year, conference, record, scoring) instance-level. No property is linked at both levels of one type.
+   - **Athletes (planned): a grouping `Athlete` type** (holds no assets; shared properties) **with a child type per sport** (FootballAthlete, ...): definition = the player, instance = an AthleteSeason that refers to its FranchiseSeason. A two-sport athlete is one asset per sport, as in sportDeets (a database per sport).
+   - **References** between imported types are Asset properties whose values are the referenced row's sportDeets id, which its asset keeps (Franchise Home Venue, FranchiseSeason Venue).
 2. **Fixed GUIDs:** sportDeets ids for assets (recommended); fixed new GUIDs for the type, properties and picklists.
 3. **Country -> State dependency:** now or later.
 4. **Default view columns:** suggested Name, City, State, Capacity, Surface, Setting.
