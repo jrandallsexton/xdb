@@ -52,10 +52,16 @@ public sealed class GenTableGenerator(IGeneratedObjectProcedures procedures, IOp
                 assetNameLabel: await procedures.GetReportingLabelAsync(assetTypeId, forInstances: isInstance, cancellationToken),
                 instanceOfLabel: await procedures.GetReportingLabelAsync(assetTypeId, forInstances: !isInstance, cancellationToken));
 
-            // As in the original, two live relations for the same property fail the type (Dictionary.Add).
+            // A property linked at both levels has a relation for each; this level's wins. Two live relations at the
+            // same level still fail the type (Dictionary.Add); the original failed on either.
             var relations = new Dictionary<Guid, PropertyRelationRow>();
-            foreach (var relation in await procedures.GetRelationsAsync(assetTypeId, propertyIds.ToList(), cancellationToken))
+            foreach (var relation in (await procedures.GetRelationsAsync(assetTypeId, propertyIds.ToList(), cancellationToken))
+                         .OrderBy(r => r.IsInstance != isInstance))
+            {
+                if (relations.TryGetValue(relation.PropertyId, out var kept) && kept.IsInstance == isInstance && relation.IsInstance != isInstance)
+                    continue;
                 relations.Add(relation.PropertyId, relation);
+            }
 
             var selects = GenTableSql.BuildSelects(new GenTableInput(assetTypeId, isInstance, propertyIds, properties, relations,
                 loadAssetTypeIds, definitionLabel, options.Value.ViewImageUrl));

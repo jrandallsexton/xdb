@@ -46,7 +46,7 @@ public sealed class CreateAssetCommandHandler(
     ILogger<CreateAssetCommandHandler> logger) : ICreateAssetCommandHandler
 {
     private sealed record LinkedProperty(Guid Id, string Name, DataType DataType, Guid? PickListId, Guid? AssetTypeId, bool? AssetTypeIsInstance,
-        bool AllowMultiValue);
+        Guid? RoleId, bool AllowMultiValue);
 
     public async Task<Result<CreateAssetResult>> ExecuteAsync(CreateAssetCommand command, CancellationToken cancellationToken = default)
     {
@@ -145,7 +145,7 @@ public sealed class CreateAssetCommandHandler(
         var linked = await db.AssetTypesProperties.AsNoTracking()
             .Where(l => l.AssetTypeId == command.AssetTypeId && l.IsInstance == isInstance && l.Deleted == null && l.Property.Deleted == null)
             .Select(l => new LinkedProperty(l.Property.Id, l.Property.Name, (DataType)l.Property.DataTypeId, l.Property.PickListId,
-                l.Property.AssetTypeId, l.Property.AssetTypeIsInstance, l.Property.AllowMultiValue))
+                l.Property.AssetTypeId, l.Property.AssetTypeIsInstance, l.Property.RoleId, l.Property.AllowMultiValue))
             .Distinct()
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
@@ -201,17 +201,40 @@ public sealed class CreateAssetCommandHandler(
                     ? null
                     : $"{id} is not a value of the property's pick list.";
             case DataType.Asset:
-                return await db.Assets.AsNoTracking().AnyAsync(a => a.Id == id && a.Deleted == null && a.AssetTypeId == property.AssetTypeId
+                // A grouping type holds no assets itself; its descendants' assets are its selectable values.
+                var typeIds = property.AssetTypeId is { } targetId ? await SelfAndDescendantsAsync(targetId, cancellationToken) : [];
+                return await db.Assets.AsNoTracking().AnyAsync(a => a.Id == id && a.Deleted == null && typeIds.Contains(a.AssetTypeId)
                         && (property.AssetTypeIsInstance == null || a.IsInstance == property.AssetTypeIsInstance), cancellationToken)
                     ? null
                     : $"{id} is not a live asset of the type the property refers to.";
             case DataType.User:
-                return await db.Members.AsNoTracking().AnyAsync(m => m.Id == id && m.Deleted == null, cancellationToken)
+                if (!await db.Members.AsNoTracking().AnyAsync(m => m.Id == id && m.Deleted == null, cancellationToken))
+                    return $"{id} is not a live member.";
+                return property.RoleId is not { } roleId
+                    || await db.RoleMembers.AsNoTracking().AnyAsync(m => m.MemberId == id && m.RoleId == roleId && m.Deleted == null, cancellationToken)
                     ? null
-                    : $"{id} is not a live member.";
+                    : $"{id} is not a member of the role the property is limited to.";
             default:
                 return null;
         }
+    }
+
+    /// <summary>The type and its live descendants, through AssetTypeRelations.</summary>
+    private async Task<List<Guid>> SelfAndDescendantsAsync(Guid assetTypeId, CancellationToken cancellationToken)
+    {
+        var all = new List<Guid> { assetTypeId };
+        var level = all.ToList();
+        while (level.Count > 0)
+        {
+            level = (await db.AssetTypeRelations.AsNoTracking()
+                    .Where(r => level.Contains(r.ParentAssetTypeId) && r.Deleted == null)
+                    .Select(r => r.ChildAssetTypeId)
+                    .ToListAsync(cancellationToken))
+                .Except(all)
+                .ToList();
+            all.AddRange(level);
+        }
+        return all;
     }
 
     private static PropertyValue Value(Guid propertyId, Guid assetId, Guid submittalId, string text, int? order, DateTime now, Guid actorId) => new()

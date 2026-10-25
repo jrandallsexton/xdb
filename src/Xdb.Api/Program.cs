@@ -83,6 +83,9 @@ public partial class Program
 
         if (!isTestingEnv)
         {
+            // Before any startup write: migrations and seeding would otherwise reach whatever database is configured.
+            if (importSportDeets)
+                await RequireSportDeetsDatabaseAsync(app.Services);
             if (resetBeforeImport)
                 await ResetSportDeetsDatabaseAsync(app.Services);
 

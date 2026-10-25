@@ -123,6 +123,31 @@ public class CreateAssetTypeCommandHandlerTests(FreshInstallFixture fixture) : I
     }
 
     [Fact]
+    public async Task ChildWithoutAnInstanceLabel_CannotInheritInstanceLinks()
+    {
+        var parent = await ExecuteAsync(Command(new CreateAssetTypeProperty(await CreatePropertyAsync("City"), true)));
+
+        var child = await ExecuteAsync(Command() with { ParentId = parent.Value.Id, InstanceLabel = null });
+
+        child.Status.Should().Be(ResultStatus.Validation);
+        ErrorsOf(child).Should().ContainSingle(e => e.PropertyName == nameof(CreateAssetTypeCommand.InstanceLabel));
+    }
+
+    [Fact]
+    public async Task PropertyLinkedAtBothLevels_StillBuildsTheGenTables()
+    {
+        var code = await CreatePropertyAsync("Code");
+        var parent = await ExecuteAsync(Command(new CreateAssetTypeProperty(code, IsInstance: false)));
+
+        // Inherited at the definition level, linked explicitly at the instance level.
+        var child = await ExecuteAsync(Command(new CreateAssetTypeProperty(code, IsInstance: true)) with { ParentId = parent.Value.Id });
+
+        child.Status.Should().Be(ResultStatus.Created);
+        child.Value.Failures.Should().BeEmpty();
+        child.Value.GenTables.Should().Be(4);
+    }
+
+    [Fact]
     public async Task NameOfAnyType_FailsValidation()
     {
         var result = await ExecuteAsync(Command() with { Name = "user" });

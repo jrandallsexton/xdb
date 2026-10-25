@@ -18,6 +18,7 @@ using Xdb.Api.Application.GeneratedObjects;
 using Xdb.Api.Application.PickLists.Commands.CreatePickList;
 using Xdb.Api.Application.Properties.Commands.CreateProperty;
 using Xdb.Api.Infrastructure.Data;
+using Xdb.Api.Infrastructure.Data.Entities;
 using Xdb.Api.Tests.Integration.Application.Setup;
 using Xdb.Core.Common;
 
@@ -181,6 +182,66 @@ public class CreateAssetCommandHandlerTests(FreshInstallFixture fixture) : IClas
     }
 
     [Fact]
+    public async Task InstanceOfAChild_WhoseParentHasNoInstances_IsInTheChildsGenTable()
+    {
+        var parentId = await CreateTypeAsync(instanceLabel: null, allowAssets: false);
+        var city = await CreatePropertyAsync("City", DataType.String);
+        var childId = await CreateTypeAsync("Stadium", [new CreateAssetTypeProperty(city, IsInstance: true)], parentId: parentId);
+        var definition = (await ExecuteAsync(new CreateAssetCommand { ActorId = SystemMemberIds.Admin, AssetTypeId = childId, Name = "Stadium" })).Value.Id;
+
+        var result = await ExecuteAsync(new CreateAssetCommand
+        {
+            ActorId = SystemMemberIds.Admin, AssetTypeId = childId, Name = "Bowl", InstanceOfId = definition, Values = [new CreateAssetValue(city, "Columbus")]
+        });
+
+        result.Value.Failures.Should().BeEmpty("the parent has no instance gen tables to refresh");
+        var table = GeneratedObjectNames.Table(childId, isInstance: true, isRaw: false);
+        (await ScalarAsync<string>($"SELECT [City] FROM [dbo].[{table}] WHERE [AssetId] = '{result.Value.Id:D}'")).Should().Be("Columbus");
+    }
+
+    [Fact]
+    public async Task AssetProperty_OnAGroupingType_TakesItsDescendantsAssets()
+    {
+        var groupingId = await CreateTypeAsync(instanceLabel: "Item", allowAssets: false);
+        var childId = await CreateTypeAsync(instanceLabel: "Item", parentId: groupingId);
+        var target = (await ExecuteAsync(new CreateAssetCommand { ActorId = SystemMemberIds.Admin, AssetTypeId = childId, Name = "Target" })).Value.Id;
+        var reference = await RunAsync<ICreatePropertyCommandHandler, CreatePropertyCommand, Guid>(new CreatePropertyCommand
+        {
+            ActorId = SystemMemberIds.Admin, Name = "Home", DataType = DataType.Asset, AssetTypeId = groupingId, AssetTypeIsInstance = false
+        }, (h, c) => h.ExecuteAsync(c));
+        var holderId = await CreateTypeAsync(instanceLabel: null, [new CreateAssetTypeProperty(reference, IsInstance: false)]);
+
+        var result = await ExecuteAsync(new CreateAssetCommand
+        {
+            ActorId = SystemMemberIds.Admin, AssetTypeId = holderId, Name = "Holder", Values = [new CreateAssetValue(reference, target.ToString())]
+        });
+
+        result.Status.Should().Be(ResultStatus.Created);
+    }
+
+    [Fact]
+    public async Task UserProperty_LimitedToARole_TakesOnlyItsMembers()
+    {
+        var roleId = await CreateRoleAsync();
+        var assignee = await RunAsync<ICreatePropertyCommandHandler, CreatePropertyCommand, Guid>(new CreatePropertyCommand
+        {
+            ActorId = SystemMemberIds.Admin, Name = "Assignee", DataType = DataType.User, RoleId = roleId
+        }, (h, c) => h.ExecuteAsync(c));
+        var typeId = await CreateTypeAsync(instanceLabel: null, [new CreateAssetTypeProperty(assignee, IsInstance: false)]);
+        CreateAssetCommand Command() => new()
+        {
+            ActorId = SystemMemberIds.Admin, AssetTypeId = typeId, Name = "Task", Values = [new CreateAssetValue(assignee, SystemMemberIds.Admin.ToString())]
+        };
+
+        var outsider = await ExecuteAsync(Command());
+        await AddRoleMemberAsync(roleId, SystemMemberIds.Admin);
+        var member = await ExecuteAsync(Command());
+
+        ErrorsOf(outsider).Should().ContainSingle(e => e.PropertyName == "Values[0]");
+        member.Status.Should().Be(ResultStatus.Created);
+    }
+
+    [Fact]
     public async Task TakenId_IsAConflict()
     {
         var venue = await BuildVenueAsync();
@@ -236,7 +297,8 @@ public class CreateAssetCommandHandlerTests(FreshInstallFixture fixture) : IClas
         return new Venue(typeId, definition, city, capacity, latitude, opened, surface, grass, artificial, code, tags, otherValue);
     }
 
-    private async Task<Guid> CreateTypeAsync(string? instanceLabel, IReadOnlyList<CreateAssetTypeProperty>? properties = null, bool allowAssets = true)
+    private async Task<Guid> CreateTypeAsync(string? instanceLabel, IReadOnlyList<CreateAssetTypeProperty>? properties = null, bool allowAssets = true,
+        Guid? parentId = null)
     {
         var result = await RunAsync<ICreateAssetTypeCommandHandler, CreateAssetTypeCommand, CreateAssetTypeResult>(new CreateAssetTypeCommand
         {
@@ -246,9 +308,34 @@ public class CreateAssetCommandHandlerTests(FreshInstallFixture fixture) : IClas
             DefinitionLabel = "Venue Kind",
             InstanceLabel = instanceLabel,
             AllowAssets = allowAssets,
+            ParentId = parentId,
             Properties = properties ?? []
         }, (h, c) => h.ExecuteAsync(c));
         return result.Id;
+    }
+
+    private async Task<Guid> CreateRoleAsync()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
+        var role = new Role
+        {
+            Id = Guid.NewGuid(), Name = $"Role {Guid.NewGuid():N}", Created = fixture.Services.GetRequiredService<IDateTimeProvider>().UtcNow(), CreatedBy = SystemMemberIds.Admin, IsActive = true
+        };
+        db.Roles.Add(role);
+        await db.SaveChangesAsync();
+        return role.Id;
+    }
+
+    private async Task AddRoleMemberAsync(Guid roleId, Guid memberId)
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
+        db.RoleMembers.Add(new RoleMember
+        {
+            Id = Guid.NewGuid(), RoleId = roleId, MemberId = memberId, Created = fixture.Services.GetRequiredService<IDateTimeProvider>().UtcNow(), CreatedBy = SystemMemberIds.Admin
+        });
+        await db.SaveChangesAsync();
     }
 
     private Task<Guid> CreatePropertyAsync(string name, DataType type, Guid? pickListId = null, bool allowMultiValue = false) =>

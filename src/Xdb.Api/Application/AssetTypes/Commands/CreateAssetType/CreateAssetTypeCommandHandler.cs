@@ -134,6 +134,11 @@ public sealed class CreateAssetTypeCommandHandler(
                 errors.Add(new ValidationFailure(nameof(CreateAssetTypeCommand.Properties), $"Property {propertyId} is a system property."));
         }
 
+        // The validator checks the command's own links; inherited instance links need the instance level too.
+        if (string.IsNullOrEmpty(command.InstanceLabel) && inherited.Any(l => l.IsInstance))
+            errors.Add(new ValidationFailure(nameof(CreateAssetTypeCommand.InstanceLabel),
+                "The parent has instance properties, which the type would inherit; it needs an instance label."));
+
         foreach (var link in command.Properties.Where(inherited.Contains))
             errors.Add(new ValidationFailure(nameof(CreateAssetTypeCommand.Properties),
                 $"Property {link.PropertyId} is already inherited from the parent at the same level."));

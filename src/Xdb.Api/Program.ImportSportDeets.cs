@@ -141,12 +141,11 @@ public partial class Program
 
     // ---- The run ----
 
-    /// <returns>The process exit code: 1 when any row failed.</returns>
+    /// <returns>The process exit code: 1 when any row or gen-table refresh failed.</returns>
     private static async Task<int> ImportSportDeets(IServiceProvider services, CancellationToken cancellationToken = default)
     {
+        // Main has already checked the target database (RequireSportDeetsDatabaseAsync), before migrating it.
         var logger = services.GetRequiredService<ILogger<Program>>();
-        await using (var scope = services.CreateAsyncScope())
-            RequireSportDeetsDatabase(scope.ServiceProvider.GetRequiredService<XdbDataContext>());
 
         var producer = services.GetRequiredService<IConfiguration>().GetConnectionString(ProducerConnectionStringName)
             ?? throw new InvalidOperationException(
@@ -159,7 +158,7 @@ public partial class Program
         return failed == 0 ? 0 : 1;
     }
 
-    /// <returns>The number of rows that failed.</returns>
+    /// <returns>The number of failures: rows not created, and gen-table builds or refreshes that failed.</returns>
     private static async Task<int> ImportTypeAsync(IServiceProvider services, ImportType type, string producer, ILogger logger, CancellationToken cancellationToken)
     {
         var rows = await ReadRowsAsync(producer, type, cancellationToken);
@@ -187,7 +186,7 @@ public partial class Program
             propertyIds[property.Name] = await EnsurePropertyAsync(services, property, pickListId, logger, cancellationToken);
         }
 
-        var typeId = await EnsureAssetTypeAsync(services, type, type.Properties.Select(p => propertyIds[p.Name]).ToList(), logger, cancellationToken);
+        var (typeId, typeGenFailures) = await EnsureAssetTypeAsync(services, type, type.Properties.Select(p => propertyIds[p.Name]).ToList(), logger, cancellationToken);
         var definitionId = await EnsureDefinitionAsync(services, typeId, type.DefinitionName, logger, cancellationToken);
         var groupIds = new List<Guid>();
         foreach (var group in type.Groups)
@@ -200,7 +199,7 @@ public partial class Program
             .Where(a => rowIds.Contains(a.Id)).Select(a => a.Id).ToListAsync(cancellationToken));
         var skip = existing.ToHashSet();
 
-        int created = 0, failed = 0;
+        int created = 0, failed = 0, genFailures = typeGenFailures;
         foreach (var row in rows)
         {
             if (skip.Contains(row.Id))
@@ -232,13 +231,20 @@ public partial class Program
                 continue;
             }
             foreach (var genFailure in result.Value.Failures)
-                logger.LogWarning("{Type} {Id}: gen-table refresh failed: {Error}", type.Name, row.Id, genFailure.Error);
+            {
+                genFailures++;
+                logger.LogError("{Type} {Id}: gen-table refresh failed: {Error}", type.Name, row.Id, genFailure.Error);
+            }
             if (++created % 100 == 0)
                 logger.LogInformation("{Type}: {Created} created", type.Name, created);
         }
 
         logger.LogInformation("{Type}: {Created} created, {Skipped} already present, {Failed} failed", type.Name, created, skip.Count, failed);
-        return failed;
+        // A rerun skips assets that already exist, so it cannot repair their gen-table rows; a rebuild does.
+        if (genFailures > 0)
+            logger.LogError("{Type}: {Count} gen-table failures; the assets exist but are missing from the gen tables. Rebuild them with " +
+                "the {Verb} verb in the SportDeets environment.", type.Name, genFailures, RegenerateAllVerb);
+        return failed + genFailures;
     }
 
     private static async Task<List<ImportRow>> ReadRowsAsync(string producer, ImportType type, CancellationToken cancellationToken)
@@ -336,7 +342,7 @@ public partial class Program
     }
 
     /// <summary>The type, matched by name; all imported properties are instance-level.</summary>
-    private static async Task<Guid> EnsureAssetTypeAsync(IServiceProvider services, ImportType type, IReadOnlyList<Guid> propertyIds, ILogger logger,
+    private static async Task<(Guid Id, int GenFailures)> EnsureAssetTypeAsync(IServiceProvider services, ImportType type, IReadOnlyList<Guid> propertyIds, ILogger logger,
         CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
@@ -354,7 +360,7 @@ public partial class Program
             if (unlinked > 0)
                 logger.LogWarning("Asset type '{Name}' lacks {Count} of the import's properties; their values will fail. Rerun with {Reset}.",
                     type.Name, unlinked, ResetOption);
-            return existing.Id;
+            return (existing.Id, 0);
         }
 
         var result = await scope.ServiceProvider.GetRequiredService<ICreateAssetTypeCommandHandler>().ExecuteAsync(new CreateAssetTypeCommand
@@ -368,9 +374,9 @@ public partial class Program
         }, cancellationToken);
         var created = Require(result, $"asset type '{type.Name}'");
         foreach (var failure in created.Failures)
-            logger.LogWarning("Asset type '{Name}': gen-table generation failed: {Error}", type.Name, failure.Error);
+            logger.LogError("Asset type '{Name}': gen-table generation failed: {Error}", type.Name, failure.Error);
         logger.LogInformation("Created asset type '{Name}' ({GenTables} gen tables)", type.Name, created.GenTables);
-        return created.Id;
+        return (created.Id, created.Failures.Count);
     }
 
     private static async Task<Guid> EnsureDefinitionAsync(IServiceProvider services, Guid typeId, string name, ILogger logger, CancellationToken cancellationToken)
@@ -453,6 +459,12 @@ public partial class Program
         RequireSportDeetsDatabase(db);
         scope.ServiceProvider.GetRequiredService<ILogger<Program>>().LogWarning("Dropping database {Database}", SportDeetsDatabase);
         await db.Database.EnsureDeletedAsync();
+    }
+
+    private static async Task RequireSportDeetsDatabaseAsync(IServiceProvider services)
+    {
+        await using var scope = services.CreateAsyncScope();
+        RequireSportDeetsDatabase(scope.ServiceProvider.GetRequiredService<XdbDataContext>());
     }
 
     /// <summary>Guards against importing into (or dropping) any other database, such as a copy of the original.</summary>
