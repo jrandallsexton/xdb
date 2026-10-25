@@ -32,6 +32,12 @@ using Xdb.Api.Application.Metadata.Queries.Lookups;
 using Xdb.Api.Application.Metadata.Queries.PickLists;
 using Xdb.Api.Application.Metadata.Queries.Properties;
 using Xdb.Api.Application.Metadata.Queries.Values;
+using Xdb.Api.Application.Assets.Commands.CreateAsset;
+using Xdb.Api.Application.AssetTypes.Commands.CreateAssetType;
+using Xdb.Api.Application.PickLists.Commands.CreatePickList;
+using Xdb.Api.Application.Properties.Commands.CreateProperty;
+using Xdb.Api.Application.PropertyGroups.Commands.CreatePropertyGroup;
+using Xdb.Api.Application.Views.Commands.CreateView;
 using Xdb.Api.Application.Reports.Queries.GetReportClient;
 using Xdb.Api.Application.Reports.Queries.GetReportData;
 using Xdb.Api.Application.Reports.Queries.GetReportExecutionStats;
@@ -305,6 +311,24 @@ public static class ServiceRegistration
 
         // Setup
         services.AddScoped<IInitializeDatabaseCommandHandler, InitializeDatabaseCommandHandler>();
+
+        // Assets
+        services.AddScoped<ICreateAssetCommandHandler, CreateAssetCommandHandler>();
+
+        // Asset types
+        services.AddScoped<ICreateAssetTypeCommandHandler, CreateAssetTypeCommandHandler>();
+
+        // Pick lists
+        services.AddScoped<ICreatePickListCommandHandler, CreatePickListCommandHandler>();
+
+        // Properties
+        services.AddScoped<ICreatePropertyCommandHandler, CreatePropertyCommandHandler>();
+
+        // Property groups
+        services.AddScoped<ICreatePropertyGroupCommandHandler, CreatePropertyGroupCommandHandler>();
+
+        // Views
+        services.AddScoped<ICreateViewCommandHandler, CreateViewCommandHandler>();
 
         // Reports
         services.AddScoped<IGetReportClientQueryHandler, GetReportClientQueryHandler>();

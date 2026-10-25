@@ -52,6 +52,11 @@ public sealed class GenTableRefresher(IAssetWriteProcedures writes, IMetadataPro
     {
         foreach (var typeId in await StackAsync(assetTypeId, cancellationToken))
         {
+            // A type without an instance label has no instance gen tables (an ancestor of an instance type may not);
+            // the original stopped at its missing procedure and never reached the asset's own type.
+            if (isInstance && string.IsNullOrEmpty((await metadata.GetAssetTypeAsync(typeId, cancellationToken))?.InstanceLabel))
+                continue;
+
             await writes.ExecuteGenProcedureAsync(GeneratedObjectNames.UpdateProcedure(GeneratedObjectNames.Table(typeId, isInstance, isRaw: true)), assetId, cancellationToken);
             await writes.ExecuteGenProcedureAsync(GeneratedObjectNames.UpdateProcedure(GeneratedObjectNames.Table(typeId, isInstance, isRaw: false)), assetId, cancellationToken);
         }

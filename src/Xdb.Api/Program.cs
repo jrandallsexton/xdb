@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -47,7 +48,15 @@ public partial class Program
         if (regenerateAll)
             args = args[1..];
 
+        var importSportDeets = args.Length > 0 && args[0] == ImportSportDeetsVerb;
+        var resetBeforeImport = importSportDeets && args.Contains(ResetOption);
+        if (importSportDeets)
+            args = args[1..].Where(a => a != ResetOption).ToArray();
+
         var builder = WebApplication.CreateBuilder(args);
+        // Only the import reads this store (the Producer connection string); it never holds the app's own settings.
+        if (importSportDeets)
+            builder.Configuration.AddUserSecrets(SportDeetsSecretsId);
         // The original host (IIS) wrote response header values as UTF-8 bytes (e.g. a file name with "é" in
         // Content-disposition); Kestrel would refuse a non-ASCII value.
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.ResponseHeaderEncodingSelector = _ => Encoding.UTF8);
@@ -74,12 +83,21 @@ public partial class Program
 
         if (!isTestingEnv)
         {
+            // Before any startup write: migrations and seeding would otherwise reach whatever database is configured.
+            if (importSportDeets)
+                await RequireSportDeetsDatabaseAsync(app.Services);
+            if (resetBeforeImport)
+                await ResetSportDeetsDatabaseAsync(app.Services);
+
             await app.Services.ApplyMigrationsAsync();
 
             if (regenerateAll)
                 return await RegenerateAllAsync(app.Services);
 
             await InitializeDatabaseAsync(app.Services);
+
+            if (importSportDeets)
+                return await ImportSportDeets(app.Services);
         }
 
         app.UseSerilogRequestLogging();

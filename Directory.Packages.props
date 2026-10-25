@@ -12,6 +12,8 @@
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
     <!-- Legacy wire: some original operations serialized with Json.NET; same escaping rules. -->
+    <!-- sportDeets import: reads the Producer (PostgreSQL) database. -->
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="System.Formats.Nrbf" Version="10.0.13" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
