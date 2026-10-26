@@ -2190,15 +2190,11 @@ namespace Xdb.Api.Infrastructure.Data.Migrations
 
                     b.HasIndex(new[] { "AssetId" }, "IX_AssetIds");
 
-                    b.HasIndex(new[] { "PropertyId", "AssetId" }, "IX_PropVals");
+                    b.HasIndex(new[] { "PropertyId", "AssetId", "Deleted" }, "IX_PropertyValues_Lookup");
 
-                    b.HasIndex(new[] { "PropertyId" }, "IX_PropertyIds");
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex(new[] { "PropertyId", "AssetId", "Deleted" }, "IX_PropertyValues_Lookup"), new[] { "Approved", "Value" });
 
-                    b.HasIndex(new[] { "PropertyId", "AssetId", "Deleted" }, "_dta_index_PropertyValues_5_836914053__K2_K3_K9_5");
-
-                    b.HasIndex(new[] { "Id" }, "_dta_index_PropertyValues_7_1989582126__K1_2_3_4_5_6_7_8_9_10_11_12_13_14");
-
-                    b.HasIndex(new[] { "Deleted", "SubmittalGroupId" }, "_dta_index_PropertyValues_7_1989582126__K9_K4_1_2_3_5_6_7_8_10_11_12_13_14");
+                    b.HasIndex(new[] { "SubmittalGroupId" }, "IX_PropertyValues_SubmittalGroupId");
 
                     b.ToTable("PropertyValues");
                 });

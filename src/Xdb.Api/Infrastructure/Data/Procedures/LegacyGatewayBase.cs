@@ -74,9 +74,11 @@ public abstract class LegacyGatewayBase(XdbDataContext db)
     /// <summary>ExecuteScalarInLine: -1 for NULL; no row throws (the original dereferenced null).</summary>
     protected async Task<int> ScalarIntAsync(string sql, object? parameters, CancellationToken cancellationToken)
     {
-        var value = await (await OpenAsync(cancellationToken)).ExecuteScalarAsync(Inline(sql, parameters, cancellationToken))
-            ?? throw new NullReferenceException("Scalar query returned no row.");
-        return int.TryParse(value.ToString(), out var result) ? result : -1;
+        // A reader, not ExecuteScalar: Dapper's scalar maps a NULL to null too, which would read as "no row".
+        await using var reader = await (await OpenAsync(cancellationToken)).ExecuteReaderAsync(Inline(sql, parameters, cancellationToken));
+        if (!await reader.ReadAsync(cancellationToken))
+            throw new NullReferenceException("Scalar query returned no row.");
+        return !reader.IsDBNull(0) && int.TryParse(reader.GetValue(0).ToString(), out var result) ? result : -1;
     }
 
     /// <summary>A COUNT(*) procedure compared with 1, as the original's IsValidId-style helpers did.</summary>
