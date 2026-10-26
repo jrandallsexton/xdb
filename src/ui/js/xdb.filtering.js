@@ -1,0 +1,734 @@
+var SELECT_OPTION = '<option value="-1">[Select]</option>',
+    ATTRIB_VALS_INPUT_HTML = '<input id="attribValue" onchange="onAttribSearchChanged()" type="text" style="width:95%;" class="ui-widget ui-state-default"/>',
+    ATTRIB_VALS_SELECT_HTML = '<select id="lstAttribValues" style="width:100%;" onChange="onAttribValueChanged()" class="ui-widget ui-state-default">',
+    ASSETS_HTML = '<select id="lstAssets" size=10 style="width:100%" class="ui-widget"></select>',
+    ASSETS_HTML_PANEL = '<select id="lstAssets" size=10 style="width:100%" class="ui-state-enabled"></select>',
+    NULL_SELECTION = "-1",
+    LOAD_MSG = '<div style="width:100%;text-align:center;" >Retrieving data.  Please wait.</div><br/><div style="text-align:center"><img src="images/ajax-loader.gif" alt="spinner" style="text-align:left;" /></div>',
+    _isDialog = null,
+    $lstAttribs = null,
+    $lstAttribValues = null,
+    $lstOps = null,
+    $propVals = null,
+    $lstAssets = null,
+    $spinner = null,
+    $tdFilterPropsVals = null,
+    $tdAssets = null,
+    _viewId = null,
+    _assetTypeId = null,
+    _art = null,
+    _attrib = null,
+    _attribId = null,
+    _attribValueId = null,
+    _attribValueValue = null,
+    _attribName = null,
+    _filters = null,
+    _filterGroups = null,
+    _filterOps = null,
+    _opId = null,
+    _searchClient = null,
+    _attribsLoaded = false,
+    _allowFreeForm = null,
+    _isFreeForm = null,
+    _checkboxIds = null,
+    _checkStates = [],
+    _checkCount = 0,
+    JOIN_TYPE_NA = -1,
+    JOIN_TYPE_OR = 0,
+    JOIN_TYPE_AND = 1;
+
+function clearVars() {
+    $lstAttribs = null;
+    $lstAttribValues = null;
+    $lstOps = null;
+    $propVals = null;
+    $lstAssets = null;
+    $spinner = null;
+    $tdFilterPropsVals = null;
+    $tdAssets = null;
+    _viewId = null;
+    _assetTypeId = null;
+    _art = null;
+    _attrib = null;
+    _attribId = null;
+    _attribValueId = null;
+    _attribValueValue = null;
+    _attribName = null;
+    _filters = [];
+    _filterGroups = [];
+    _filterOps = [];
+    _opId = null;
+    _searchClient = null;
+    _attribsLoaded = false;
+    _allowFreeForm = null;
+    _isFreeForm = null;
+    _checkboxIds = null;
+    _checkStates = [];
+    _checkCount = 0
+}
+
+function assetSearchClient_Create(assetTypeId, assetRequestType, filters, filterOps) {
+    var temp = {};
+    temp.id = generateGuid(null);
+    temp.userId = USER_CURRENT.Id;
+    temp.viewId = _viewId;
+    temp.assetTypeId = assetTypeId;
+    temp.assetRequestType = assetRequestType;
+    temp.filterName = "Not Defined";
+    temp.filters = filters;
+    temp.filterExpression = buildFilterExpression(null, filterOps);
+    return temp
+}
+
+function buildFilterExpression(filterGroups, filterOps) {
+    var html = [];
+    if (filterGroups == null || filterGroups.length == 0) return "";
+    else {
+        var filterGroupCount = filterGroups.length,
+            index = 0;
+        for (var j = 0; j < filterGroupCount; j++) {
+            var filters = filterGroups[j],
+                filterCount = filters.length;
+            html.push("(");
+            for (var i = 0; i < filterCount; i++) {
+                if (i == filterCount - 1) html.push("({" + index + "})");
+                else if (_isDialog) html.push("({" + index + "}) AND ");
+                else html.push("({" + index + "}) OR ");
+                index++
+            }
+            html.push(")");
+            if (filterGroupCount > 1 && j < filterGroupCount - 1) {
+                var filterOp = filterOps[j];
+                if (filterOp == 0) html.push(" OR ");
+                else html.push(" AND ")
+            }
+        }
+        return html.join("")
+    }
+}
+
+function createAttributeSelectorHtml(assetTypeId, assetRequestType, includeFreeForm) {
+    _allowFreeForm = includeFreeForm;
+    var html = [];
+    html.push(SELECT_OPTION);
+    if (includeFreeForm) $.each(properties_Get(assetTypeId, assetRequestType, true, assetRequestType == ART_INSTANCE, true), function(index, value) {
+        html.push('<option value="' + value.key + '">' + value.value + "</option>")
+    });
+    else $.each(properties_GetNonFreeformByAssetTypeId(assetTypeId, assetRequestType), function(index, value) {
+        html.push('<option value="' + value.key + '">' + value.value + "</option>")
+    });
+    return html.join("")
+}
+
+function createOperatorSelectorHtml(allowFreeForm) {
+    var html = [];
+    html.push(SELECT_OPTION);
+    if (allowFreeForm) $.each(operators_Get(), function(index, item) {
+        html.push('<option value="' + item.key + '">' + item.value + "</option>")
+    });
+    else $.each(operators_Get(), function(index, item) {
+        if (item.key != OP_LIKE) html.push('<option value="' + item.key + '">' + item.value + "</option>")
+    });
+    return html.join("")
+}
+
+function createFilterDialog(assetTypeId, assetRequestType, assetNameLabel) {
+    clearVars();
+    _isDialog = true;
+    _assetTypeId = assetTypeId;
+    _art = assetRequestType;
+    var html = [];
+    html.push('<table style="width:100%;">');
+    html.push("<tr>");
+    html.push("<td>Attribute</td>");
+    html.push("<td>Operator</td>");
+    html.push("<td>Attribute Value</td>");
+    html.push("</tr>");
+    html.push("<tr>");
+    html.push('<td style="width:35%;">');
+    html.push('<select id="lstAttributes" style="width:100%;" class="ui-widget ui-state-highlight" onChange="setTimeout(function() { onAttribChanged(); }, 50)">');
+    html.push(createAttributeSelectorHtml(assetTypeId, assetRequestType, true));
+    html.push("</select></td>");
+    html.push('<td style="width:15%;text-align:center;">');
+    html.push('<select id="lstOperators" style="width:100%;border:0;" disabled="disabled" class="ui-widget ui-state-disabled" onChange="onOperatorChanged(this.value);">');
+    html.push(createOperatorSelectorHtml(true));
+    html.push("</select>");
+    html.push("</td>");
+    html.push('<td style="width:40%;" id="tdFilterPropVals">');
+    html.push('<select id="lstAttribValues" disabled="disabled" style="width:100%;" onChange="setTimeout(function() { selectedAttributeValueChanged(); }, 50)" class="ui-widget ui-state-disabled"></select></td>');
+    html.push('<td style="width:5%;">');
+    html.push('<input id="btnAdd" type="button" class="ui-state-disabled" value="Add" onClick="onAdd()" disabled="disabled"></input></td>');
+    html.push("</tr>");
+    html.push('<tr><td colspan=4 style="width:100%;"><div id="lstFilters"></div></td></tr>');
+    html.push('<tr><td id="tdAssets" colspan=4 style="width:100%;">');
+    refreshFilterDisplay();
+    var assetCount = 0;
+    if (assetRequestType == ART_INSTANCE) assetCount = assets_GetInstanceCount(assetTypeId, includeChildAssetTypes);
+    else assetCount = assets_GetCount(assetTypeId);
+    if (assetCount < MAX_AUTOCOMPLETE_ITEMS) {
+        html.push('<select id="lstAssets" size=10 style="width:100%" class="ui-widget">');
+        var assets = assets_Get(assetTypeId, assetRequestType, includeChildAssetTypes),
+            length = assets.length;
+        for (var i = 0; i < length; i++) html.push('<option value="' + assets[i].Key + '">' + assets[i].Value + "</option>");
+        html.push("</select>")
+    } else html.push('<select id="lstAssets" size=10 style="width:100%;display:none" class="ui-widget"></select>');
+    var assetTypeName = assetType_GetName(assetTypeId, assetCount > 1);
+    html.push("</td></tr>");
+    html.push('<tr><td><div id="divSpinner" style="overflow-y:auto;height:100%;width:100%;display:none;"></div></td></tr>');
+    html.push('<tr><td id="tdStatus" colspan=4 style="width:100%;"><i>' + assetCount + " " + assetTypeName.toLowerCase() + " in the database</i></td></tr>");
+    html.push("</table>");
+    return html.join("")
+}
+
+function createFilterDialogFromFilters(assetTypeId, assetRequestType, filters) {
+    clearVars();
+    _isDialog = true;
+    _assetTypeId = assetTypeId;
+    _art = assetRequestType;
+    var filterAttribIds = [],
+        filterAttribNames = [];
+    $.each(filters, function(index, item) {
+        filterAttribIds.push(item.propId)
+    });
+    var html = [];
+    html.push('<table style="width:100%;">');
+    html.push("<tr>");
+    html.push("<td>Attribute</td>");
+    html.push("<td>Operator</td>");
+    html.push("<td>Attribute Value</td>");
+    html.push("</tr>");
+    html.push("<tr>");
+    html.push('<td style="width:35%;">');
+    html.push('<select id="lstAttributes" style="width:100%;" class="ui-widget ui-state-highlight" onChange="setTimeout(function() { onAttribChanged(); }, 50)">');
+    html.push(SELECT_OPTION);
+    $.each(properties_GetNonFreeformByAssetTypeId(assetTypeId, assetRequestType), function(index, value) {
+        var loc = $.inArray(value.key, filterAttribIds);
+        if (loc == -1) html.push('<option value="' + value.key + '">' + value.value + "</option>");
+        else filterAttribNames[value.key] = value.value
+    });
+    html.push("</select></td>");
+    html.push('<td style="width:15%;text-align:center;">');
+    html.push('<select id="lstOperators" style="width:100%;border:0;" disabled="disabled" class="ui-widget ui-state-disabled" onChange="onOperatorChanged(this.value);">');
+    html.push(createOperatorSelectorHtml(true));
+    html.push("</select>");
+    html.push("</td>");
+    html.push('<td style="width:40%;" id="tdFilterPropVals">');
+    html.push('<select id="lstAttribValues" disabled="disabled" style="width:100%;" onChange="setTimeout(function() { selectedAttributeValueChanged(); }, 50)" class="ui-widget ui-state-disabled"></select></td>');
+    html.push('<td style="width:5%;">');
+    html.push('<input id="btnAdd" type="button" class="ui-state-disabled" value="Add" onClick="onAddAsANDClicked()" disabled="disabled"></input></td>');
+    html.push("</tr>");
+    html.push('<tr><td colspan=4 style="width:100%;">');
+    $.each(filters, function(index, item) {
+        filter = filterCreate(item.propId, 0, item.val, _filters.length, filterAttribNames[item.propId], item.valVal);
+        _filters[_filters.length] = filter;
+        _filterOps[_filterOps.length] = JOIN_TYPE_AND
+    });
+    if (_searchClient == null) _searchClient = assetSearchClient_Create(_assetTypeId, _art, _filters, _filterOps);
+    else _searchClient.filters = _filters;
+    _filterGroups[_filterGroups.length] = _filters;
+    _searchClient.filters = filterGroupItemToListOfFilters(_filterGroups);
+    _searchClient.filterExpression = buildFilterExpression(_filterGroups, _filterOps);
+    html.push('<div id="lstFilters">');
+    html.push(displayFilters(_filterGroups, _filterOps));
+    html.push("</div></td></tr>");
+    html.push('<tr><td id="tdAssets" colspan=4 style="width:100%;">');
+    html.push('<select id="lstAssets" size=10 style="width:100%" class="ui-state-enabled">');
+    var matchedAssets = assets_GetViaFiltering(_searchClient, null),
+        length = matchedAssets.length;
+    for (var i = 0; i < length; i++) html.push('<option value="' + matchedAssets[i].key + '">' + matchedAssets[i].value + "</option>");
+    html.push("</select></td></tr>");
+    html.push('<tr><td><div id="divSpinner" style="overflow-y:auto;height:100%;width:100%;display:none;"></div></td></tr>');
+    html.push('<tr><td id="tdStatus" colspan=4 style="width:100%;"></td></tr>');
+    html.push("</table>");
+    refreshFilterDisplay();
+    displayFiltersByFilterGroups(_filterGroups);
+    return html.join("")
+}
+
+function createFilterPanelUI(viewId, assetTypeId, isInstance, userFilters) {
+    clearVars();
+    _isDialog = false;
+    _viewId = viewId;
+    _assetTypeId = assetTypeId;
+    _art = isInstance ? ART_INSTANCE : ART_DEFINITION;
+    var html = [];
+    html.push('<table style="width:100%;">');
+    html.push("<tr>");
+    html.push("<td>Attribute</td>");
+    html.push("<td>Operator</td>");
+    html.push("</tr>");
+    html.push("<tr>");
+    html.push('<td style="width:75%;">');
+    html.push('<select id="lstAttributes" style="width:100%;border:0;" class="ui-widget ui-state-enabled filterWidget" onChange="setTimeout(function() { onAttribChanged(); }, 100)">');
+    html.push("</select></td>");
+    html.push('<td style="width:25%">');
+    html.push('<select id="lstOperators" style="width:100%;border:0;" disabled="disabled" class="ui-widget ui-state-disabled filterWidget" onChange="onOperatorChanged(this.value);">');
+    html.push("</select>");
+    html.push("</td></tr>");
+    html.push('<tr><td colspan=2 style="width:100%;">');
+    html.push('<div id="lstAttribValues" style="display:none" class="ui-state-enabled checkboxlist"></div>');
+    html.push("</td></tr>");
+    html.push("</table>");
+    html.push('<div id="pnlLeftButtons" style="display:none;width:100%;text-align:center;">');
+    html.push('<input type="submit" id="btnCheckAll" disabled="disabled" class="ui-widget ui-state-disabled filterButton" value="All" onClick="onCheckAllChanged(1)"/>');
+    html.push('<input type="submit" id="btnUncheckAll" disabled="disabled" class="ui-widget ui-state-disabled filterButton" value="None" onClick="onCheckAllChanged(0)"/>');
+    html.push('<input type="submit" id="btnAdd" disabled="disabled" class="ui-widget ui-state-disabled filterButton" value="Add" onClick="onAdd()"/>');
+    html.push('<input type="submit" id="btnAddOr" disabled="disabled" class="ui-widget ui-state-disabled filterButton" value="Add As \'OR\'" onClick="onAddAsORClicked()"/>');
+    html.push('<input type="submit" id="btnAddAnd" disabled="disabled" class="ui-widget ui-state-disabled filterButton" value="Add As \'AND\'" onClick="onAddAsANDClicked()"/></div>');
+    return html.join("")
+}
+
+function displayAssets(matchedAssets) {
+    if (_isDialog) $tdAssets.html(ASSETS_HTML);
+    $lstAssets = $("#lstAssets");
+    var html = [],
+        length = matchedAssets.length;
+    for (var i = 0; i < length; i++) html.push('<option value="' + matchedAssets[i].key + '">' + matchedAssets[i].value + "</option>");
+    $lstAssets.html(html.join(""));
+    if (_isDialog) {
+        if (length == 1) $lstAssets.prop("selectedIndex", 0)
+    } else $lstAssets.change(function() {
+        var assetId = $("#lstAssets :selected").val();
+        driverChanged(assetId)
+    }).removeAttr("disabled")
+}
+
+function displayAttribValues_Dialog(attributeValues) {
+    $("#btnAdd").val("Add");
+    var html = [];
+    html.push(ATTRIB_VALS_SELECT_HTML);
+    html.push('<option value="-1">[Select]</option>');
+    if (attributeValues !== null) {
+        var length = attributeValues.length;
+        for (var i = 0; i < length; i++) {
+            var val = attributeValues[i],
+                displayValue = val.value;
+            html.push('<option value="' + val.key + '" title="' + displayValue + '">' + displayValue + "</option>")
+        }
+    }
+    html.push("</select>");
+    $tdFilterPropsVals.html(html.join(""));
+    $lstAttribs.removeClass("ui-state-highlight").addClass("ui-state-default");
+    toggleControl("lstAttribValues", false, true);
+    $lstOps.removeAttr("disabled").addClass("ui-state-highlight")
+}
+
+function displayAttribValues_FilterPanel(attributeValues) {
+    _checkboxIds = [];
+    _checkStates = [];
+    _checkCount = 0;
+    if (attributeValues !== null) {
+        var html = [],
+            length = attributeValues.length;
+        for (var i = 0; i < length; i++) {
+            var val = attributeValues[i];
+            html.push('<input type="checkbox" disabled="disabled" class="ui-widget ui-state-disabled" id="' + val.key + '" value="' + val.value + '" onchange="onCheckChanged(this.id)"/>' + val.value + "<br/>");
+            _checkboxIds[_checkboxIds.length] = val.key;
+            _checkStates[val.key] = false
+        }
+        $propVals.html(html.join(""));
+        toggleControl("lstAttribValues", false, true);
+        $lstOps.removeAttr("disabled");
+        toggleControl("btnCheckAll", false, true);
+        toggleControl("btnUncheckAll", false, true);
+        toggleControl("btnAdd", false, true)
+    }
+}
+
+function displayFilters(filterGroups, filterOps) {
+    if (filterGroups == null || filterGroups.length == 0) return "";
+    var html = [],
+        filterGroupCount = filterGroups.length;
+    for (var j = 0; j < filterGroupCount; j++) {
+        html.push('<div style="display:block">');
+        html.push('<span class="ui-icon ui-icon-circle-close" style="float:left; margin-right: .2em;" onClick="onRemoveFilter(' + j + ')"/>');
+        html.push(j + 1 + ". ");
+        html.push("(");
+        var filters = filterGroups[j],
+            filterCount = filters.length;
+        for (var i = 0; i < filterCount; i++) {
+            var f = filters[i];
+            if (i == filterCount - 1) html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ")");
+            else if (_isDialog) html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ") AND ");
+            else html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ") OR ")
+        }
+        html.push(")");
+        html.push("</div>");
+        if (filterGroupCount > 1 && j < filterGroupCount - 1) {
+            html.push('<div style="display:block">');
+            var filterOp = filterOps[j];
+            if (filterOp == 0) html.push("OR");
+            else html.push("AND");
+            html.push("</div>")
+        }
+    }
+    return html.join("")
+}
+
+function displayFiltersByFilterGroups(filterGroups) {
+    var $filters = $("#lstFilters");
+    if (filterGroups == null || filterGroups.length == 0) {
+        $filters.html("");
+        return
+    }
+    var html = [],
+        filterGroupCount = filterGroups.length;
+    for (var j = 0; j < filterGroupCount; j++) {
+        html.push('<div style="display:block">');
+        html.push('<span class="ui-icon ui-icon-circle-close" style="float:left; margin-right: .2em;" onClick="onRemoveFilter(' + j + ')"/>');
+        html.push(j + 1 + ". ");
+        html.push("(");
+        var filters = filterGroups[j],
+            filterCount = filters.length;
+        for (var i = 0; i < filterCount; i++) {
+            var f = filters[i];
+            if (i == filterCount - 1) html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ")");
+            else if (_isDialog) html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ") AND ");
+            else html.push("(" + f.propertyName + " " + filterDisplayFromId(f.operatorId) + " " + f.propertyValue + ") OR ")
+        }
+        html.push(")");
+        html.push("</div>");
+        if (filterGroupCount > 1 && j < filterGroupCount - 1) {
+            html.push('<div style="display:block">');
+            var filterOp = _filterOps[j];
+            if (filterOp == 0) html.push("OR");
+            else html.push("AND");
+            html.push("</div>")
+        }
+    }
+    $filters.html(html.join(""))
+}
+
+function filterAttributeRequiresTextInput(propertyId) {
+    var property = property_Get(propertyId);
+    if (property.SystemType == SYSTEM_TYPE_ASSET_NAME) return true;
+    if (property.DataType == DATA_TYPE_STRING)
+        if (!property.IsSystem) return true;
+    if (property.DataType == DATA_TYPE_MEMO) return true;
+    if (property.SystemType == SYSTEM_TYPE_DESCRIPTION) return true;
+    return false
+}
+
+function filterCreate(propertyId, operatorId, value, order, propertyName, propertyValue) {
+    var filter = {};
+    filter.propertyId = propertyId;
+    filter.operatorId = operatorId;
+    filter.value = value;
+    filter.order = order;
+    filter.propertyName = propertyName;
+    filter.propertyValue = propertyValue;
+    filter.filterString = "";
+    filter.filterExpression = "({0})";
+    filter.filterName = propertyName;
+    return filter
+}
+
+function filterGroupItemToListOfFilters(filterGroups) {
+    var temp = [],
+        filterGroupCount = filterGroups.length,
+        index = 0;
+    for (var j = 0; j < filterGroupCount; j++) {
+        var filters = filterGroups[j],
+            filterCount = filters.length;
+        for (var i = 0; i < filterCount; i++) {
+            temp[index] = filters[i];
+            temp[index].order = index;
+            index++
+        }
+    }
+    return temp
+}
+
+function getMatchesViaPropertyValue(propertyId, propertyValue) {
+    var searchRequestType = ART_DEFINITION;
+    if (FILTERED_ASSET_IS_INSTANCE) searchRequestType = ART_INSTANCE;
+    var options = assetSearchClient_Create(FILTERED_ASSET_TYPE_ID, searchRequestType);
+    return assets_GetViaFiltering(options)
+}
+
+function onAdd() {
+    if (_isDialog) {
+        if ($tdAssets == null) $tdAssets = $("#tdAssets");
+        $tdAssets.html(LOAD_MSG);
+        var filter = null;
+        if (_isFreeForm) {
+            var val = $("#attribValue").val();
+            filter = filterCreate(_attribId, _opId, val, _filters.length, _attribName, val)
+        } else filter = filterCreate(_attribId, _opId, _attribValueId, _filters.length, _attribName, _attribValueValue);
+        _filters[_filters.length] = filter;
+        _filterOps[_filterOps.length] = JOIN_TYPE_AND
+    }
+    if (_searchClient == null) _searchClient = assetSearchClient_Create(_assetTypeId, _art, _filters, _filterOps);
+    else _searchClient.filters = _filters;
+    _filterGroups[_filterGroups.length] = _filters;
+    _searchClient.filters = filterGroupItemToListOfFilters(_filterGroups);
+    _searchClient.filterExpression = buildFilterExpression(_filterGroups, _filterOps);
+    $("#lstAssets").html("<img src='images/ajax-loader.gif' alt='spinner' style='padding-left:2px;'/>").show();
+    var matchedAssets = assets_GetViaFiltering(_searchClient, onReceivedMatches)
+}
+
+function onAddAsORClicked() {
+    _filterOps[_filterOps.length] = JOIN_TYPE_OR;
+    onAdd()
+}
+
+function onAddAsANDClicked() {
+    _filterOps[_filterOps.length] = JOIN_TYPE_AND;
+    onAdd()
+}
+
+function onAdd_old() {
+    if ($spinner == null) $spinner = $("#divSpinner");
+    $("#btnAdd").attr("disabled", "disabled");
+    $("#lstAssets").hide();
+    $spinner.html("<img src='images/loader-16.gif' alt='spinner'/>").show();
+    var $props = $("#lstAttributes"),
+        propertyId = $props.val(),
+        propertyName = selectOption_GetCurrentText("lstAttributes"),
+        $propVals = $("#lstAttribValues"),
+        valueToMatch = $propVals.val();
+    if (valueToMatch === null || valueToMatch == "") return;
+    var propertyValueDisplay, matchedAssetIds = {};
+    if (propertyId == PROP_ASSET_NAME) {
+        propertyValueDisplay = valueToMatch;
+        var searchRequestType = FILTERED_ASSET_IS_INSTANCE ? ART_INSTANCE : ART_DEFINITION,
+            f = filterCreate(propertyId, FILTER_TYPE_LIKE, valueToMatch, filterCount(), propertyName, propertyValueDisplay);
+        filterAdd(f);
+        var options = assetSearchClient_Create(FILTERED_ASSET_TYPE_ID, searchRequestType, filters, filterOps);
+        matchedAssetIds = assets_GetViaFiltering(options)
+    } else {
+        propertyValueDisplay = selectOption_GetCurrentText("lstAttribValues");
+        var f = filterCreate(propertyId, FILTER_TYPE_EQUAL, valueToMatch, filterCount(), propertyName, propertyValueDisplay);
+        filterAdd(f);
+        matchedAssetIds = getMatchesViaPropertyValue(propertyId, valueToMatch)
+    }
+    selectOptionsRemove("filteredAssetIds");
+    if (matchedAssetIds !== null && associativeArrayLength(matchedAssetIds) > 0)
+        if (propertyId == "AssetName")
+            for (value in matchedAssetIds) {
+                var k = matchedAssetIds[value].Key,
+                    v = matchedAssetIds[value].Value;
+                selectOptionAppend("filteredAssetIds", k, v, false)
+            } else {
+                var html = [],
+                    length = matchedAssetIds.length;
+                for (var i = 0; i < length; i++) html.push('<option value="' + matchedAssetIds[i].key + '">' + matchedAssetIds[i].value + "</option>");
+                $("#filteredAssetIds").html(html.join(""))
+            }
+    htmlSelect_RemoveOptionByValue("lstAttributes", propertyId);
+    $props.val("-1");
+    if (propertyId == PROP_ASSET_NAME) $propVals.val("");
+    else {
+        selectOptionsRemove("lstAttribValues");
+        selectOptionAppend("lstAttribValues", -1, "[Select]", false);
+        $propVals.val("-1")
+    }
+    $propVals.attr("disabled", "disabled");
+    if (matchedAssetIds !== null && associativeArrayLength(matchedAssetIds) > 0)
+        if (propertyId == "AssetName") updateNumberOfMatches(FILTERED_ASSET_TYPE_ID, associativeArrayLength(matchedAssetIds));
+        else updateNumberOfMatches(FILTERED_ASSET_TYPE_ID, matchedAssetIds.length);
+    else updateNumberOfMatches(FILTERED_ASSET_TYPE_ID, 0);
+    refreshFilterDisplay();
+    var filter = {};
+    filter.propertyId = propertyId;
+    filter.propertyName = propertyName;
+    filter.propertyValue = valueToMatch;
+    filter.propertyValueDisplay = propertyValueDisplay;
+    FILTERS[FILTERS.length] = filter;
+    $("#filteredAssetIds").show();
+    $spinner.hide()
+}
+
+function onAttribChanged() {
+    if ($lstAttribs == null) $lstAttribs = $("#lstAttributes");
+    if ($propVals == null) $propVals = $("#lstAttribValues");
+    if ($tdFilterPropsVals == null) $tdFilterPropsVals = $("#tdFilterPropVals");
+    if ($lstOps == null) $lstOps = $("#lstOperators");
+    _filters = [];
+    _attribId = $("#lstAttributes option:selected").val();
+    _attribName = $("#lstAttributes option:selected").text();
+    var potentialValues = null;
+    if (_attribId != NULL_SELECTION) {
+        if (_allowFreeForm && filterAttributeRequiresTextInput(_attribId)) {
+            _isFreeForm = true;
+            $tdFilterPropsVals.html(ATTRIB_VALS_INPUT_HTML);
+            $lstAttribs.removeClass("ui-state-highlight");
+            $lstOps.removeAttr("disabled").removeClass("ui-state-disabled").addClass("ui-state-enabled").addClass("ui-state-highlight").val(NULL_SELECTION);
+            $("#btnAdd").val("Search");
+            return
+        } else {
+            if (_isDialog) $tdFilterPropsVals.html("<div style='vertical-align:middle'><img src='images/loader-16.gif' style='margin-right:5px;padding-left:2px;' alt='spinner'/>Please wait ...</div>");
+            else $propVals.html("<div style='vertical-align:middle'><img src='images/loader-16.gif' style='margin-right:5px;padding-left:2px;padding-top:2px;' alt='spinner'/>Please wait ...</div>").show();
+            if (_searchClient == null) potentialValues = propertyValues_GetPotentialByAssetType(_assetTypeId, _attribId, _art);
+            else {
+                _searchClient.propertyId = _attribId;
+                potentialValues = propertyValues_GetPotential_ViaFiltering(_searchClient)
+            }
+        }
+        if (_isDialog) {
+            if (_isFreeForm) return;
+            displayAttribValues_Dialog(potentialValues)
+        } else displayAttribValues_FilterPanel(potentialValues);
+        toggleControl("lstOperators", true, true);
+        $lstOps.val(NULL_SELECTION)
+    } else {
+        toggleControl("lstOperators", false, true);
+        toggleControl("btnAdd", false, true);
+        if (_isDialog) return;
+        toggleControl("btnAddOr", false, true);
+        toggleControl("btnAddAnd", false, true);
+        toggleControl("btnCheckAll", false, true);
+        toggleControl("btnUncheckAll", false, true)
+    }
+}
+
+function onAttribSearchChanged() {
+    if (_opId == null || _opId == undefined || _opId == -1) return;
+    var val = $("#attribValue").val();
+    if (val !== null && val != undefined && val != "") {
+        $("#attribValue").removeClass("ui-state-highlight");
+        $("#btnAdd").removeClass("ui-state-disabled").addClass("ui-state-enabled").removeAttr("disabled")
+    } else $("#btnAdd").removeClass("ui-state-enabled").addClass("ui-state-disabled").attr("disabled", "disabled")
+}
+
+function onAttribValueChanged() {
+    if ($lstAttribValues == null) $lstAttribValues = $("#lstAttribValues");
+    _attribValueId = $("#lstAttribValues option:selected").val();
+    _attribValueValue = $("#lstAttribValues option:selected").text();
+    if (_attribValueId != NULL_SELECTION) {
+        $("#btnAdd").removeClass("ui-state-disabled").addClass("ui-state-enabled").removeAttr("disabled");
+        $lstAttribValues.removeClass("ui-state-highlight").addClass("ui-state-default")
+    } else {
+        $("#btnAdd").removeClass("ui-state-enabled").addClass("ui-state-disabled").attr("disabled", "disabled");
+        $lstAttribValues.removeClass("ui-state-default").addClass("ui-state-highlight")
+    }
+}
+
+function onCheckAllChanged(checked) {
+    var newState = checked == 1 ? true : false;
+    for (var i = 0; i < _checkboxIds.length; i++) $("#" + _checkboxIds[i]).attr("checked", newState);
+    _checkCount = newState ? _checkboxIds.length : 0;
+    var opId = $lstOps.val();
+    newState = newState && opId != "-1";
+    toggleControl("btnUncheckAll", _checkCount > 0, true);
+    toggleControl("btnCheckAll", _checkCount != _checkboxIds.length, true);
+    toggleControl("btnAdd", false, true);
+    toggleControl("btnAddOr", false, true);
+    toggleControl("btnAddAnd", false, true)
+}
+
+function onCheckChanged(checkboxId) {
+    var $cBox = $("#" + checkboxId),
+        checked = checkBox_GetChecked(checkboxId),
+        checkboxText = $cBox.attr("value");
+    _checkStates[checkboxId] = checked;
+    if (checked) {
+        var filter = filterCreate(_attribId, _opId, checkboxId, _filters.length, _attribName, checkboxText);
+        _filters[_filters.length] = filter;
+        _checkCount++
+    } else {
+        removeFilter(checkboxId);
+        _checkCount--
+    }
+    toggleControl("btnUncheckAll", _checkCount > 0, true);
+    toggleControl("btnCheckAll", _checkCount != _checkboxIds.length, true);
+    if (_filterGroups == null || _filterGroups.length == 0) {
+        toggleControl("btnAdd", _checkCount > 0, true);
+        toggleControl("btnAddOr", false, true);
+        toggleControl("btnAddAnd", false, true)
+    } else {
+        toggleControl("btnAdd", false, true);
+        toggleControl("btnAddOr", _checkCount > 0, true);
+        toggleControl("btnAddAnd", _checkCount > 0, true)
+    }
+}
+
+function onReceivedMatches(data) {
+    displayAssets(data);
+    toggleControl("btnAdd", false, true);
+    displayFiltersByFilterGroups(_filterGroups);
+    updateNumberOfMatches(data.length);
+    if (_isDialog) return;
+    toggleControl("btnClear", true, true);
+    toggleControl("btnClear", true, true);
+    toggleControl("btnSave", true, true);
+    toggleControl("btnApply", true, true);
+    $("#pnl01").fadeIn();
+    $("#pnl02").fadeIn()
+}
+
+function onRemoveFilter(value) {
+    _filterGroups.splice(value, 1);
+    _searchClient.filters = filterGroupItemToListOfFilters(_filterGroups);
+    _searchClient.filterExpression = buildFilterExpression(_filterGroups, _filterOps);
+    $lstAssets.html("<img src='images/ajax-loader.gif' alt='spinner'/>").show();
+    if (_searchClient.filters.length == 0) {
+        var assetCount = 0;
+        if (_art == ART_INSTANCE) assetCount = assets_GetInstanceCount(_assetTypeId, true);
+        else assetCount = assets_GetCount(_assetTypeId);
+        var html = [];
+        if (assetCount < MAX_AUTOCOMPLETE_ITEMS) {
+            var assets = assets_Get(_assetTypeId, _art, true),
+                options = [],
+                length = assets.length;
+            for (var i = 0; i < length; i++) options[i] = '<option value="' + assets[i].Key + '">' + assets[i].Value + "</option>";
+            $lstAssets.html(options.join(""))
+        } else $lstAssets.hide();
+        displayFiltersByFilterGroups(_filterGroups);
+        updateNumberOfMatches(_assetTypeId, assetCount);
+        $lstAttribs.val(NULL_SELECTION).addClass("ui-state-highlight");
+        $lstOps.val(NULL_SELECTION);
+        $lstAttribValues.val(NULL_SELECTION)
+    } else assets_GetViaFiltering(_searchClient, onReceivedMatches)
+}
+
+function onSearch() {}
+
+function onOperatorChanged(value) {
+    if ($lstAttribValues == null) $lstAttribValues = $("#lstAttribValues");
+    _opId = parseInt(value);
+    if (value == -1) {
+        toggleControl("lstAttribValues", false, true);
+        toggleControl("btnAdd", false, true);
+        if (_isDialog) return;
+        toggleControl("btnAddOr", false, true);
+        toggleControl("btnAddAnd", false, true)
+    } else {
+        if (!_isDialog) {
+            $("#pnlLeftButtons").show();
+            toggleControl("lstAttribValues", true, true);
+            $lstAttribValues.show();
+            $("#lstAttribValues input").removeClass("ui-state-disabled").addClass("ui-state-enabled").removeAttr("disabled");
+            toggleControl("btnCheckAll", true, true);
+            toggleControl("btnUncheckAll", true, true)
+        } else {
+            if (_isFreeForm) {
+                toggleControl("attribValue", true, true);
+                $("#attribValue").removeClass("ui-state-default").addClass("ui-state-highlight")
+            } else {
+                toggleControl("lstAttribValues", true, true);
+                $lstAttribValues.removeClass("ui-state-default").addClass("ui-state-highlight")
+            }
+            $lstOps.removeClass("ui-state-highlight").addClass("ui-state-default")
+        }
+        var enableAdd = $("#lstAttribValues").val() != NULL_SELECTION;
+        toggleControl("btnAdd", enableAdd, true);
+        if (enableAdd) $("#btnAdd").removeClass("ui-state-disabled").addClass("ui-state-enabled").removeAttr("disabled");
+        if (_searchClient == null) {
+            if (_isDialog) return;
+            toggleControl("btnAddOr", false, true);
+            toggleControl("btnAddAnd", false, true)
+        } else {
+            if (_isDialog) return;
+            toggleControl("btnAddOr", _checkCount > 0, true);
+            toggleControl("btnAddAnd", _checkCount > 0, true)
+        }
+    }
+}
+
+function updateNumberOfMatches(numberOfMatches) {
+    if (_isDialog) {
+        var matchText = numberOfMatches > 1 || numberOfMatches == 0 ? "matches." : "match.";
+        $("#tdStatus").html("<i>Found " + numberWithCommas(numberOfMatches) + " " + matchText + "</i>")
+    } else $("#results").html("Results ( " + numberWithCommas(numberOfMatches) + " )")
+}
