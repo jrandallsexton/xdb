@@ -1,0 +1,104 @@
+var uploadId = null,
+    _imgSrc = "../images";
+
+function initForm() {
+    getCurrentUser();
+    displayCurrentUser(_imgSrc);
+    $("#header").html(buildHeaderContent(_imgSrc));
+    $("#navigation").html(buildMenuHtml(_imgSrc));
+    refreshRecent(_imgSrc);
+    initMenu();
+    authorizePageViewAdmin();
+    $.ajaxSetup({
+        cache: false
+    });
+    $("#divOptions").hide();
+    activateAutoCompletes(false, 0);
+    loadAssetTypesAndDefaultViews()
+}
+
+function activateAutoCompletes(showAll, filter) {
+    $("#lstItems").focusin(function() {
+        if (this.autoCompleteRendered != true) {
+            var imgRandomID = new Date().getTime();
+            $(this).after("<img id='img" + imgRandomID + "' src='../images/ajax-loader.gif' alt='spinner' style='position:absolute;top:" + $(this).offset().top + "px;left:" + $(this).offset().left + "px' />");
+            var dataSource = null;
+            if (showAll) dataSource = bulkUploads_Get(null, filter);
+            else dataSource = bulkUploads_Get(USER_CURRENT.Id, filter);
+            var minChars = 0;
+            if (dataSource.length > MAX_AUTOCOMPLETE_ITEMS) minChars = 2;
+            $(this).autocomplete({
+                minLength: minChars,
+                source: dataSource,
+                focus: function(event, ui) {
+                    $(this).val(ui.item.value);
+                    return false
+                },
+                select: function(event, ui) {
+                    $(this).val(ui.item.value);
+                    $(this.id + "-id").val(ui.item.key);
+                    onLogSelected(ui.item.key);
+                    this.blur();
+                    return false
+                }
+            }).data("autocomplete")._renderItem = function(ul, item) {
+                return $("<li class='ui-widget'></li>").data("item.autocomplete", item).append("<a>" + item.value + "</a>").appendTo(ul)
+            };
+            $("#img" + imgRandomID).remove()
+        }
+        $(this).autocomplete("search")
+    })
+}
+
+function onOptionChanged() {
+    onLogSelected(uploadId)
+}
+
+function onLogSelected(logId) {
+    uploadId = logId;
+    $("#divOptions").show();
+    $("#processingResults").html("");
+    var showInfo = checkBox_GetChecked("Info"),
+        showWarning = checkBox_GetChecked("Warning"),
+        showError = checkBox_GetChecked("Error"),
+        completed = false,
+        bulkUpload = bulkUpload_Get(logId);
+    if (bulkUpload !== null) completed = bulkUpload.Completed !== null && bulkUpload.Completed != undefined && bulkUpload.Completed != "";
+    var html = [];
+    html.push('<table style="width:100%">');
+    $.each(bulkUploadLogs_Get(logId, false), function(index, item) {
+        switch (item.Category) {
+            case "Info":
+                if (!showInfo) return;
+                break;
+            case "Warning":
+                if (!showWarning) return;
+                break;
+            case "Error":
+                if (!showError) return;
+                break
+        }
+        html.push("<tr>");
+        html.push('<td class="' + item.Category + '">' + item.Category + "</td>");
+        html.push("<td>");
+        if (item.AssetId !== null && item != undefined && item != NULL_GUID) {
+            var viewId = null;
+            if (item.IsInstance) viewId = ASSET_TYPES_VIEWS_INS[item.AssetTypeId];
+            else viewId = ASSET_TYPES_VIEWS[item.AssetTypeId];
+            html.push(item.Message + " " + createUrlForBookmark(item.Id, viewId, item.AssetId, "View " + item.AssetName))
+        } else html.push(item.Message);
+        html.push("</td>");
+        html.push("</tr>")
+    });
+    $("#processingResults").html(html.join(""))
+}
+
+function onShowAllChanged() {
+    var filter = $("input[name='filter']:checked").val();
+    activateAutoCompletes(checkBox_GetChecked("chkShowAll"), filter)
+}
+
+function onFilterChanged() {
+    var filter = $("input[name='filter']:checked").val();
+    activateAutoCompletes(checkBox_GetChecked("chkShowAll"), filter)
+}
