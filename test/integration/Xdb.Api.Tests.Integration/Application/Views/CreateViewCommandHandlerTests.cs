@@ -93,6 +93,32 @@ public class CreateViewCommandHandlerTests(FreshInstallFixture fixture) : IClass
     }
 
     [Fact]
+    public async Task MembersOfItsRoles_AreTouched_SoTheCachedMenuRefreshes()
+    {
+        var venue = await CreateVenueAsync();
+        var roleId = await CreateRoleAsync();
+        var longAgo = new DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        await using (var scope = fixture.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
+            db.RoleMembers.Add(new RoleMember
+            {
+                Id = Guid.NewGuid(), RoleId = roleId, MemberId = SystemMemberIds.Admin,
+                Created = fixture.Services.GetRequiredService<IDateTimeProvider>().UtcNow(), CreatedBy = SystemMemberIds.Admin
+            });
+            (await db.Members.SingleAsync(m => m.Id == SystemMemberIds.Admin)).LastModified = longAgo;
+            await db.SaveChangesAsync();
+        }
+
+        await ExecuteAsync(Command(venue.TypeId, isInstance: true, venue.DetailsGroup) with { RoleIds = [roleId] });
+
+        await using var check = fixture.Services.CreateAsyncScope();
+        var member = await check.ServiceProvider.GetRequiredService<XdbDataContext>().Members.AsNoTracking().SingleAsync(m => m.Id == SystemMemberIds.Admin);
+        member.LastModified.Should().NotBe(longAgo, "User_Modified must report a change for the UI to rebuild its menu");
+        member.LastModifiedBy.Should().Be(SystemMemberIds.Admin);
+    }
+
+    [Fact]
     public async Task AdminListedExplicitly_IsRelatedOnce()
     {
         var venue = await CreateVenueAsync();

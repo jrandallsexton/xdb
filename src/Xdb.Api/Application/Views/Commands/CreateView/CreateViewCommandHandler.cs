@@ -76,8 +76,20 @@ public sealed class CreateViewCommandHandler(
             });
         }
         // Without the Admin role nobody could reach the view to manage it.
-        foreach (var roleId in command.RoleIds.Append(SystemRoleIds.Admin).Distinct())
+        var roleIds = command.RoleIds.Append(SystemRoleIds.Admin).Distinct().ToList();
+        foreach (var roleId in roleIds)
             db.RolesViews.Add(new RolesView { Id = Guid.NewGuid(), RoleId = roleId, ViewId = id, Created = now, CreatedBy = command.ActorId });
+
+        // The UI caches its menu in the browser until User_Modified reports the member changed; touching the members who
+        // gain the view (through RoleMembers, as Views_Get reads it) lets the menu pick it up.
+        var members = await db.Members
+            .Where(m => m.Deleted == null && db.RoleMembers.Any(r => r.MemberId == m.Id && roleIds.Contains(r.RoleId) && r.Deleted == null))
+            .ToListAsync(cancellationToken);
+        foreach (var member in members)
+        {
+            member.LastModified = now;
+            member.LastModifiedBy = command.ActorId;
+        }
 
         if (command.IsDefault)
         {
