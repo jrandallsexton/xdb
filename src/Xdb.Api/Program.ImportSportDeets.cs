@@ -293,8 +293,226 @@ public partial class Program
                     DefinitionId: reader.GetGuid(reader.GetOrdinal("FranchiseId")));
             }));
 
+    /// <summary>
+    /// Athlete seasons imported, by FranchiseSeason year: the NCAAFB tables hold about 625k seasons of 252k athletes, more
+    /// than the per-asset write path should take in one run. Athletes are those with a season in the window.
+    /// </summary>
+    private const int AthleteSeasonsFrom = 2025, AthleteSeasonsTo = 2025;
+
+    /// <summary>The athletes with a season in the window, with their birth location; read for Person and for Football Athlete.</summary>
+    private static readonly string AthletesInWindowQuery = $"""
+        SELECT a."Id", a."DisplayName", a."FirstName", a."LastName", a."ShortName", a."DoB", a."HeightIn", a."WeightLb", a."Slug",
+               l."City", l."State", l."Country"
+        FROM public."Athlete" a
+        LEFT JOIN public."Location" l ON l."Id" = a."BirthLocationId"
+        WHERE EXISTS (
+            SELECT 1 FROM public."AthleteSeason" s
+            JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
+            WHERE s."AthleteId" = a."Id" AND fs."SeasonYear" BETWEEN {AthleteSeasonsFrom} AND {AthleteSeasonsTo})
+        ORDER BY a."DisplayName"
+        """;
+
+    /// <summary>The people behind the athletes in the window and behind every coach; Role says which, for the Person id.</summary>
+    private static readonly string PeopleQuery = $"""
+        SELECT 'Athlete' AS "Role", a."Id", a."DisplayName", a."FirstName", a."LastName", a."DoB", a."HeightIn", a."WeightLb",
+               l."City", l."State", l."Country"
+        FROM public."Athlete" a
+        LEFT JOIN public."Location" l ON l."Id" = a."BirthLocationId"
+        WHERE EXISTS (
+            SELECT 1 FROM public."AthleteSeason" s
+            JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
+            WHERE s."AthleteId" = a."Id" AND fs."SeasonYear" BETWEEN {AthleteSeasonsFrom} AND {AthleteSeasonsTo})
+        UNION ALL
+        SELECT 'Coach', c."Id", concat_ws(' ', c."FirstName", c."LastName"), c."FirstName", c."LastName", c."DateOfBirth", NULL, NULL,
+               NULL, NULL, NULL
+        FROM public."Coach" c
+        ORDER BY 3
+        """;
+
+    /// <summary>
+    /// The human, whatever roles they have: a football athlete and a coach each refer to one, so a coach can be linked to
+    /// their playing career. The Producer does not link athletes and coaches yet, so for now each athlete and each coach
+    /// brings a Person of their own; when that link exists (from the Producer or curated here), roles share one Person.
+    /// </summary>
+    private static readonly ImportType Person = new(
+        Name: "Person",
+        Pluralization: "People",
+        Definitions: new ImportLevel(
+            Label: "Person",
+            Properties:
+            [
+                new("First Name", DataType.String),
+                new("Last Name", DataType.String),
+                new("Birth Date", DataType.Date),
+                new("Birth City", DataType.String),
+                // The venues' lists: a state's related items then show its venues and the people born there.
+                new("Birth State", DataType.PickList, PickList: "State"),
+                new("Birth Country", DataType.PickList, PickList: "Country"),
+                new("Height (in)", DataType.Float),
+                new("Weight (lb)", DataType.Float)
+            ],
+            Groups:
+            [
+                new("Person", ["AssetName", "First Name", "Last Name", "Birth Date"]),
+                new("Birthplace", ["Birth City", "Birth State", "Birth Country"]),
+                new("Physical", ["Height (in)", "Weight (lb)"])
+            ],
+            ViewName: "People",
+            Query: PeopleQuery,
+            Map: reader => new ImportRow(
+                PersonId(reader.GetString(reader.GetOrdinal("Role")), reader.GetGuid(reader.GetOrdinal("Id"))),
+                reader.GetString(reader.GetOrdinal("DisplayName")).Trim(),
+                new Dictionary<string, string?>
+                {
+                    ["First Name"] = Text(reader, "FirstName"),
+                    ["Last Name"] = Text(reader, "LastName"),
+                    ["Birth Date"] = reader.IsDBNull(reader.GetOrdinal("DoB"))
+                        ? null
+                        : reader.GetFieldValue<DateTime>(reader.GetOrdinal("DoB")).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    ["Birth City"] = Text(reader, "City"),
+                    ["Birth State"] = Text(reader, "State"),
+                    ["Birth Country"] = Text(reader, "Country"),
+                    // 0 is unknown, as with venue capacity.
+                    ["Height (in)"] = Positive(reader, "HeightIn"),
+                    ["Weight (lb)"] = Positive(reader, "WeightLb")
+                })));
+
+    private static readonly ImportType FootballAthlete = new(
+        Name: "Football Athlete",
+        Pluralization: "Football Athletes",
+        Definitions: new ImportLevel(
+            Label: "Athlete",
+            Properties:
+            [
+                new("Person", DataType.Asset, TargetType: "Person"),
+                new("Short Name", DataType.String),
+                new("Slug", DataType.String)
+            ],
+            Groups:
+            [
+                new("Athlete", ["AssetName", "Person", "Short Name"]),
+                new("sportDeets", ["Slug"])
+            ],
+            ViewName: "Football Athletes",
+            Query: AthletesInWindowQuery,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                reader.GetString(reader.GetOrdinal("DisplayName")).Trim(),
+                new Dictionary<string, string?>
+                {
+                    ["Person"] = PersonId("Athlete", reader.GetGuid(reader.GetOrdinal("Id"))).ToString("D"),
+                    ["Short Name"] = Text(reader, "ShortName"),
+                    ["Slug"] = Text(reader, "Slug")
+                })),
+        Instances: new ImportLevel(
+            Label: "Season",
+            Properties:
+            [
+                new("Season Year", DataType.Int),
+                new("Team", DataType.Asset, TargetType: "Franchise", TargetIsInstance: true),
+                new("Position", DataType.PickList, PickList: "Position"),
+                new("Jersey", DataType.String),
+                new("Class", DataType.PickList, PickList: "Class"),
+                new("Status", DataType.PickList, PickList: "Athlete Status"),
+                new("Active", DataType.PickList, PickList: "Yes/No", FixedValues: YesNo)
+            ],
+            Groups:
+            [
+                new("Season", ["AssetName", "InstanceOf", "Season Year", "Team", "Position", "Jersey", "Class", "Status", "Active"])
+            ],
+            ViewName: "Football Athlete Seasons",
+            Query: $"""
+                SELECT s."Id", s."AthleteId", s."FranchiseSeasonId", fs."SeasonYear", s."DisplayName", p."DisplayName" AS "Position",
+                       s."Jersey", s."ExperienceDisplayValue", st."Name" AS "Status", s."IsActive"
+                FROM public."AthleteSeason" s
+                JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
+                LEFT JOIN public."AthletePosition" p ON p."Id" = s."PositionId"
+                LEFT JOIN public."AthleteStatus" st ON st."Id" = s."StatusId"
+                WHERE fs."SeasonYear" BETWEEN {AthleteSeasonsFrom} AND {AthleteSeasonsTo}
+                ORDER BY fs."SeasonYear", s."DisplayName"
+                """,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                $"{reader.GetInt32(reader.GetOrdinal("SeasonYear"))} {reader.GetString(reader.GetOrdinal("DisplayName")).Trim()}",
+                new Dictionary<string, string?>
+                {
+                    ["Season Year"] = Number(reader, "SeasonYear"),
+                    ["Team"] = Reference(reader, "FranchiseSeasonId"),
+                    ["Position"] = Text(reader, "Position"),
+                    ["Jersey"] = Text(reader, "Jersey"),
+                    ["Class"] = Text(reader, "ExperienceDisplayValue"),
+                    ["Status"] = Text(reader, "Status"),
+                    ["Active"] = reader.GetBoolean(reader.GetOrdinal("IsActive")) ? "Yes" : "No"
+                },
+                DefinitionId: reader.GetGuid(reader.GetOrdinal("AthleteId")))));
+
+    /// <summary>
+    /// A coach: definition = the coach (a Person), instance = a season with a team. Not imported: CoachSeason.Title, which
+    /// holds the coach's last name on every row (a Producer mapping bug), and Coach.Title, empty on every row.
+    /// </summary>
+    private static readonly ImportType Coach = new(
+        Name: "Coach",
+        Pluralization: "Coaches",
+        Definitions: new ImportLevel(
+            Label: "Coach",
+            Properties:
+            [
+                new("Person", DataType.Asset, TargetType: "Person"),
+                new("Experience (years)", DataType.Int)
+            ],
+            Groups:
+            [
+                new("Coach", ["AssetName", "Person", "Experience (years)"])
+            ],
+            ViewName: "Coaches",
+            Query: """
+                SELECT c."Id", concat_ws(' ', c."FirstName", c."LastName") AS "Name", c."Experience"
+                FROM public."Coach" c
+                ORDER BY 2
+                """,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                reader.GetString(reader.GetOrdinal("Name")).Trim(),
+                new Dictionary<string, string?>
+                {
+                    ["Person"] = PersonId("Coach", reader.GetGuid(reader.GetOrdinal("Id"))).ToString("D"),
+                    // 0 is unknown (242 of 276 rows).
+                    ["Experience (years)"] = Positive(reader, "Experience")
+                })),
+        Instances: new ImportLevel(
+            Label: "Season",
+            Properties:
+            [
+                new("Season Year", DataType.Int),
+                new("Team", DataType.Asset, TargetType: "Franchise", TargetIsInstance: true),
+                new("Active", DataType.PickList, PickList: "Yes/No", FixedValues: YesNo)
+            ],
+            Groups:
+            [
+                new("Season", ["AssetName", "InstanceOf", "Season Year", "Team", "Active"])
+            ],
+            ViewName: "Coach Seasons",
+            Query: """
+                SELECT s."Id", s."CoachId", s."FranchiseSeasonId", s."IsActive", fs."SeasonYear",
+                       concat_ws(' ', c."FirstName", c."LastName") AS "Name"
+                FROM public."CoachSeason" s
+                JOIN public."Coach" c ON c."Id" = s."CoachId"
+                JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
+                ORDER BY fs."SeasonYear", 6
+                """,
+            Map: reader => new ImportRow(
+                reader.GetGuid(reader.GetOrdinal("Id")),
+                $"{reader.GetInt32(reader.GetOrdinal("SeasonYear"))} {reader.GetString(reader.GetOrdinal("Name")).Trim()}",
+                new Dictionary<string, string?>
+                {
+                    ["Season Year"] = Number(reader, "SeasonYear"),
+                    ["Team"] = Reference(reader, "FranchiseSeasonId"),
+                    ["Active"] = reader.GetBoolean(reader.GetOrdinal("IsActive")) ? "Yes" : "No"
+                },
+                DefinitionId: reader.GetGuid(reader.GetOrdinal("CoachId")))));
+
     /// <summary>In order: a type's Asset properties refer to types listed before it.</summary>
-    private static readonly IReadOnlyList<ImportType> SportDeetsTypes = [Venue, Franchise];
+    private static readonly IReadOnlyList<ImportType> SportDeetsTypes = [Venue, Franchise, Person, FootballAthlete, Coach];
 
     /// <summary>
     /// From a season's group chain (its group first, then ancestors): the nearest conference, the group below it (a
@@ -591,6 +809,7 @@ public partial class Program
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<XdbDataContext>();
+
         var existing = await db.AssetTypes.AsNoTracking().Where(t => t.Name == type.Name).Select(t => new { t.Id, t.Deleted }).SingleOrDefaultAsync(cancellationToken);
         if (existing is not null)
         {
@@ -727,6 +946,29 @@ public partial class Program
     {
         var ordinal = reader.GetOrdinal(column);
         return reader.IsDBNull(ordinal) ? null : Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// The Person asset's id for a sportDeets athlete or coach. Their own id is already the role asset's (Football Athlete,
+    /// Coach), so the Person gets a stable id derived from it (name-based, MD5): reruns find the same Person.
+    /// </summary>
+    private static Guid PersonId(string role, Guid sourceId)
+    {
+        // Athletes came first and keep their original key.
+        var key = role == "Athlete" ? $"sportDeets/Person/{sourceId:D}" : $"sportDeets/Person/{role}/{sourceId:D}";
+        var hash = System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(key));
+        hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
+        hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
+        return new Guid(hash);
+    }
+
+    /// <summary>A positive number as invariant text; NULL or 0 (unknown in the Producer data) writes no value.</summary>
+    private static string? Positive(DbDataReader reader, string column)
+    {
+        var ordinal = reader.GetOrdinal(column);
+        return reader.IsDBNull(ordinal) || Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture) <= 0
+            ? null
+            : Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
     }
 
     /// <summary>A reference to another imported row, by its sportDeets id (which its asset keeps); NULL or all-zero writes no value.</summary>
