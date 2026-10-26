@@ -33,6 +33,7 @@ using Xdb.Api.Application.Metadata.Queries.PickLists;
 using Xdb.Api.Application.Metadata.Queries.Properties;
 using Xdb.Api.Application.Metadata.Queries.Values;
 using Xdb.Api.Application.Assets.Commands.CreateAsset;
+using Xdb.Api.Application.Assets.Commands.CreateAssets;
 using Xdb.Api.Application.AssetTypes.Commands.CreateAssetType;
 using Xdb.Api.Application.PickLists.Commands.CreatePickList;
 using Xdb.Api.Application.Properties.Commands.CreateProperty;
@@ -314,6 +315,7 @@ public static class ServiceRegistration
 
         // Assets
         services.AddScoped<ICreateAssetCommandHandler, CreateAssetCommandHandler>();
+        services.AddScoped<ICreateAssetsCommandHandler, CreateAssetsCommandHandler>();
 
         // Asset types
         services.AddScoped<ICreateAssetTypeCommandHandler, CreateAssetTypeCommandHandler>();

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 
 using Xdb.Api.Application.Assets.Commands.CreateAsset;
+using Xdb.Api.Application.Assets.Commands.CreateAssets;
 using Xdb.Api.Application.AssetTypes.Commands.CreateAssetType;
 using Xdb.Api.Application.Common.Metadata;
 using Xdb.Api.Application.PickLists.Commands.CreatePickList;
@@ -294,14 +296,20 @@ public partial class Program
             }));
 
     /// <summary>
-    /// Athlete seasons imported, by FranchiseSeason year: the NCAAFB tables hold about 625k seasons of 252k athletes, more
-    /// than the per-asset write path should take in one run. Athletes are those with a season in the window.
+    /// Athlete seasons imported, by FranchiseSeason year (every year the Producer holds; NCAAFB is about 625k seasons of
+    /// 252k athletes). Athletes are those with a season in the window; narrow it for a quicker partial import.
     /// </summary>
-    private const int AthleteSeasonsFrom = 2025, AthleteSeasonsTo = 2025;
+    private const int AthleteSeasonsFrom = 1990, AthleteSeasonsTo = 2026;
+
+    /// <summary>
+    /// An athlete's name: the display name, else first and last name. Some Producer athletes have neither (empty or NULL);
+    /// they come through as '' and are rejected, and logged, by the import.
+    /// </summary>
+    private const string AthleteName = """COALESCE(NULLIF(btrim(a."DisplayName"), ''), NULLIF(btrim(concat_ws(' ', a."FirstName", a."LastName")), ''), '')""";
 
     /// <summary>The athletes with a season in the window, with their birth location; read for Person and for Football Athlete.</summary>
     private static readonly string AthletesInWindowQuery = $"""
-        SELECT a."Id", a."DisplayName", a."FirstName", a."LastName", a."ShortName", a."DoB", a."HeightIn", a."WeightLb", a."Slug",
+        SELECT a."Id", {AthleteName} AS "DisplayName", a."FirstName", a."LastName", a."ShortName", a."DoB", a."HeightIn", a."WeightLb", a."Slug",
                l."City", l."State", l."Country"
         FROM public."Athlete" a
         LEFT JOIN public."Location" l ON l."Id" = a."BirthLocationId"
@@ -309,12 +317,12 @@ public partial class Program
             SELECT 1 FROM public."AthleteSeason" s
             JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
             WHERE s."AthleteId" = a."Id" AND fs."SeasonYear" BETWEEN {AthleteSeasonsFrom} AND {AthleteSeasonsTo})
-        ORDER BY a."DisplayName"
+        ORDER BY 2
         """;
 
     /// <summary>The people behind the athletes in the window and behind every coach; Role says which, for the Person id.</summary>
     private static readonly string PeopleQuery = $"""
-        SELECT 'Athlete' AS "Role", a."Id", a."DisplayName", a."FirstName", a."LastName", a."DoB", a."HeightIn", a."WeightLb",
+        SELECT 'Athlete' AS "Role", a."Id", {AthleteName} AS "DisplayName", a."FirstName", a."LastName", a."DoB", a."HeightIn", a."WeightLb",
                l."City", l."State", l."Country"
         FROM public."Athlete" a
         LEFT JOIN public."Location" l ON l."Id" = a."BirthLocationId"
@@ -422,14 +430,16 @@ public partial class Program
             ],
             ViewName: "Football Athlete Seasons",
             Query: $"""
-                SELECT s."Id", s."AthleteId", s."FranchiseSeasonId", fs."SeasonYear", s."DisplayName", p."DisplayName" AS "Position",
+                SELECT s."Id", s."AthleteId", s."FranchiseSeasonId", fs."SeasonYear",
+                       COALESCE(NULLIF(btrim(s."DisplayName"), ''), {AthleteName}) AS "DisplayName", p."DisplayName" AS "Position",
                        s."Jersey", s."ExperienceDisplayValue", st."Name" AS "Status", s."IsActive"
                 FROM public."AthleteSeason" s
+                JOIN public."Athlete" a ON a."Id" = s."AthleteId"
                 JOIN public."FranchiseSeason" fs ON fs."Id" = s."FranchiseSeasonId"
                 LEFT JOIN public."AthletePosition" p ON p."Id" = s."PositionId"
                 LEFT JOIN public."AthleteStatus" st ON st."Id" = s."StatusId"
                 WHERE fs."SeasonYear" BETWEEN {AthleteSeasonsFrom} AND {AthleteSeasonsTo}
-                ORDER BY fs."SeasonYear", s."DisplayName"
+                ORDER BY fs."SeasonYear", 5
                 """,
             Map: reader => new ImportRow(
                 reader.GetGuid(reader.GetOrdinal("Id")),
@@ -610,14 +620,11 @@ public partial class Program
             await EnsureViewAsync(services, typeId, type, level, isInstance, groupIds, logger, cancellationToken);
         }
 
-        // Assets, keeping the sportDeets ids: definitions first, so instances can name theirs.
-        var failed = 0;
-        foreach (var (level, rows) in Levels(type, definitionRows, instanceRows))
-        {
-            var (levelFailed, levelGenFailures) = await CreateAssetsAsync(services, typeId, level, rows, propertyIds, pickListValues, logger, cancellationToken);
-            failed += levelFailed;
-            genFailures += levelGenFailures;
-        }
+        // Assets, keeping the sportDeets ids, in one batch: the handler writes definitions first, so instances can name
+        // theirs, and builds the gen tables once.
+        var (failed, writeGenFailures) = await CreateAssetsAsync(services, typeId, type, definitionRows, instanceRows, propertyIds, pickListValues,
+            logger, cancellationToken);
+        genFailures += writeGenFailures;
 
         // A rerun skips assets that already exist, so it cannot repair their gen-table rows; a rebuild does.
         if (genFailures > 0)
@@ -634,23 +641,28 @@ public partial class Program
             yield return (type.Instances, instanceRows);
     }
 
-    /// <returns>Rows that failed, and gen-table refreshes that failed for rows that were created.</returns>
-    private static async Task<(int Failed, int GenFailures)> CreateAssetsAsync(IServiceProvider services, Guid typeId, ImportLevel level,
-        IReadOnlyList<ImportRow> rows, IReadOnlyDictionary<string, Guid> propertyIds, IReadOnlyDictionary<string, Dictionary<string, Guid>> pickListValues,
-        ILogger logger, CancellationToken cancellationToken)
+    /// <returns>Rows that failed, and gen-table work that failed for rows that were created.</returns>
+    private static async Task<(int Failed, int GenFailures)> CreateAssetsAsync(IServiceProvider services, Guid typeId, ImportType type,
+        IReadOnlyList<ImportRow> definitionRows, IReadOnlyList<ImportRow> instanceRows, IReadOnlyDictionary<string, Guid> propertyIds,
+        IReadOnlyDictionary<string, Dictionary<string, Guid>> pickListValues, ILogger logger, CancellationToken cancellationToken)
     {
+        var rows = new Dictionary<Guid, (ImportLevel Level, ImportRow Row)>();
+        foreach (var (level, levelRows) in Levels(type, definitionRows, instanceRows))
+            foreach (var row in levelRows)
+                if (!rows.TryAdd(row.Id, (level, row)))
+                    logger.LogWarning("{Level} {Id} '{Name}' appears more than once in the source; the first is kept", level.Label, row.Id, row.Name);
+
         var existing = new HashSet<Guid>();
         // Chunked: SQL Server takes at most 2100 parameters.
-        foreach (var chunk in rows.Select(r => r.Id).Chunk(2000))
+        foreach (var chunk in rows.Keys.Chunk(2000))
             existing.UnionWith(await InScopeAsync(services, sp => sp.GetRequiredService<XdbDataContext>().Assets.AsNoTracking()
                 .Where(a => chunk.Contains(a.Id)).Select(a => a.Id).ToListAsync(cancellationToken)));
 
-        int created = 0, failed = 0, genFailures = 0;
-        foreach (var row in rows)
+        var items = new List<CreateAssetsItem>();
+        foreach (var (level, row) in rows.Values)
         {
             if (existing.Contains(row.Id))
                 continue;
-
             var values = new List<CreateAssetValue>();
             foreach (var (name, text) in row.Values)
             {
@@ -659,33 +671,48 @@ public partial class Program
                 var value = pickListValues.TryGetValue(name, out var map) ? map[text.Trim()].ToString("D") : text;
                 values.Add(new CreateAssetValue(propertyIds[name], value));
             }
+            items.Add(new CreateAssetsItem { Id = row.Id, Name = row.Name, InstanceOfId = row.DefinitionId, Values = values });
+        }
 
-            var result = await InScopeAsync(services, sp => sp.GetRequiredService<ICreateAssetCommandHandler>().ExecuteAsync(new CreateAssetCommand
+        var created = new HashSet<Guid>();
+        int failed = 0, genFailures = 0;
+        if (items.Count > 0)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var result = await InScopeAsync(services, sp => sp.GetRequiredService<ICreateAssetsCommandHandler>().ExecuteAsync(new CreateAssetsCommand
             {
                 ActorId = SystemMemberIds.Admin,
-                Id = row.Id,
                 AssetTypeId = typeId,
-                Name = row.Name,
-                InstanceOfId = row.DefinitionId,
-                Values = values
+                Assets = items
             }, cancellationToken));
 
-            if (result is Failure<CreateAssetResult> failure)
+            if (result is Failure<CreateAssetsResult> failure)
+            {
+                logger.LogError("{Type}: the batch of {Count} was refused: {Errors}", type.Name, items.Count, Describe(failure.Errors));
+                return (items.Count, 0);
+            }
+            foreach (var rejected in result.Value.Rejected)
             {
                 failed++;
-                logger.LogError("{Level} {Id} '{Name}' failed: {Errors}", level.Label, row.Id, row.Name, Describe(failure.Errors));
-                continue;
+                var (level, row) = rows[rejected.Id];
+                logger.LogError("{Level} {Id} '{Name}' failed: {Errors}", level.Label, row.Id, row.Name, Describe(rejected.Errors));
             }
             foreach (var genFailure in result.Value.Failures)
             {
                 genFailures++;
-                logger.LogError("{Level} {Id}: gen-table refresh failed: {Error}", level.Label, row.Id, genFailure.Error);
+                logger.LogError("{Type}: gen tables of {Kind} {Id} failed: {Error}", type.Name, genFailure.Kind, genFailure.Id, genFailure.Error);
             }
-            if (++created % 500 == 0)
-                logger.LogInformation("{Level}: {Created} created", level.Label, created);
+            created.UnionWith(result.Value.Created);
+            logger.LogInformation("{Type}: {Count} assets written in {Elapsed:N1}s ({Rate:N0}/s)", type.Name, created.Count,
+                stopwatch.Elapsed.TotalSeconds, created.Count / Math.Max(stopwatch.Elapsed.TotalSeconds, 0.001));
         }
 
-        logger.LogInformation("{Level}: {Created} created, {Skipped} already present, {Failed} failed", level.Label, created, existing.Count, failed);
+        foreach (var (level, _) in Levels(type, definitionRows, instanceRows))
+        {
+            var levelRows = rows.Values.Where(r => r.Level == level).Select(r => r.Row.Id).ToList();
+            logger.LogInformation("{Level}: {Created} created, {Skipped} already present, {Failed} failed", level.Label,
+                levelRows.Count(created.Contains), levelRows.Count(existing.Contains), levelRows.Count(id => !created.Contains(id) && !existing.Contains(id)));
+        }
         return (failed, genFailures);
     }
 

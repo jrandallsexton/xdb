@@ -50,15 +50,12 @@ public class PropertyValue : EntityBase<Guid>, IHasCreatedBy, IHasDeletedBy
 
             builder.HasIndex(e => e.AssetId, "IX_AssetIds");
 
-            builder.HasIndex(e => new { e.PropertyId, e.AssetId }, "IX_PropVals");
+            // A property's value on an asset: dbo.PropertyValue (every gen-table cell) and the value readers. Covers the
+            // live, approved filter, so the lookup never goes to the heap.
+            builder.HasIndex(e => new { e.PropertyId, e.AssetId, e.Deleted }, "IX_PropertyValues_Lookup")
+                .IncludeProperties(e => new { e.Approved, e.Value });
 
-            builder.HasIndex(e => e.PropertyId, "IX_PropertyIds");
-
-            builder.HasIndex(e => new { e.PropertyId, e.AssetId, e.Deleted }, "_dta_index_PropertyValues_5_836914053__K2_K3_K9_5");
-
-            builder.HasIndex(e => e.Id, "_dta_index_PropertyValues_7_1989582126__K1_2_3_4_5_6_7_8_9_10_11_12_13_14");
-
-            builder.HasIndex(e => new { e.Deleted, e.SubmittalGroupId }, "_dta_index_PropertyValues_7_1989582126__K9_K4_1_2_3_5_6_7_8_10_11_12_13_14");
+            builder.HasIndex(e => e.SubmittalGroupId, "IX_PropertyValues_SubmittalGroupId");
 
             builder.Property(e => e.Id).ValueGeneratedNever();
             builder.Property(e => e.Approved).HasColumnType("smalldatetime");
