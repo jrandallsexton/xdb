@@ -1,6 +1,6 @@
 # 09 - Concept: XDB as a Link Explorer over sportDeets Data
 
-Status: **concept for discussion** (2026-10-21). No development until agreed. Sequencing: this comes *after* the as-is port in `10-plan-run-as-is.md` - the first version of this overlay runs on the resurrected engine, unmodified.
+Status: **concept (2026-10-21); first slices built, then paused (2026-10-26).** The import in `13-import-venue.md` reads the Producer database directly rather than through the export contract below; see `14-pause-point.md` for what exists. Sequencing: this comes *after* the as-is port in `10-plan-run-as-is.md` - the first version of this overlay runs on the resurrected engine, unmodified.
 
 ## 1. The idea
 

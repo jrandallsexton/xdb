@@ -1,6 +1,6 @@
 # 11 - Phase 2 Scope: .NET 10 Port
 
-Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7, M8 and M9 done (2026-10-23): Phase 2 complete.** Builds on `10-plan-run-as-is.md`.
+Status: **approved 2026-10-21; M0, M1 and M2 done (2026-10-21); M3 to M6 done (2026-10-22); M7, M8 and M9 done (2026-10-23): Phase 2 complete.** Work after Phase 2 (the sportDeets import, fixes found along the way) and the pause of 2026-10-26 are in `14-pause-point.md`. Builds on `10-plan-run-as-is.md`.
 
 Goal: replace the original WCF REST service with a .NET 10 API that reproduces the original wire contract exactly, so the original jQuery UI works against it. The UI is **not** pointed at the port where it stands: at cut-over (M9) it is copied into this repository in its entirety and modified there (author decision 2026-10-23). Until then the unmodified original UI and its recorded traffic define the contract. **After M9 (author decision 2026-10-23)** byte-identical behaviour is no longer required: defects are fixed in XDB as they are found, each recorded as a behaviour change. Each ported operation must be shown equivalent by replaying recorded traffic against both the original (still running locally) and the port, then diffing the responses. The code follows the conventions of the author's current production system: thin controllers, handlers injected per action, CQRS with validation and `Result<T>`.
 
